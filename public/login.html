@@ -1,0 +1,308 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CPL PAYMENT MAKER - LOGIN</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: Arial, Helvetica, sans-serif; }
+    body {
+      min-height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 20px;
+      background: linear-gradient(rgba(0, 0, 0, 0.15), rgba(0, 0, 0, 0.15)), url('https://images.unsplash.com/photo-1611657291636-c141ee8cf7ab?q=80&w=1250&auto=format&fit=crop') no-repeat center center fixed;
+      background-size: cover; padding: 20px; position: relative;
+    }
+    .admin-top-btn {
+      position: absolute; top: 20px; right: 20px;
+      background: linear-gradient(180deg, #c0392b 0%, #962d22 100%);
+      color: #ffffff; font-size: 12px; font-weight: 900; padding: 8px 16px; border: none; border-radius: 4px; cursor: pointer;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.3); z-index: 100;
+    }
+    .rules-top-btn {
+      position: absolute; top: 100px; right: 20px;
+      background: linear-gradient(180deg, #f39c12 0%, #d35400 100%);
+      color: #ffffff; font-size: 12px; font-weight: 900; padding: 8px 16px; border: none; border-radius: 4px; cursor: pointer;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.3); z-index: 100; width: 112px; text-align: center;
+    }
+
+    /* REALISTIC FLAG WITH POLE & WAVING ANIMATION */
+    .india-flag-pole-container {
+      position: absolute; top: 100px; left: 25px;
+      display: flex; align-items: flex-start; z-index: 100;
+    }
+    .flagpole {
+      width: 6px; height: 110px; background: linear-gradient(90deg, #555, #ccc, #333);
+      border-radius: 3px; box-shadow: 2px 2px 6px rgba(0,0,0,0.5);
+    }
+    .flagpole-ball {
+      width: 14px; height: 14px; background: radial-gradient(circle at 30% 30%, #ffd700, #b8860b);
+      border-radius: 50%; position: absolute; top: -6px; left: -4px; box-shadow: 0 2px 4px rgba(0,0,0,0.4);
+    }
+    .waving-flag {
+      width: 90px; height: 60px; margin-left: 2px;
+      background: linear-gradient(to bottom, #FF9933 33.33%, #FFFFFF 33.33%, #FFFFFF 66.66%, #138808 66.66%);
+      position: relative; box-shadow: 3px 3px 10px rgba(0,0,0,0.4);
+      animation: waveEffect 1.8s ease-in-out infinite alternate;
+      transform-origin: left center;
+      border-radius: 0 4px 4px 0;
+    }
+    .waving-flag::after {
+      content: ""; position: absolute; inset: 0;
+      background: linear-gradient(90deg, rgba(255,255,255,0) 0%, rgba(0,0,0,0.2) 50%, rgba(255,255,255,0) 100%);
+      animation: lightShimmer 1.8s ease-in-out infinite alternate;
+    }
+    .flag-chakra-center {
+      position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+      width: 20px; height: 20px; border: 1.5px solid #000080; border-radius: 50%;
+      display: flex; align-items: center; justify-content: center; background: rgba(255,255,255,0.9);
+    }
+    .flag-chakra-center::before {
+      content: ""; width: 100%; height: 1px; background: #000080; position: absolute;
+    }
+    .flag-chakra-center::after {
+      content: ""; width: 1px; height: 100%; background: #000080; position: absolute;
+    }
+    @keyframes waveEffect {
+      0% { transform: perspective(200px) rotateY(0deg) skewY(0deg); }
+      100% { transform: perspective(200px) rotateY(-18deg) skewY(-2deg); }
+    }
+    @keyframes lightShimmer {
+      0% { opacity: 0.1; }
+      100% { opacity: 0.5; }
+    }
+
+    .title-banner {
+      background: rgba(255, 255, 255, 0.65); border: 1px solid rgba(255, 255, 255, 0.8); padding: 12px 60px; border-radius: 4px; box-shadow: 0 4px 15px rgba(0,0,0,0.3); text-align: center;
+    }
+    .title-banner h1 { font-size: 38px; font-weight: 900; color: #ed1c09; text-shadow: 2px 2px 0px #0b4f24, -1px -1px 0px #a3f7bf; letter-spacing: 1.5px; }
+    .pill-orange {
+      background: linear-gradient(180deg, #f37324 0%, #c84e03 100%); color: #ffffff; font-size: 19px; font-weight: 900; padding: 9px 50px; border-radius: 4px; border-top: 2px solid #ffaa75; border-bottom: 3px solid #833000; box-shadow: 0 6px 12px rgba(0,0,0,0.4); text-align: center;
+    }
+    .period-selector-panel {
+      background: rgba(255, 255, 255, 0.95); padding: 18px 22px; border-radius: 6px; border: 2px solid #2b579a; box-shadow: 0 4px 15px rgba(0,0,0,0.3); display: flex; flex-direction: column; gap: 12px; width: 360px; text-align: left;
+    }
+    .period-selector-panel label { font-size: 11px; font-weight: bold; color: #333; }
+    .period-selector-panel select, .period-selector-panel input { width: 100%; height: 34px; padding: 4px 8px; font-size: 12px; font-weight: bold; border: 1px solid #ccc; border-radius: 4px; }
+    .btn-operator-login {
+      background: linear-gradient(180deg, #2b579a 0%, #153465 100%); color: #ffffff; font-size: 12px; font-weight: 900; padding: 8px; border: none; border-radius: 4px; cursor: pointer; text-align: center; width: 100%; margin-top: 4px;
+    }
+    #authStatusMsg { font-size: 11px; font-weight: bold; text-align: center; margin-top: 4px; min-height: 22px; line-height: 1.3; }
+    .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.6); z-index: 200; justify-content: center; align-items: center; }
+    .modal-window { background: #ffffff; border-radius: 6px; padding: 20px; width: 350px; box-shadow: 0 6px 20px rgba(0,0,0,0.4); display: flex; flex-direction: column; gap: 12px; text-align: center; }
+    .modal-window h3 { color: #2b579a; font-size: 16px; }
+    .modal-window input { width: 100%; height: 34px; padding: 6px 10px; border: 1.5px solid #2b579a; border-radius: 4px; font-size: 13px; }
+    .modal-btn-row { display: flex; justify-content: center; gap: 10px; margin-top: 6px; }
+    .btn-modal { padding: 6px 14px; font-weight: bold; font-size: 12px; border-radius: 4px; cursor: pointer; border: none; color: white; }
+  </style>
+</head>
+<body>
+
+  <!-- REALISTIC FLAG WITH STAND ON TOP LEFT -->
+  <div class="india-flag-pole-container" title="Proud to be Indian">
+    <div style="position: relative;">
+      <div class="flagpole-ball"></div>
+      <div class="flagpole"></div>
+    </div>
+    <div class="waving-flag">
+      <div class="flag-chakra-center"></div>
+    </div>
+  </div>
+
+  <!-- ORIGINAL ADMIN BUTTON & RULES BUTTON JUST BELOW IT -->
+  <button class="admin-top-btn" onclick="openAdminModal()">🔑 ADMIN LOGIN</button>
+  <button class="rules-top-btn" onclick="openRulesModal()">📜 RULES</button>
+
+  <div class="title-banner"><h1>CPL PAYMENT MAKER</h1></div>
+  <div class="pill-orange">HQ 74 RCC (GREF)</div>
+  
+  <div class="period-selector-panel">
+    <h3 style="font-size:13px; color:#2b579a; text-align:center; font-weight:900;">SELECT ACTIVE PERIOD & F/Y</h3>
+    <div>
+      <label>FINANCIAL YEAR:</label>
+      <select id="globalFY" onchange="onSelectionChange()">
+        <option value="2026-27">F/Y 2026-27</option>
+        <option value="2027-28">F/Y 2027-28</option>
+      </select>
+    </div>
+    <div>
+      <label>SELECT MONTH / WAGES PERIOD:</label>
+      <select id="globalMonth" onchange="onSelectionChange()">
+        <option value="">-- Select Month --</option>
+        <option value="SEP 2026">SEP 2026 (21 Aug 2026 to 20 Sep 2026)</option>
+        <option value="OCT 2026">OCT 2026 (21 Sep 2026 to 20 Oct 2026)</option>
+        <option value="NOV 2026">NOV 2026 (21 Oct 2026 to 20 Nov 2026)</option>
+        <option value="DEC 2026">DEC 2026 (21 Nov 2026 to 20 Dec 2026)</option>
+      </select>
+    </div>
+    <div>
+      <label>USER / OPERATOR NAME:</label>
+      <input type="text" id="userNameInput" placeholder="Enter your name..." oninput="checkUserStatus()">
+    </div>
+    <button class="btn-operator-login" onclick="loginOperatorName()">LOGIN</button>
+    <div id="authStatusMsg"></div>
+  </div>
+
+  <!-- ADMIN PASSWORD MODAL -->
+  <div class="modal-overlay" id="adminModal">
+    <div class="modal-window">
+      <h3>ADMIN LOGIN</h3>
+      <p style="font-size:11.5px; color:#555;">Enter Admin Password:</p>
+      <input type="password" id="adminPasswordInput" placeholder="Password..." onkeydown="if(event.key==='Enter') submitAdminLogin()">
+      <div class="modal-btn-row">
+        <button class="btn-modal" style="background:#666;" onclick="closeModal('adminModal')">CANCEL</button>
+        <button class="btn-modal" style="background:#007e33;" onclick="submitAdminLogin()">LOGIN</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- RULES MODAL -->
+  <div class="modal-overlay" id="rulesModal">
+    <div class="modal-window" style="width: 380px; text-align: left;">
+      <h3 style="text-align: center; margin-bottom: 8px;">SYSTEM RULES & GUIDELINES</h3>
+      <div style="font-size: 12px; color: #333; line-height: 1.6; display: flex; flex-direction: column; gap: 8px;">
+        <p><strong>Rule 1 (Admin Login):</strong> ADMIN LOGIN is strictly reserved for the Administrator only.</p>
+        <p><strong>Rule 2 (Operator Login):</strong> Operators must enter their own correct name in the Operator field and wait for Admin approval. After approval, you will be able to log in and perform work.</p>
+      </div>
+      <div class="modal-btn-row" style="margin-top: 15px;">
+        <button class="btn-modal" style="background:#2b579a; width: 100%;" onclick="closeModal('rulesModal')">GOT IT</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    function onSelectionChange() {
+      const fy = document.getElementById("globalFY").value;
+      const month = document.getElementById("globalMonth").value;
+      if (fy && month) {
+        localStorage.setItem("CPL_GLOBAL_FY", fy);
+        localStorage.setItem("CPL_GLOBAL_MONTH", month);
+      }
+    }
+
+    function checkUserStatus() {
+      const userName = document.getElementById("userNameInput").value.trim().toUpperCase();
+      const statusMsg = document.getElementById("authStatusMsg");
+      if (!userName) {
+        statusMsg.innerText = "";
+        return;
+      }
+
+      let approvedList = JSON.parse(localStorage.getItem("CPL_APPROVED_USERS") || "[]");
+      let pendingList = JSON.parse(localStorage.getItem("CPL_PENDING_USERS") || "[]");
+
+      if (approvedList.includes(userName)) {
+        statusMsg.style.color = "#27ae60";
+        statusMsg.innerText = `✓ Welcome back, ${userName}! (Approved)`;
+      } else if (pendingList.includes(userName)) {
+        statusMsg.style.color = "#d35400";
+        status_msg_text = "Approving your name please, wait (Any other query talk to Admin)";
+        statusMsg.innerText = status_msg_text;
+      } else {
+        statusMsg.style.color = "#555";
+        statusMsg.innerText = "Click LOGIN to submit your name for approval.";
+      }
+    }
+
+    function loginOperatorName() {
+      const userName = document.getElementById("userNameInput").value.trim().toUpperCase();
+      const fy = document.getElementById("globalFY").value;
+      const month = document.getElementById("globalMonth").value;
+      const statusMsg = document.getElementById("authStatusMsg");
+
+      if (!fy || !month) {
+        alert("Please select Financial Year and Month first!");
+        return;
+      }
+      if (!userName) {
+        alert("Please enter your operator name!");
+        return;
+      }
+
+      let approvedList = JSON.parse(localStorage.getItem("CPL_APPROVED_USERS") || "[]");
+      if (approvedList.includes(userName)) {
+        localStorage.setItem("CPL_LOGGED_USER", userName);
+        localStorage.setItem("CPL_ADMIN_LOGGED", "false");
+        statusMsg.style.color = "#27ae60";
+        statusMsg.innerText = `✓ Login Successful! Opening Payment...`;
+        setTimeout(() => {
+          localStorage.setItem("CPL_IN_PAYMENT_SCREEN", "true");
+          window.location.href = "/payment.html";
+        }, 400);
+        return;
+      }
+
+      // Pending list mein add karna
+      let pendingList = JSON.parse(localStorage.getItem("CPL_PENDING_USERS") || "[]");
+      if (!pendingList.includes(userName)) {
+        pendingList.push(userName);
+        localStorage.setItem("CPL_PENDING_USERS", JSON.stringify(pendingList));
+      }
+
+      // Msg Box ke liye edit requests list mein add karna
+      let requests = JSON.parse(localStorage.getItem("CPL_EDIT_REQUESTS") || "[]");
+      const reqExists = requests.some(r => r.user === userName && r.mrLabel === "LOGIN APPROVAL");
+      if (!reqExists) {
+        requests.push({ 
+          user: userName, 
+          mrLabel: "LOGIN APPROVAL", 
+          title: "New Operator Login Approval Request", 
+          time: new Date().toLocaleTimeString() 
+        });
+        localStorage.setItem("CPL_EDIT_REQUESTS", JSON.stringify(requests));
+      }
+
+      statusMsg.style.color = "#d35400";
+      statusMsg.innerText = "Approving your name please, wait (Any other query talk to Admin)";
+    }
+
+    function openAdminModal() {
+      document.getElementById("adminPasswordInput").value = "";
+      document.getElementById("adminModal").style.display = "flex";
+      setTimeout(() => { document.getElementById("adminPasswordInput").focus(); }, 100);
+    }
+
+    function openRulesModal() {
+      document.getElementById("rulesModal").style.display = "flex";
+    }
+
+    function closeModal(id) { document.getElementById(id).style.display = "none"; }
+
+    function submitAdminLogin() {
+      const pwd = document.getElementById("adminPasswordInput").value;
+      if (pwd === "admin1235") {
+        // Admin login hone par naam ADMIN set hoga taaki sabhi jagah ADMIN dikhe
+        localStorage.setItem("CPL_LOGGED_USER", "ADMIN");
+        localStorage.setItem("CPL_ADMIN_LOGGED", "true");
+        closeModal('adminModal');
+        window.location.href = "/completed.html";
+      } else {
+        alert("Incorrect Admin Password!");
+        document.getElementById("adminPasswordInput").value = "";
+      }
+    }
+
+    window.addEventListener("DOMContentLoaded", () => {
+      const savedFY = localStorage.getItem("CPL_GLOBAL_FY");
+      const savedMonth = localStorage.getItem("CPL_GLOBAL_MONTH");
+      const savedUser = localStorage.getItem("CPL_LOGGED_USER") || localStorage.getItem("CPL_USER_NAME");
+
+      if (savedFY) document.getElementById("globalFY").value = savedFY;
+      if (savedMonth) document.getElementById("globalMonth").value = savedMonth;
+      
+      if (savedUser && savedUser !== "ADMIN") {
+        document.getElementById("userNameInput").value = savedUser;
+        checkUserStatus();
+      }
+
+      // Offline master data sync check
+      fetch('/api/master-data')
+        .then(res => res.json())
+        .then(res => {
+          if (res.data) {
+            localStorage.setItem('CPL_OFFLINE_MASTER_DATA', JSON.stringify({ headers: res.headers, data: res.data }));
+          }
+        })
+        .catch(e => {});
+    });
+  </script>
+</body>
+</html>

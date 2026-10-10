@@ -1,0 +1,1667 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CPL PAYMENT WORKSPACE</title>
+  <script src="https://cdn.jsdelivr.net/npm/xlsx-js-style@1.2.0/dist/xlsx.bundle.js"></script>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: Arial, Helvetica, sans-serif; }
+    body { min-height: 100vh; background-color: #332e1d; }
+
+    #screen2 { display: flex; height: 100vh; background: #332e1d; flex-direction: row; }
+    .sidebar { width: 140px; min-width: 140px; border-right: 2px solid #e0e0e0; padding: 8px 6px; display: flex; flex-direction: column; justify-content: space-between; background: #00796b; }
+    .sidebar-top { display: flex; flex-direction: column; gap: 6px; overflow-y: auto; max-height: 40vh; }
+    .btn-add-mr { background: linear-gradient(180deg, #fbe3d5 0%, #e2b99f 100%); color: #000000; font-size: 13px; font-weight: 800; padding: 6px 4px; border-radius: 4px; cursor: pointer; text-align: center; }
+    .btn-mr-tab {
+      background: #ffffff; color: #333333; font-size: 12px; font-weight: 900; padding: 5px 4px; border-radius: 4px; border: 1.5px solid #bbb;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1); cursor: pointer; text-align: center; text-transform: uppercase; word-break: break-all;
+    }
+    .btn-mr-tab.active { background: linear-gradient(180deg, #00c853 0%, #007e33 100%); color: #ffffff; border-top: 1.5px solid #72ff9f; border-bottom: 2.5px solid #004d1f; }
+
+    .sidebar-bottom { display: flex; flex-direction: column; gap: 5px; padding-top: 6px; border-top: 1px solid rgba(255,255,255,0.2); }
+    .btn-sidebar-fn { background: linear-gradient(180deg, #1b499b 0%, #0d2857 100%); color: #ffffff; font-size: 11px; font-weight: 800; padding: 4px 4px; border: none; border-radius: 4px; cursor: pointer; text-align: center; text-decoration: none; display: block; }
+    .btn-sidebar-letter { background: linear-gradient(180deg, #d35400 0%, #a04000 100%); }
+
+    .workspace-main { flex: 1; padding: 6px 12px; display: flex; flex-direction: column; gap: 6px; overflow: hidden; background: #f4f4f4; }
+    .main-banner { background: linear-gradient(180deg, #2b579a 0%, #153465 100%); color: #ffffff; font-size: 15px; font-weight: 900; text-align: center; padding: 5px; border-radius: 4px; }
+    .search-row { display: flex; justify-content: space-between; align-items: center; gap: 6px; background: #f8f9fa; padding: 4px 8px; border-radius: 4px; }
+
+    .action-buttons { display: flex; gap: 2px; align-items: center; }
+    .btn-action { font-weight: bold; font-size: 11px; border: none; padding: 2px 4px; border-radius: 4px; cursor: pointer; color: #ffffff; height: 25px; display: flex; align-items: center; text-decoration: none; }
+
+    .btn-goto-home { background: #2c04f7; }
+    .btn-submit-sync { background: #2b579a; font-weight: 900; }
+    .btn-edit { background: #2980b9; }
+    .btn-save-alert { background: #14059a; font-weight: 900; }
+    .btn-undo-redo { background: #f53c17; height: 25px; }
+    .btn-page-total { background: #2c3e50; color: #fff; font-weight: 900; font-size: 11px; border: none; padding: 0 8px; height: 25px; border-radius: 4px; cursor: pointer; }
+
+    .dropdown { position: relative; display: inline-block; }
+    .dropdown-content { display: none; position: absolute; right: 0; background-color: #f9f9f9; min-width: 190px; box-shadow: 0px 8px 16px rgba(0,0,0,0.2); z-index: 10; border-radius: 4px; }
+    .dropdown-content button { color: black; padding: 8px 12px; text-decoration: none; display: block; width: 100%; border: none; background: none; text-align: left; font-size: 11px; font-weight: bold; cursor: pointer; }
+    .dropdown-content button:hover { background-color: #f1f1f1; }
+    .dropdown:hover .dropdown-content { display: block; }
+
+    .rs-total-box {
+      background: #ffffff; border: 2px solid #007e33; height: 25px; min-width: 110px; display: flex; align-items: center; padding: 0 6px;
+      font-size: 12px; font-weight: 900; color: #000000; border-radius: 4px; gap: 4px; cursor: pointer;
+    }
+    .rs-total-box span { color: #c0392b; font-size: 13px; }
+
+    .table-container { flex: 1; overflow: auto; border: 1.5px solid #000000; background: #ffffff; }
+    table { border-collapse: collapse; font-size: 11px; width: 100%; white-space: nowrap; }
+    th, td { border: 1px solid #000000; padding: 3px 6px; text-align: left; height: 28px; }
+    th { background: #ffffff; font-weight: bold; position: sticky; top: 0; z-index: 5; text-align: center; }
+    .row-letter th { font-size: 11.5px; font-weight: 900; background: #f0f0f0; height: 20px; z-index: 5; }
+    .row-name th { font-size: 10px; font-weight: 800; height: 28px; background: #ffffff; text-transform: uppercase; z-index: 5; }
+    tbody tr { height: 28px; cursor: pointer; }
+    tbody tr:hover { background-color: #f1f7ff; }
+    
+    tbody tr.selected-row { background-color: #2980b9 !important; color: #ffffff !important; }
+    tbody tr.selected-row td { color: #ffffff !important; border-color: #154360 !important; background-color: #2980b9 !important; }
+
+    tbody tr.grand-total-row { background-color: #ffffff !important; font-weight: 900 !important; }
+    .td-merged-gtotal { text-align: center !important; font-weight: 900 !important; background-color: #fff3cd !important; color: #000 !important; }
+    .td-gtotal-amount { text-align: center !important; font-weight: 900 !important; color: #c0392b !important; background-color: #fff3cd !important; }
+    .td-gtotal-page { text-align: center !important; font-weight: 900 !important; color: #856404 !important; background-color: #fff3cd !important; }
+    tbody td { font-weight: 600; }
+
+    th:nth-child(1), td:nth-child(1) { position: sticky; left: 0; z-index: 6; background-color: #ffffff; width: 45px; min-width: 45px; border-right: 1px solid #000000 !important; }
+    th:nth-child(2), td:nth-child(2) { position: sticky; left: 45px; z-index: 6; background-color: #ffffff; width: 65px; min-width: 65px; border-right: 1px solid #000000 !important; }
+    th:nth-child(3), td:nth-child(3) { position: sticky; left: 110px; z-index: 6; background-color: #ffffff; width: 90px; min-width: 90px; border-right: 2px solid #000000 !important; }
+
+    th:nth-child(8), td:nth-child(8) { width: 130px !important; min-width: 130px !important; max-width: 180px !important; white-space: nowrap !important; overflow: hidden !important; text-overflow: ellipsis !important; }
+
+    .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.6); z-index: 200; justify-content: center; align-items: center; }
+    .modal-window { background: #ffffff; border-radius: 6px; box-shadow: 0 6px 20px rgba(0,0,0,0.4); display: flex; flex-direction: column; overflow: hidden; }
+    .modal-header { background: #2b579a; color: white; padding: 10px 16px; font-size: 15px; font-weight: bold; display: flex; justify-content: space-between; align-items: center; }
+    .btn-modal { padding: 6px 14px; font-weight: bold; font-size: 12px; border-radius: 4px; cursor: pointer; border: none; }
+
+    .edit-tabs { display: flex; background: #eef2f7; border-bottom: 1px solid #ccc; }
+    .edit-tab-btn { flex: 1; padding: 10px; font-weight: bold; font-size: 12px; background: none; border: none; cursor: pointer; text-align: center; }
+    .edit-tab-btn.active { background: #fff; border-bottom: 3px solid #2b579a; color: #2b579a; }
+
+    .edit-grid { padding: 16px; display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; overflow-y: auto; max-height: 60vh; background: #f8f9fa; }
+    .edit-table-container { padding: 10px; overflow: auto; height: 65vh; max-height: 75vh; background: #fff; }
+    .edit-table { width: 100%; border-collapse: collapse; font-size: 11px; }
+    .edit-table th, .edit-table td { border: 1px solid #000; padding: 4px; height: 26px; }
+    .edit-table th { background: #f0f0f0; text-align: center; }
+    .edit-table input { width: 100%; border: none; background: transparent; font-size: 11px; outline: none; }
+
+    .form-group { display: flex; flex-direction: column; gap: 3px; }
+    .form-group label { font-size: 11px; font-weight: bold; }
+    .form-group input, .form-group select, .form-group textarea { padding: 5px 8px; font-size: 12px; border: 1px solid #ccc; border-radius: 4px; }
+
+    .code-by-grid { display: flex; gap: 12px; padding: 16px; height: 440px; background: #f8f9fa; }
+    .code-by-col { flex: 1; display: flex; flex-direction: column; gap: 6px; }
+    .code-by-col label { font-size: 11px; font-weight: bold; color: #333; }
+    .code-by-col textarea { flex: 1; padding: 8px; font-family: monospace; font-size: 12px; border: 1.5px solid #ccc; border-radius: 4px; resize: none; outline: none; line-height: 19.5px; }
+    .name-preview-box { flex: 1; padding: 8px; background: #ffffff; border: 1.5px solid #ccc; border-radius: 4px; overflow-y: auto; font-size: 11.5px; font-weight: bold; color: #2b579a; line-height: 19.5px; }
+
+    #alertToast { position: fixed; top: 20px; right: 20px; background: #27ae60; color: #ffffff; padding: 10px 18px; border-radius: 4px; font-size: 13px; font-weight: bold; box-shadow: 0 4px 12px rgba(0,0,0,0.3); z-index: 9999; display: none; }
+    #alertToast.error { background: #c0392b; }
+    
+    .cal-grid {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      gap: 8px;
+      margin-top: 10px;
+    }
+    .cal-day-cell {
+      border: 1.5px solid #ccc;
+      border-radius: 4px;
+      padding: 10px 4px;
+      cursor: pointer;
+      font-weight: bold;
+      font-size: 12px;
+      background: #f8f9fa;
+      position: relative;
+      user-select: none;
+      transition: all 0.2s;
+    }
+    .cal-day-cell:hover {
+      background: #e2e6ea;
+    }
+    .cal-day-cell.absent {
+      background: #f8d7da;
+      border-color: #dc3545;
+      color: #dc3545;
+    }
+    .cal-day-cell.absent::after {
+      content: "❌";
+      display: block;
+      font-size: 14px;
+      margin-top: 2px;
+    }
+
+    @keyframes blinkWarning {
+      0% { opacity: 1; }
+      50% { opacity: 0.2; }
+      100% { opacity: 1; }
+    }
+    .blink-not-match {
+      color: #dc3545;
+      font-weight: 900;
+      animation: blinkWarning 1s infinite;
+    }
+    .match-ok {
+      color: #27ae60;
+      font-weight: 900;
+    }
+    .calendar-footer-stats {
+      display: flex;
+      justify-content: space-around;
+      align-items: center;
+      background: #f8f9fa;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      padding: 8px;
+      margin-top: 10px;
+      font-size: 11.5px;
+      font-weight: bold;
+    }
+  </style>
+</head>
+<body>
+
+  <div id="alertToast">Success Message</div>
+
+  <div id="screen2">
+    <div class="sidebar">
+      <div class="sidebar-top">
+        <div class="btn-add-mr" id="btnAddMrTab" onclick="openMRModal()">ADD MR +</div>
+        <div id="mrTabsContainer" style="display:flex; flex-direction:column; gap:6px;"></div>
+      </div>
+      <div class="sidebar-bottom">
+        <a href="/letter.html" class="btn-sidebar-fn btn-sidebar-letter">LETTER</a>
+        <button class="btn-sidebar-fn" onclick="openCodeByModal()">CODE BY</button>
+        <button class="btn-sidebar-fn" onclick="openDaysModal()">DAYS</button>
+      </div>
+    </div>
+
+    <div class="workspace-main">
+      <div class="main-banner" id="mainBanner">PLEASE CREATE / SELECT AN MR SHEET</div>
+      <div class="search-row">
+        <div style="display:flex; gap:6px; align-items:center;">
+          <input type="text" id="nameSearch" list="nameOptions" placeholder="Search NAME..." oninput="onNameSearchInput(this.value)" style="height:20px; padding:2px 2px; border:1px solid #ccc; border-radius:4px; width:150px;">
+          <datalist id="nameOptions"></datalist>
+          
+          <button class="btn-action" style="background:#e67e22; font-weight:900;" onclick="openFindModal()">🔍 FIND</button>
+          <button class="btn-action btn-undo-redo" onclick="undoAction()" title="Undo">↩️</button>
+          <button class="btn-action btn-undo-redo" onclick="redoAction()" title="Redo">↪️</button>
+          <button class="btn-page-total" onclick="openPageTotalModal()">Page-Total</button>
+          
+          <div class="rs-total-box" onclick="insertGrandTotalRow()" title="Click to insert/update G/TOTAL row">
+            Rs <span id="grandTotalDisplay">0</span>
+          </div>
+        </div>
+
+        <div style="display:flex; gap:8px; align-items:center;">
+          <button class="btn-action btn-submit-sync" onclick="submitToSever()" style="background:#2b579a; font-weight:900; padding: 6px 20px; font-size:13px; height:25px;">🚀 SUBMIT</button>
+          <button class="btn-action btn-save-alert" onclick="triggerSaveAlert()" title="Check save status">💾 SAVE</button>
+          <button class="btn-action" style="background: linear-gradient(180deg, #8e44ad 0%, #512e5f 100%); font-weight:900; height:25px; padding:0 10px;" onclick="openCompleteMRWindow()">📁 COMPLETED MR</button>
+        </div>
+
+        <div class="action-buttons">
+          <button class="btn-action btn-edit" id="btnEditRow" onclick="openEditModal()">✏️ EDIT INDL</button>
+          
+          <div class="dropdown">
+            <button class="btn-action" style="background:#d35400; font-weight:900;" onclick="checkExcelImportAccess(event)">⚙️ OPTIONS ▾</button>
+            <div class="dropdown-content">
+              <input type="file" id="excelImportFile" accept=".xlsx, .xls" style="display:none;" onchange="handleExcelImport(event)">
+              <button onclick="checkAndTriggerExcelImport()">📁 Import Excel</button>
+              <button onclick="deleteActiveMR()" style="color:#c0392b;">🗑️ Delete MR</button>
+              <button onclick="changeRowFontColorModal()">🎨 Row Font Colour Changed</button>
+              <button onclick="changeRowHighlightColorModal()">🖌️ Row Highlight Colour Changed</button>
+            </div>
+          </div>
+
+          <button class="btn-action btn-goto-home" onclick="goToHome()">🏠 HOME</button>
+        </div>
+      </div>
+      <div class="table-container">
+        <table>
+          <thead>
+            <tr class="row-letter" id="letterHead"></tr>
+            <tr class="row-name" id="nameHead"></tr>
+          </thead>
+          <tbody id="tableBody"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODALS -->
+  <div class="modal-overlay" id="customConfirmModal">
+    <div class="modal-window" style="width: 420px; padding: 20px; gap: 14px; text-align: center;">
+      <h3 style="color:#2b579a; font-size:16px;">CONFIRMATION</h3>
+      <p id="customConfirmText" style="font-size: 13px; font-weight: bold; color: #333; line-height: 1.4;">Are you sure?</p>
+      <div style="display:flex; justify-content:center; gap:10px; margin-top:6px;">
+        <button class="btn-modal" style="background:#666; color:#fff;" onclick="closeCustomConfirm(false)">NO</button>
+        <button class="btn-modal" style="background:#007e33; color:#fff;" onclick="closeCustomConfirm(true)">YES</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal-overlay" id="searchEmpModal">
+    <div class="modal-window" style="width: 440px; padding: 20px; gap: 12px;">
+      <h3 style="color:#2b579a; text-align:center;">EMPLOYEE DETAILS</h3>
+      <div id="searchEmpContent" style="font-size: 12px; line-height: 1.6; background: #f8f9fa; padding: 12px; border: 1px solid #ccc; border-radius: 4px;">
+      </div>
+      <div style="display:flex; justify-content:space-between; gap:10px; margin-top:4px;">
+        <button class="btn-modal" style="background:#666; color:#fff;" onclick="closeModal('searchEmpModal')">CLOSE</button>
+        <button class="btn-modal" id="btnAddSearchedData" style="background:#27ae60; color:#fff;" onclick="addSearchedEmployeeToSheet()">➕ ADD DATA</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal-overlay" id="mrModal">
+    <div class="modal-window" style="width: 400px; padding: 20px; gap: 12px;">
+      <h3 style="color:#2b579a; text-align:center;">CREATE NEW MR SHEET</h3>
+      <input type="text" id="modalMrNo" value="MR No. 74 RCC/ /SEP 2026" style="width:100%; height:32px; padding:4px;">
+      <select id="modalJobSelect" style="width:100%; height:32px;">
+        <option value="ADG (B)/ BFR Cell/ (A/A & E/S) / 2024/832 FMN">JOB No. ADG (B)/ BFR Cell/ (A/A & E/S) / 2024/832 FMN</option>
+        <option value="ADG (B)/ BFR Cell/ (A/A & E/S) / 2024/831 FMN">JOB No. ADG (B)/ BFR Cell/ (A/A & E/S) / 2024/831 FMN</option>
+        <option value="MAINT CHK ROAD (2026-24) KM 0.00 TO 10.00">JOB No. MAINT CHK ROAD (2026-24) KM 0.00 TO 10.00</option>        
+        <option value="80/515 (PSK)">JOB No. 80/515 (PSK)</option>
+        <option value="MAINT CHK 2026-27 (KM 10.00 TO 75.50)">JOB No. MAINT CHK 2026-27 (KM 10.00 TO 75.50)</option>
+        <option value="710-A/50 REHAB CHK">JOB No. 710-A/50 REHAB CHK</option>
+        <option value="710-A/52">JOB No. 710-A/52</option>
+        <option value="MAINT KVK ROAD 2026-27">JOB No. MAINT KVK ROAD 2026-27</option>
+        <option value="MAINT DVF ROAD 2026-27">JOB No. MAINT DVF ROAD 2026-27</option>
+        <option value="MAINT FT ROAD 2026-27">JOB No. MAINT FT ROAD 2026-27</option>
+        <option value="MAINT NVT ROAD 2026-27">JOB No. MAINT NVT ROAD 2026-27</option>
+        <option value="L-3307/07 PMT TBSPS ROAD">JOB No. L-3307/07 PMT TBSPS ROAD</option>
+        <option value="L-3307/07 SURF TBSPS ROAD">JOB No. L-3307/07 SURF TBSPS ROAD</option>
+        <option value="L-3307/10 FMN TBSPS ROAD">JOB No. L-3307/10 FMN TBSPS ROAD</option>
+        <option value="L-3307/10 PMT TBSPS ROAD">JOB No. L-3307/10 PMT TBSPS ROAD</option>
+        <option value="L-3307/12 (DPR)">JOB No. L-3307/12 (DPR)</option>
+        <option value="MAINT S-T ROAD 2026-27 (KM 82.00 TO 164.53)">JOB No. MAINT S-T ROAD 2026-27 (KM 82.00 TO 164.53)</option>
+        <option value="JOB No. 709/157 FMN ON S-T ROAD">JOB No. 709/157 FMN ON S-T ROAD</option>
+        <option value="JOB No. 709/157 FMN ON S-T ROAD">JOB No. 709/157 PMT ON S-T ROAD</option>
+        <option value="MAINTENANCE KDA ROAD 2026-27">JOB No. MAINTENANCE KDA ROAD 2026-27</option>
+        <option value="MAINT S-T ROAD 2026-27 (KM 31.12 TO 42.00)">JOB No. MAINT S-T ROAD 2026-27 (KM 31.12 TO 42.00)</option>
+        <option value="ADG (B)/ BFR Cell/ (A/A & E/S) / 2024/832 FMN">JOB No. ADG (B)/ BFR Cell/ (A/A & E/S) / 2024/832 FMN</option>
+        <option value="ADG (B)/ BFR Cell/ (A/A & E/S) / 2024/832 SURF">JOB No. ADG (B)/ BFR Cell/ (A/A & E/S) / 2024/832 SURF</option>
+        <option value="ADG (B)/ BFR Cell/ (A/A & E/S) / 2024/831 FMN">JOB No. ADG (B)/ BFR Cell/ (A/A & E/S) / 2024/831 FMN</option>
+        <option value="ADG (B)/ BFR Cell/ (A/A & E/S) / 2024/831 FMN">JOB No. ADG (B)/ BFR Cell/ (A/A & E/S) / 2024/831 SURF </option>
+        
+      </select>
+      <div style="display:flex; justify-content:flex-end; gap:10px;">
+        <button class="btn-modal" style="background:#666; color:#fff;" onclick="closeModal('mrModal')">CANCEL</button>
+        <button class="btn-modal" style="background:#007e33; color:#fff;" onclick="confirmAddMR()">CREATE</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal-overlay" id="codeByModal">
+    <div class="modal-window" style="width: 640px;">
+      <div class="modal-header">
+        <span>BULK IMPORT BY CODES</span>
+        <span style="cursor:pointer;" onclick="closeModal('codeByModal')">✖</span>
+      </div>
+      <div style="padding: 10px 16px 0 16px; background: #f8f9fa;">
+        <label style="font-size:11px; font-weight:bold; display:block; margin-bottom:3px;">START S/NO (Optional):</label>
+        <input type="number" id="codeStartNo" value="" placeholder="e.g. 5" oninput="previewBulkCodes()" style="width:100%; height:30px; padding:4px 8px; border:1.5px solid #ccc; border-radius:4px;">
+      </div>
+      <div class="code-by-grid">
+        <div class="code-by-col">
+          <label>PASTE CODES (COLUMN A):</label>
+          <textarea id="bulkCodeInput" placeholder="Paste codes here (one per line)..." oninput="previewBulkCodes()"></textarea>
+        </div>
+        <div class="code-by-col">
+          <label>MATCHED NAMES & DUPLICATE CHECK:</label>
+          <div class="name-preview-box" id="bulkNamePreview">
+            <i>Names will appear here as you paste codes...</i>
+          </div>
+        </div>
+      </div>
+      <div style="padding: 12px 16px; background:#fff; border-top:1px solid #ddd; display:flex; justify-content:space-between; align-items:center;">
+        <span id="bulkDuplicateWarning" style="color:#c0392b; font-size:11px; font-weight:bold;"></span>
+        <div style="display:flex; gap:10px;">
+          <button class="btn-modal" style="background:#888; color:white;" onclick="closeModal('codeByModal')">CANCEL</button>
+          <button class="btn-modal" id="btnApplyBulk" style="background:#27ae60; color:white;" onclick="applyBulkCodes()">➕ ADD ALL TO SHEET</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal-overlay" id="daysModal">
+    <div class="modal-window" style="width: 520px;">
+      <div class="modal-header">
+        <span>BULK PASTE WORKING DAYS (COL R)</span>
+        <span style="cursor:pointer;" onclick="closeModal('daysModal')">✖</span>
+      </div>
+      <div style="padding:16px; background:#f8f9fa; display:flex; flex-direction:column; gap:10px;">
+        <div style="display:flex; gap:10px;">
+          <div style="flex:1;">
+            <label style="font-size:11px; font-weight:bold;">FROM S/NO:</label>
+            <input type="number" id="daysStartNo" value="1" oninput="updateDaysHelper(); previewBulkDays();" style="width:100%; height:30px; padding:4px 8px; border:1.5px solid #ccc; border-radius:4px;">
+          </div>
+          <div style="flex:1;">
+            <label style="font-size:11px; font-weight:bold;">TO S/NO:</label>
+            <input type="number" id="daysEndNo" value="20" oninput="updateDaysHelper()" style="width:100%; height:30px; padding:4px 8px; border:1.5px solid #ccc; border-radius:4px;">
+          </div>
+        </div>
+        <div>
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 3px;">
+            <label style="font-size:11px; font-weight:bold;">PASTE DAYS (Line by line or Comma separated):</label>
+            <span id="daysRangeHelper" style="font-size: 10.5px; font-weight: bold; color: #2b579a; background: #eef2f7; padding: 2px 6px; border-radius: 3px;">Target: S/No 1 to 20</span>
+          </div>
+          <div style="display: flex; gap: 8px;">
+            <div id="daysSNoList" style="width: 45px; background: #fff; border: 1.5px solid #ccc; border-radius: 4px; padding: 8px 2px; font-family: monospace; font-size: 13px; color: #666; text-align: right; line-height: 19.5px; height: 380px; overflow: hidden; user-select: none;">
+              1.
+            </div>
+            <textarea id="bulkDaysInput" placeholder="31&#10;31&#10;25&#10;28&#10;..." oninput="previewBulkDays()" onscroll="document.getElementById('daysSNoList').scrollTop = this.scrollTop;" style="flex: 1; height: 380px; padding: 8px; font-size: 13px; font-family: monospace; line-height: 19.5px; border: 1.5px solid #ccc; border-radius: 4px; outline: none; resize: vertical;"></textarea>
+          </div>
+        </div>
+      </div>
+      <div style="padding: 10px 16px; background:#fff; border-top:1px solid #ddd; display:flex; justify-content:flex-end; gap:10px;">
+        <button class="btn-modal" style="background:#888; color:white;" onclick="closeModal('daysModal')">CANCEL</button>
+        <button class="btn-modal" style="background:#2b579a; color:white;" onclick="applyBulkDays()">APPLY TO COL R</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal-overlay" id="pageTotalModal">
+    <div class="modal-window" style="width: 400px; padding: 20px; gap: 12px;">
+      <h3 style="color:#2b579a; text-align:center;">CALCULATE & APPLY PAGE TOTAL</h3>
+      <div style="display:flex; gap:10px;">
+        <div style="flex:1;">
+          <label style="font-size:11px; font-weight:bold;">FROM S/NO:</label>
+          <input type="number" id="pageTotalStart" value="1" style="width:100%; height:30px; padding:4px 8px; border:1px solid #ccc; border-radius:4px;">
+        </div>
+        <div style="flex:1;">
+          <label style="font-size:11px; font-weight:bold;">TO S/NO:</label>
+          <input type="number" id="pageTotalEnd" value="20" style="width:100%; height:30px; padding:4px 8px; border:1px solid #ccc; border-radius:4px;">
+        </div>
+      </div>
+      <div style="display:flex; justify-content:flex-end; gap:10px; margin-top:10px;">
+        <button class="btn-modal" style="background:#666; color:#fff;" onclick="closeModal('pageTotalModal')">CANCEL</button>
+        <button class="btn-modal" style="background:#2c3e50; color:#fff;" onclick="applyPageTotal()">APPLY PAGE TOTAL</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal-overlay" id="findModal">
+    <div class="modal-window" style="width: 380px; padding: 20px;">
+      <h3 style="color:#2b579a; margin-bottom:10px;">FIND INDIVIDUAL</h3>
+      <input type="text" id="findInput" placeholder="Enter name to find..." oninput="executeFind(this.value)" style="width:100%; height:32px; padding:4px 8px; border:1px solid #ccc; border-radius:4px;">
+      <div id="findResultBox" style="max-height:150px; overflow-y:auto; margin-top:10px; font-size:11.5px;"></div>
+      <div style="display:flex; justify-content:flex-end; margin-top:10px;">
+        <button class="btn-modal" style="background:#666; color:#fff;" onclick="closeModal('findModal')">CLOSE</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal-overlay" id="colorPickerModal">
+    <div class="modal-window" style="width: 320px; padding: 20px; gap: 14px; text-align:center;">
+      <h3 id="colorPickerTitle" style="color:#2b579a; font-size:15px;">SELECT COLOR</h3>
+      <input type="color" id="colorPickerInput" value="#000000" style="width:100%; height:45px; border:none; cursor:pointer; background:none;">
+      <div style="display:flex; justify-content:center; gap:10px; margin-top:6px;">
+        <button class="btn-modal" style="background:#666; color:#fff;" onclick="closeModal('colorPickerModal')">CANCEL</button>
+        <button class="btn-modal" style="background:#27ae60; color:#fff;" onclick="applyChosenColor()">APPLY</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- EDIT INDL MODAL -->
+  <div class="modal-overlay" id="editModal">
+    <div class="modal-window" style="width: 92%; max-width: 1050px;">
+      <div class="modal-header">
+        <span id="editModalTitle">EDIT EMPLOYEE RECORD</span>
+        <span style="cursor:pointer;" onclick="closeModal('editModal')">✖</span>
+      </div>
+      <div class="edit-tabs">
+        <button class="edit-tab-btn active" id="tabBtnForm" onclick="switchEditTab('form')">📋 Form View</button>
+        <button class="edit-tab-btn" id="tabBtnTable" onclick="switchEditTab('table')">📊 Excel Grid Table View</button>
+        <button class="edit-tab-btn" id="tabBtnCalendar" onclick="switchEditTab('calendar')">📅 Attendance Calendar (Absent Mark)</button>
+      </div>
+      <div id="editFormView" class="edit-grid"></div>
+      <div id="editTableView" class="edit-table-container" style="display:none;"></div>
+      <div id="editCalendarView" style="display:none; padding:16px; background:#fff; max-height:60vh; overflow-y:auto; text-align:center;"></div>
+
+      <div style="padding: 10px 16px; background:#fff; display:flex; justify-content:space-between; align-items:center; border-top:1px solid #ccc;">
+        <div style="display:flex; gap:6px;">
+          <button class="btn-modal" style="background:#dc3545; color:white;" onclick="deleteCurrentRow()">🗑️ DELETE</button>
+          <button class="btn-modal" style="background:#6c757d; color:white;" onclick="navigateEmployee(-1)">⬅️ Prev S/No</button>
+          <button class="btn-modal" style="background:#6c757d; color:white;" onclick="navigateEmployee(1)">Next S/No ➡️</button>
+        </div>
+        <div style="display:flex; gap:10px;">
+          <button class="btn-modal" style="background:#34495e; color:white;" onclick="insertBlankRowBelow()">➕ INSERT BLANK</button>
+          <button class="btn-modal" style="background:#888;" onclick="closeModal('editModal')">CANCEL</button>
+          <button class="btn-modal" style="background:#27ae60;" onclick="saveEditedData()">UPDATE & APPLY</button>
+        </div>
+      </div>
+    </div>
+  </div>
+  
+  <script>
+    let masterData = [];
+    let masterHeaders = [];
+    let mrSheets = [];
+    let currentMRIndex = 0;
+    let selectedRowIdx = 0;
+    let activePeriod = localStorage.getItem("CPL_GLOBAL_MONTH") || "SEP 2026";
+    let pendingConfirmAction = null;
+    let activeColorMode = 'font';
+
+    let undoStack = [];
+    let redoStack = [];
+    const MAX_UNDO = 5;
+
+    const tradeOptions = [
+      "MAZ", "MATE", "SKD-III", "SKD-II", "SKD-I", "CPDVR",
+      "MAZ/MATE", "MAZ/SKD-III", "MAZ/SKD-II", "MAZ/SKD-I", "MAZ/CPDVR",
+      "MATE/MAZ", "MATE/SKD-III", "MATE/SKD-II", "MATE/SKD-I", "MATE/CPDVR",
+      "SKD-III/MAZ", "SKD-III/MATE", "SKD-III/SKD-II", "SKD-III/SKD-I", "SKD-III/CPDVR",
+      "SKD-II/MAZ", "SKD-II/MATE", "SKD-II/SKD-III", "SKD-II/SKD-I", "SKD-II/CPDVR",
+      "SKD-I/MAZ", "SKD-I/MATE", "SKD-I/SKD-III", "SKD-I/SKD-II", "SKD-I/CPDVR",
+      "CPDVR/MAZ", "CPDVR/MATE", "CPDVR/SKD-III", "CPDVR/SKD-II", "CPDVR/SKD-I"
+    ];
+
+    const gridColsList = [0, 1, 2, 3, 4, 5, 7, 8, 12, 15, 16, 17, 21, 22, 23];
+
+    function showAlert(message, isError = false) {
+      const toast = document.getElementById("alertToast");
+      toast.innerText = message;
+      toast.className = isError ? "error" : "";
+      toast.style.display = "block";
+      setTimeout(() => { toast.style.display = "none"; }, 3000);
+    }
+
+    function calculateRateByTrade(tradeVal) {
+      if (!tradeVal) return "";
+      const t = String(tradeVal).trim().toUpperCase();
+      if (t.endsWith("MAZ")) return "550";
+      if (t.endsWith("MATE")) return "570";
+      if (t.endsWith("SKD-III")) return "640";
+      if (t.endsWith("SKD-II")) return "770";
+      if (t.endsWith("SKD-I")) return "900";
+      if (t.endsWith("CPDVR")) return "770";
+      return "550";
+    }
+
+    window.addEventListener("DOMContentLoaded", () => {
+      const savedMonth = localStorage.getItem("CPL_GLOBAL_MONTH");
+      if (savedMonth) activePeriod = savedMonth;
+
+      const localData = localStorage.getItem(`CPL_OFFLINE_SHEETS_${activePeriod}`);
+      if (localData) {
+        try {
+          const parsed = JSON.parse(localData);
+          if (parsed.mrSheets && parsed.mrSheets.length > 0) {
+            mrSheets = parsed.mrSheets;
+            currentMRIndex = parsed.lastIndex || 0;
+          }
+        } catch(e) {}
+      }
+
+      const savedMaster = localStorage.getItem('CPL_OFFLINE_MASTER_DATA');
+      if (savedMaster) {
+        try {
+          const pm = JSON.parse(savedMaster);
+          masterHeaders = pm.headers || [];
+          masterData = pm.data || [];
+          populateDatalists();
+        } catch(e) {}
+      }
+
+      renderHeaders();
+      if (mrSheets.length > 0) {
+        if (currentMRIndex >= mrSheets.length || mrSheets[currentMRIndex].isSubmitted) {
+          const firstActive = mrSheets.findIndex(m => !m.isSubmitted);
+          currentMRIndex = firstActive !== -1 ? firstActive : 0;
+        }
+        renderTabs();
+        renderBody();
+      }
+
+      fetch(`/api/master-data`)
+        .then(res => res.json())
+        .then(res => {
+          if (res.data) {
+            masterHeaders = res.headers; masterData = res.data;
+            localStorage.setItem('CPL_OFFLINE_MASTER_DATA', JSON.stringify({ headers: masterHeaders, data: masterData }));
+            populateDatalists();
+          }
+          fetchMRDataFromServer();
+        })
+        .catch(e => fetchMRDataFromServer());
+    });
+
+    function fetchMRDataFromServer() {
+      fetch(`/api/mr-sheets?period=${encodeURIComponent(activePeriod)}`)
+        .then(res => res.json())
+        .then(data => {
+          if (data.mrSheets && data.mrSheets.length > 0) {
+            const localData = localStorage.getItem(`CPL_OFFLINE_SHEETS_${activePeriod}`);
+            if (!localData) {
+              mrSheets = data.mrSheets;
+              currentMRIndex = data.lastIndex || 0;
+              saveToLocal(true);
+            }
+          }
+          renderHeaders();
+          const activeMRs = mrSheets.filter(m => !m.isSubmitted);
+          if (activeMRs.length === 0 && mrSheets.length === 0) {
+            openMRModal();
+          } else {
+            if (currentMRIndex >= mrSheets.length || mrSheets[currentMRIndex].isSubmitted) {
+              const firstActive = mrSheets.findIndex(m => !m.isSubmitted);
+              currentMRIndex = firstActive !== -1 ? firstActive : 0;
+            }
+            renderTabs(); renderBody();
+          }
+        })
+        .catch(e => {
+          renderHeaders();
+          const activeMRs = mrSheets.filter(m => !m.isSubmitted);
+          if (activeMRs.length === 0 && mrSheets.length === 0) openMRModal();
+          else { renderTabs(); renderBody(); }
+        });
+    }
+
+    function populateDatalists() {
+      const nameDl = document.getElementById("nameOptions");
+      nameDl.innerHTML = "";
+      masterData.forEach(item => {
+        if (item.name) {
+          const opt = document.createElement("option");
+          opt.value = item.name;
+          nameDl.appendChild(opt);
+        }
+      });
+    }
+
+    let selectedSearchedEmp = null;
+
+    function onNameSearchInput(val) {
+      const query = val.trim().toLowerCase();
+      if (!query) return;
+
+      const matchedEmp = masterData.find(d => (d.name || '').toLowerCase() === query);
+      if (matchedEmp) {
+        document.getElementById("nameSearch").value = "";
+        selectedSearchedEmp = matchedEmp;
+
+        const code = matchedEmp.code || matchedEmp.rowData[1] || '';
+        const name = matchedEmp.name || matchedEmp.rowData[3] || '';
+        const father = matchedEmp.rowData[5] || '';
+        const account = matchedEmp.rowData[15] || '';
+        const recruitmentDate = matchedEmp.rowData[22] || '';
+        const dischargeVal = String(matchedEmp.rowData[23] || '').trim();
+
+        let duplicateFound = false;
+        let duplicateInfoText = "No (Not in any MR)";
+        
+        mrSheets.forEach(mr => {
+          if (mr.rows) {
+            mr.rows.forEach((r, rIdx) => {
+              if (!r.isGrandTotal) {
+                const rCode = String(r.code || r.rowData[1] || '').trim().toLowerCase();
+                const rName = String(r.name || r.rowData[3] || '').trim().toLowerCase();
+                if ((code && rCode === code.toLowerCase()) || (name && rName === name.toLowerCase())) {
+                  duplicateFound = true;
+                  duplicateInfoText = `Yes! Found in Sheet: <strong>${mr.label}</strong> at S/No: <strong>${rIdx + 1}</strong>`;
+                }
+              }
+            });
+          }
+        });
+
+        const contentBox = document.getElementById("searchEmpContent");
+        const addBtn = document.getElementById("btnAddSearchedData");
+
+        if (dischargeVal !== "") {
+          contentBox.innerHTML = `
+            <div style="color: #c0392b; font-weight: 900; font-size: 13px; margin-bottom: 6px;">⚠️ WARNING: THIS EMPLOYEE IS DISCHARGED!</div>
+            <div><strong>Code:</strong> ${code}</div>
+            <div><strong>Name:</strong> ${name}</div>
+            <div><strong>Discharge Date/Status:</strong> <span style="color: #c0392b;">${dischargeVal}</span></div>
+            <div style="margin-top: 6px; color: #555; font-size: 11px;">Discharged employee cannot be added to active MR sheet.</div>
+          `;
+          if (addBtn) addBtn.style.display = "none";
+        } else {
+          let duplicateHtmlColor = duplicateFound ? "#c0392b" : "#007e33";
+          contentBox.innerHTML = `
+            <div><strong>Code:</strong> <span style="color: #007e33; font-weight: 900; font-size: 13px;">${code}</span></div>
+            <div><strong>Name:</strong> <span style="color: #007e33; font-weight: 900;">${name}</span></div>
+            <div><strong>Father's Name:</strong> <span style="color: #007e33; font-weight: 900;">${father}</span></div>
+            <div><strong>Account No:</strong> <span style="color: #007e33; font-weight: 900;">${account}</span></div>
+            <div><strong>Date of Recruitment:</strong> <span style="color: #007e33; font-weight: 900;">${recruitmentDate}</span></div>
+            <hr style="margin: 8px 0; border: 0; border-top: 1px solid #ccc;">
+            <div><strong>Duplicate Status:</strong> <span style="color: ${duplicateHtmlColor}; font-weight: 900;">${duplicateInfoText}</span></div>
+          `;
+          if (addBtn) addBtn.style.display = "block";
+        }
+
+        document.getElementById("searchEmpModal").style.display = "flex";
+      }
+    }
+
+    function addSearchedEmployeeToSheet() {
+      if (!selectedSearchedEmp) {
+        closeModal('searchEmpModal');
+        return;
+      }
+
+      const dischargeVal = String(selectedSearchedEmp.rowData[23] || '').trim();
+      if (dischargeVal !== "") {
+        showAlert("Discharged employee cannot be added!", true);
+        closeModal('searchEmpModal');
+        return;
+      }
+
+      if (mrSheets.length === 0 || mrSheets[currentMRIndex].isSubmitted) {
+        showAlert("Pehle koi active MR sheet select ya create karein!", true);
+        return;
+      }
+
+      pushUndoState();
+      
+      const found = selectedSearchedEmp;
+      const rowCopy = [...found.rowData];
+      rowCopy[18] = calculateRateByTrade(rowCopy[2]);
+      const days = parseFloat(rowCopy[17]) || 0;
+      const rate = parseFloat(rowCopy[18]) || 0;
+      if (days > 0 && rate > 0) rowCopy[19] = String(days * rate);
+
+      const newObj = { code: found.code, name: found.name, rowData: rowCopy };
+      
+      if (!mrSheets[currentMRIndex].rows) {
+        mrSheets[currentMRIndex].rows = [];
+      }
+      mrSheets[currentMRIndex].rows = mrSheets[currentMRIndex].rows.filter(r => !r.isGrandTotal);
+      mrSheets[currentMRIndex].rows.push(newObj);
+
+      closeModal('searchEmpModal');
+      renderBody();
+      saveToLocal(true);
+      showAlert(`Employee ${found.name} successfully added and saved locally!`);
+      selectedSearchedEmp = null;
+    }
+
+    function checkExcelImportAccess(e) {
+      let isAdmin = localStorage.getItem("CPL_ADMIN_LOGGED") === "true";
+      if (!isAdmin) {}
+    }
+
+    function checkAndTriggerExcelImport() {
+      let isAdmin = localStorage.getItem("CPL_ADMIN_LOGGED") === "true";
+      if (!isAdmin) {
+        alert("Only for Admin!");
+        return;
+      }
+      document.getElementById('excelImportFile').click();
+    }
+
+    function goToHome() {
+      pendingConfirmAction = () => {
+        localStorage.removeItem("CPL_IN_PAYMENT_SCREEN");
+        window.location.href = "/login.html";
+      };
+      document.getElementById("customConfirmText").innerText = "Did you check everything yourself? Are you sure you want to go to Home (Login Screen)?";
+      document.getElementById("customConfirmModal").style.display = "flex";
+    }
+
+    function closeCustomConfirm(yes) {
+      document.getElementById("customConfirmModal").style.display = "none";
+      if (yes && pendingConfirmAction) pendingConfirmAction();
+      pendingConfirmAction = null;
+    }
+
+    function renderHeaders() {
+      let r1 = "", r2 = "";
+      for (let i = 0; i < 24; i++) {
+        r1 += `<th>${String.fromCharCode(65 + i)}</th>`;
+        r2 += `<th>${masterHeaders[i] || ''}</th>`;
+      }
+      document.getElementById("letterHead").innerHTML = r1;
+      document.getElementById("nameHead").innerHTML = r2;
+    }
+
+    function openMRModal() {
+      document.getElementById("modalMrNo").value = `MR No 74 RCC/ / ${activePeriod}`;
+      document.getElementById("mrModal").style.display = "flex";
+    }
+
+    function closeModal(id) { document.getElementById(id).style.display = "none"; }
+
+    function openCodeByModal() {
+      if (mrSheets.length === 0) { showAlert("Please create an MR sheet first!", true); return; }
+      document.getElementById("bulkCodeInput").value = "";
+      document.getElementById("codeStartNo").value = "";
+      document.getElementById("bulkNamePreview").innerHTML = "<i>Names & Father's names will appear here as you paste codes...</i>";
+      document.getElementById("bulkDuplicateWarning").innerText = "";
+      document.getElementById("codeByModal").style.display = "flex";
+    }
+
+    function previewBulkCodes() {
+      const textarea = document.getElementById("bulkCodeInput");
+      if (!textarea) return;
+      const rawText = textarea.value;
+      const codes = rawText.split(/[\n,]+/).map(c => c.trim()).filter(c => c.length > 0);
+      const previewBox = document.getElementById("bulkNamePreview");
+      const warningBox = document.getElementById("bulkDuplicateWarning");
+      if (!previewBox) return;
+
+      if (codes.length === 0) {
+        previewBox.innerHTML = "<i>Names & Father's names will appear here as you paste codes...</i>";
+        if (warningBox) warningBox.innerText = "";
+        return;
+      }
+
+      const curRows = (mrSheets[currentMRIndex] && mrSheets[currentMRIndex].rows) ? mrSheets[currentMRIndex].rows.filter(r => !r.isGrandTotal) : [];
+      let baseStartNo = curRows.length + 1;
+      const startNoInput = document.getElementById("codeStartNo");
+      if (startNoInput && startNoInput.value.trim() !== "") {
+        const parsed = parseInt(startNoInput.value.trim());
+        if (!isNaN(parsed) && parsed > 0) baseStartNo = parsed;
+      }
+
+      let html = "";
+      let duplicateMessages = [];
+
+      codes.forEach((code, idx) => {
+        const currentSNo = baseStartNo + idx;
+        const found = masterData.find(d => d.code.toLowerCase() === code.toLowerCase());
+        
+        if (found) {
+          const workerName = found.name || '';
+          const dischargeVal = String(found.rowData[23] || '').trim();
+
+          if (dischargeVal !== "") {
+            html += `<div style="height: 19.5px; line-height: 19.5px; color:#c0392b; font-weight:bold; font-size: 11px;"><span style="color:#666; display:inline-block; width:22px; text-align:right;">${currentSNo}.</span> &nbsp;[DISCHARGED: ${workerName}]</div>`;
+          } else {
+            let foundInMR = null;
+            mrSheets.forEach((mr) => {
+              (mr.rows || []).forEach((r) => {
+                if (!r.isGrandTotal) {
+                  const rName = String(r.rowData[3] || r.name || '').trim().toLowerCase();
+                  const rCode = String(r.rowData[1] || r.code || '').trim().toLowerCase();
+                  if (rName === workerName.trim().toLowerCase() || (found.code && rCode === found.code.toLowerCase())) {
+                    foundInMR = mr.label;
+                  }
+                }
+              });
+            });
+
+            if (foundInMR) {
+              duplicateMessages.push(`${workerName} already in ${foundInMR}`);
+              html += `<div style="height: 19.5px; line-height: 19.5px; color:#c0392b; font-weight:bold; font-size: 11px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;"><span style="color:#666; display:inline-block; width:22px; text-align:right;">${currentSNo}.</span> &nbsp;[DUPLICATE: ${workerName} in ${foundInMR}]</div>`;
+            } else {
+              const fatherName = found.rowData[5] || '';
+              html += `<div style="height: 19.5px; line-height: 19.5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-size: 11px;"><span style="color:#666; font-weight:bold; display:inline-block; width:22px; text-align:right;">${currentSNo}.</span> &nbsp;<span style="color:#007e33; font-weight:bold; text-transform:uppercase;">${workerName}</span> &nbsp;&nbsp; <span style="color:#444;">${fatherName}</span></div>`;
+            }
+          }
+        } else {
+          html += `<div style="height: 19.5px; line-height: 19.5px; color:#dc3545; font-weight:bold; font-size: 11px;"><span style="color:#666; display:inline-block; width:22px; text-align:right;">${currentSNo}.</span> &nbsp;[NOT FOUND: ${code}]</div>`;
+        }
+      });
+
+      previewBox.innerHTML = html;
+      if (warningBox && duplicateMessages.length > 0) {
+        warningBox.innerText = `⚠️ Warning: Some codes/employees already exist in other MR sheets!`;
+      } else if (warningBox) {
+        warningBox.innerText = "";
+      }
+    }
+
+    function applyBulkCodes() {
+      const rawText = document.getElementById("bulkCodeInput").value;
+      const codes = rawText.split(/[\n,]+/).map(c => c.trim()).filter(c => c.length > 0);
+      const startNoInput = document.getElementById("codeStartNo").value.trim();
+      const curRows = mrSheets[currentMRIndex].rows;
+
+      let targetIndex = startNoInput !== "" ? parseInt(startNoInput) - 1 : curRows.length;
+      if (isNaN(targetIndex) || targetIndex < 0) targetIndex = curRows.length;
+
+      pushUndoState();
+      let addedCount = 0;
+
+      codes.forEach(code => {
+        const found = masterData.find(d => d.code.toLowerCase() === code.toLowerCase());
+        if (found) {
+          const dischargeVal = String(found.rowData[23] || '').trim();
+          if (dischargeVal === "") {
+            const rowCopy = [...found.rowData];
+            rowCopy[18] = calculateRateByTrade(rowCopy[2]);
+            const days = parseFloat(rowCopy[17]) || 0;
+            const rate = parseFloat(rowCopy[18]) || 0;
+            if (days > 0 && rate > 0) rowCopy[19] = String(days * rate);
+
+            const newObj = { code: found.code, name: found.name, rowData: rowCopy };
+            if (targetIndex < curRows.length) {
+              curRows.splice(targetIndex, 0, newObj);
+            } else {
+              curRows.push(newObj);
+            }
+            targetIndex++;
+            addedCount++;
+          }
+        }
+      });
+
+      closeModal("codeByModal");
+      renderBody(); saveToLocal(true);
+      showAlert(`${addedCount} active employee(s) added successfully! (Discharged skipped)`);
+    }
+
+    function openDaysModal() {
+      if (mrSheets.length === 0 || mrSheets[currentMRIndex].rows.length === 0) { showAlert("Current MR sheet has no rows!", true); return; }
+
+      document.getElementById("bulkDaysInput").value = "";
+      const curRows = mrSheets[currentMRIndex].rows.filter(r => !r.isGrandTotal);
+      let nextStart = 1;
+      for (let i = 0; i < curRows.length; i++) {
+        const dayVal = curRows[i].rowData[17];
+        if (dayVal === undefined || String(dayVal).trim() === "") {
+          nextStart = i + 1;
+          break;
+        }
+        if (i === curRows.length - 1) nextStart = curRows.length + 1;
+      }
+      if (nextStart > curRows.length) nextStart = 1;
+      let nextEnd = nextStart + 19;
+      if (nextEnd > curRows.length) nextEnd = curRows.length;
+
+      document.getElementById("daysStartNo").value = nextStart;
+      document.getElementById("daysEndNo").value = nextEnd >= nextStart ? nextEnd : nextStart;
+
+      document.getElementById("daysModal").style.display = "flex";
+      updateDaysHelper();
+      previewBulkDays();
+    }
+
+    function updateDaysHelper() {
+      const startNo = document.getElementById("daysStartNo").value || 1;
+      const endNo = document.getElementById("daysEndNo").value || 20;
+      const helper = document.getElementById("daysRangeHelper");
+      if (helper) helper.innerText = `Target: S/No ${startNo} to ${endNo}`;
+      previewBulkDays();
+    }
+
+    function previewBulkDays() {
+      const startNo = parseInt(document.getElementById("daysStartNo").value) || 1;
+      const rawText = document.getElementById("bulkDaysInput").value;
+      const daysList = rawText.split(/[\n,]+/).map(d => d.trim()).filter(d => d.length > 0);
+      const snoBox = document.getElementById("daysSNoList");
+      if (!snoBox) return;
+
+      let count = Math.max(daysList.length, 1);
+      let html = "";
+      for (let i = 0; i < count; i++) {
+        html += `<div style="height: 19.5px; line-height: 19.5px;">${startNo + i}.</div>`;
+      }
+      snoBox.innerHTML = html;
+    }
+
+    function applyBulkDays() {
+      const startNo = parseInt(document.getElementById("daysStartNo").value) || 1;
+      const endNo = parseInt(document.getElementById("daysEndNo").value) || 20;
+      const rawText = document.getElementById("bulkDaysInput").value;
+      const daysList = rawText.split(/[\n,]+/).map(d => d.trim()).filter(d => d.length > 0);
+      const curRowsData = mrSheets[currentMRIndex].rows;
+
+      if (daysList.length === 0) { showAlert("Please paste at least one day entry!", true); return; }
+      if (startNo > endNo || startNo < 1) { showAlert("Invalid S/No range!", true); return; }
+
+      pushUndoState();
+      let listIdx = 0;
+      for (let i = startNo - 1; i < Math.min(endNo, curRowsData.length); i++) {
+        if (!curRowsData[i].isGrandTotal && listIdx < daysList.length) {
+          const daysVal = daysList[listIdx++];
+          curRowsData[i].rowData[17] = daysVal;
+          if (!curRowsData[i].rowData[18]) curRowsData[i].rowData[18] = calculateRateByTrade(curRowsData[i].rowData[2]);
+          const rateVal = parseFloat(curRowsData[i].rowData[18]) || 0;
+          if (daysVal === "" || daysVal === null) {
+            curRowsData[i].rowData[19] = "0";
+          } else {
+            const daysNum = parseFloat(daysVal) || 0;
+            curRowsData[i].rowData[19] = String(daysNum * rateVal);
+          }
+        }
+      }
+
+      closeModal("daysModal");
+      renderBody(); saveToLocal(true);
+      showAlert("Working days applied successfully!");
+    }
+
+    function confirmAddMR() {
+      const rawInput = document.getElementById("modalMrNo").value.trim();
+      const jobNo = document.getElementById("modalJobSelect").value;
+      const match = rawInput.match(/\/\s*(\d+)\s*\//);
+      const tabLabel = match ? `MR NO. ${match[1]}` : `MR NO. ${mrSheets.length + 1}`;
+
+      if (mrSheets.some(m => m.label.toUpperCase() === tabLabel.toUpperCase())) {
+        return showAlert("This MR number already exists!", true);
+      }
+
+      let loggedUser = (localStorage.getItem("CPL_LOGGED_USER") || "ADMIN").toUpperCase();
+
+      mrSheets.push({ 
+        label: tabLabel, 
+        title: `${rawInput}, JOB No. ${jobNo}`, 
+        isLocked: false, 
+        isSubmitted: false, 
+        assignedUser: loggedUser, 
+        rows: [] 
+      });
+
+      currentMRIndex = mrSheets.length - 1;
+      closeModal("mrModal");
+      saveToLocal(true);
+      renderTabs(); 
+      renderBody(); 
+      showAlert("MR created successfully!");
+    }
+
+    function renderTabs() {
+      const container = document.getElementById("mrTabsContainer"); 
+      container.innerHTML = "";
+
+      let loggedUser = (localStorage.getItem("CPL_LOGGED_USER") || "ADMIN").toUpperCase();
+      let isAdmin = localStorage.getItem("CPL_ADMIN_LOGGED") === "true";
+
+      const activeMRs = mrSheets.filter(m => {
+        if (m.isSubmitted) return false;
+        if (isAdmin) return true; 
+        return (m.assignedUser || "ADMIN").toUpperCase() === loggedUser;
+      });
+
+      activeMRs.sort((a, b) => {
+        const numA = parseInt((a.label || "").replace(/\D/g, '')) || 0;
+        const numB = parseInt((b.label || "").replace(/\D/g, '')) || 0;
+        return numA - numB;
+      });
+
+      if (activeMRs.length === 0) {
+        document.getElementById("mainBanner").innerText = "Aapke paas koi active MR nahi hai.";
+        document.getElementById("tableBody").innerHTML = "";
+        return;
+      }
+
+      activeMRs.forEach(mr => {
+        const idx = mrSheets.indexOf(mr);
+        const tab = document.createElement("div");
+        tab.className = `btn-mr-tab ${idx === currentMRIndex ? 'active' : ''}`;
+        tab.innerText = mr.label;
+        tab.onclick = () => { currentMRIndex = idx; renderTabs(); renderBody(); };
+        container.appendChild(tab);
+      });
+
+      if (mrSheets[currentMRIndex]) {
+        document.getElementById("mainBanner").innerText = mrSheets[currentMRIndex].title;
+      }
+    }
+
+    function renderBody() {
+      const tbody = document.getElementById("tableBody"); tbody.innerHTML = "";
+      if (mrSheets.length === 0 || mrSheets[currentMRIndex].isSubmitted) return;
+      const curRows = mrSheets[currentMRIndex].rows;
+      let grandTotal = 0;
+
+      curRows.forEach((r, idx) => {
+        if (!r.isGrandTotal) {
+          r.rowData[0] = idx + 1;
+          grandTotal += parseFloat(r.rowData[19]) || 0;
+        }
+
+        const tr = document.createElement("tr");
+        if (r.isGrandTotal) tr.classList.add("grand-total-row");
+        if (idx === selectedRowIdx) tr.classList.add("selected-row");
+        tr.onclick = () => { selectedRowIdx = idx; renderBody(); };
+
+        if (r.rowFontColor) tr.style.color = r.rowFontColor;
+        if (r.rowHighlightColor) tr.style.backgroundColor = r.rowHighlightColor;
+
+        let html = "";
+        if (r.isGrandTotal) {
+          for (let c = 0; c < 17; c++) html += `<td></td>`;
+          html += `<td colspan="2" class="td-merged-gtotal">G/TOTAL</td>`;
+          html += `<td class="td-gtotal-amount">${r.rowData[19] || '0'}</td>`;
+          html += `<td class="td-gtotal-page">${r.rowData[20] || r.rowData[19] || '0'}</td>`;
+          for (let c = 21; c < 24; c++) html += `<td></td>`;
+        } else {
+          for (let c = 0; c < 24; c++) {
+            let val = r.rowData[c] || '';
+            if (c === 23 && val) {
+              val = val.replace(/\s*\(F\/N\)|\s*\(A\/N\)/gi, "").trim();
+            }
+            html += `<td title="${val}">${val}</td>`;
+          }
+        }
+        tr.innerHTML = html; tbody.appendChild(tr);
+      });
+      document.getElementById("grandTotalDisplay").innerText = Number(grandTotal).toLocaleString('en-IN');
+    }
+
+    function pushUndoState() {
+      if (mrSheets.length === 0) return;
+      undoStack.push(JSON.parse(JSON.stringify(mrSheets)));
+      if (undoStack.length > MAX_UNDO) undoStack.shift();
+      redoStack = [];
+    }
+
+    function undoAction() {
+      if (undoStack.length === 0) { showAlert("No actions to undo!", true); return; }
+      redoStack.push(JSON.parse(JSON.stringify(mrSheets)));
+      mrSheets = undoStack.pop();
+      renderTabs(); renderBody(); saveToLocal(true); showAlert("Undo applied!");
+    }
+
+    function redoAction() {
+      if (redoStack.length === 0) { showAlert("No actions to redo!", true); return; }
+      undoStack.push(JSON.parse(JSON.stringify(mrSheets)));
+      mrSheets = redoStack.pop();
+      renderTabs(); renderBody(); saveToLocal(true); showAlert("Redo applied!");
+    }
+
+    function openFindModal() {
+      document.getElementById("findInput").value = "";
+      document.getElementById("findResultBox").innerHTML = "";
+      document.getElementById("findModal").style.display = "flex";
+    }
+
+    function executeFind(query) {
+      const box = document.getElementById("findResultBox");
+      if (!query.trim()) { box.innerHTML = ""; return; }
+      let foundHtml = "";
+      mrSheets.forEach((mr, mIdx) => {
+        (mr.rows || []).forEach((r, rIdx) => {
+          if (!r.isGrandTotal && r.rowData.some(cell => String(cell).toLowerCase().includes(query.toLowerCase()))) {
+            foundHtml += `<div style="padding:4px; border-bottom:1px solid #eee; cursor:pointer;" onclick="jumpToFoundRow(${mIdx}, ${rIdx})">
+              <b>${mr.label}</b> - S/No: ${r.rowData[0]} | Name: <b>${r.rowData[3]}</b>
+            </div>`;
+          }
+        });
+      });
+      box.innerHTML = foundHtml || "<i>No matching records found.</i>";
+    }
+
+    function jumpToFoundRow(mIdx, rIdx) {
+      currentMRIndex = mIdx;
+      selectedRowIdx = rIdx;
+      closeModal("findModal");
+      renderTabs(); renderBody();
+    }
+
+    function changeRowFontColorModal() {
+      const curRows = mrSheets[currentMRIndex].rows;
+      if (!curRows || curRows.length === 0 || selectedRowIdx < 0) return showAlert("Please select a row first!", true);
+      activeColorMode = 'font';
+      document.getElementById("colorPickerTitle").innerText = "SELECT ROW FONT COLOR";
+      document.getElementById("colorPickerModal").style.display = "flex";
+    }
+
+    function changeRowHighlightColorModal() {
+      const curRows = mrSheets[currentMRIndex].rows;
+      if (!curRows || curRows.length === 0 || selectedRowIdx < 0) return showAlert("Please select a row first!", true);
+      activeColorMode = 'highlight';
+      document.getElementById("colorPickerTitle").innerText = "SELECT ROW HIGHLIGHT BACKGROUND COLOR";
+      document.getElementById("colorPickerModal").style.display = "flex";
+    }
+
+    function applyChosenColor() {
+      const color = document.getElementById("colorPickerInput").value;
+      const curRows = mrSheets[currentMRIndex].rows;
+      pushUndoState();
+      if (activeColorMode === 'font') {
+        curRows[selectedRowIdx].rowFontColor = color;
+        showAlert("Row font color updated!");
+      } else {
+        curRows[selectedRowIdx].rowHighlightColor = color;
+        showAlert("Row highlight color updated!");
+      }
+      closeModal("colorPickerModal");
+      renderBody(); saveToLocal(true);
+    }
+
+    function deleteActiveMR() {
+      if (mrSheets.length === 0) return;
+      if (confirm("Are you sure you want to delete this MR sheet permanently?")) {
+        pushUndoState();
+        mrSheets.splice(currentMRIndex, 1);
+        currentMRIndex = Math.max(0, currentMRIndex - 1);
+        saveToLocal(true); renderTabs(); renderBody(); showAlert("MR deleted!");
+      }
+    }
+
+    function handleExcelImport(event) {
+      const file = event.target.files[0];
+      if (!file) return;
+
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        try {
+          const data = new Uint8Array(e.target.result);
+          const workbook = XLSX.read(data, { type: 'array' });
+          
+          let importedMRSheets = [];
+          
+          workbook.SheetNames.forEach(sheetName => {
+            if (sheetName.toLowerCase() === 'forwarding_letter') return;
+            
+            const worksheet = workbook.Sheets[sheetName];
+            const jsonRows = XLSX.utils.sheet_to_json(worksheet, { header: 1, defval: '' });
+            
+            if (jsonRows.length > 1) {
+              let titleStr = jsonRows[0][0] || `MR No. 74 RCC / ${sheetName} / ${activePeriod}`;
+              let rowsData = [];
+              
+              for (let r = 2; r < jsonRows.length; r++) {
+                let rVals = jsonRows[r];
+                if (rVals && rVals.length > 0) {
+                  let rowArr = new Array(24).fill('');
+                  for (let c = 0; c < Math.min(rVals.length, 24); c++) {
+                    rowArr[c] = String(rVals[c] !== undefined ? rVals[c] : '').trim();
+                  }
+                  
+                  let isGTotal = (String(rowArr[17]).toUpperCase() === 'G/TOTAL' || String(rowArr[3]).toUpperCase() === 'G/TOTAL' || String(rowArr[2]).toUpperCase() === 'G/TOTAL');
+                  
+                  if (rowArr[1] || rowArr[3] || isGTotal) {
+                    rowsData.push({
+                      code: rowArr[1],
+                      name: rowArr[3],
+                      isGrandTotal: isGTotal,
+                      rowData: rowArr
+                    });
+                  }
+                }
+              }
+              
+              if (rowsData.length > 0) {
+                let formattedLabel = sheetName.toUpperCase();
+                if (!formattedLabel.includes("MR")) {
+                  formattedLabel = `MR NO. ${sheetName}`;
+                }
+
+                importedMRSheets.push({
+                  label: formattedLabel,
+                  title: titleStr,
+                  isLocked: false,
+                  isSubmitted: false,
+                  rows: rowsData
+                });
+              }
+            }
+          });
+
+          if (importedMRSheets.length > 0) {
+            mrSheets = importedMRSheets;
+            currentMRIndex = 0;
+            saveToLocal(true);
+            showAlert("Excel file ki sabhi sheets successfully import ho gayi hain!");
+            renderTabs();
+            renderBody();
+            document.getElementById('excelImportFile').value = '';
+          } else {
+            showAlert("Excel file me koi valid MR data nahi mila!", true);
+          }
+        } catch (err) {
+          console.error("Import error:", err);
+          showAlert("Excel file parse karne me error aayi!", true);
+        }
+      };
+      reader.readAsArrayBuffer(file);
+    }
+
+    function openCompleteMRWindow() { window.location.href = "/completed.html"; }
+
+    function submitToSever() {
+      if (mrSheets.length === 0 || !mrSheets[currentMRIndex]) return;
+
+      if (!navigator.onLine) {
+        showAlert("Internet connected nahi hai! Server par upload karne ke liye internet connection zaroori hai.", true);
+        return;
+      }
+
+      pendingConfirmAction = () => {
+        mrSheets[currentMRIndex].isSubmitted = true;
+        
+        let loggedUser = localStorage.getItem("CPL_LOGGED_USER") || (localStorage.getItem("CPL_ADMIN_LOGGED") === "true" ? "ADMIN" : "UNKNOWN USER");
+        mrSheets[currentMRIndex].submittedBy = loggedUser.toUpperCase();
+        
+        saveToLocal(true);
+
+        fetch(`/api/mr-sheets`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ mrSheets, lastIndex: currentMRIndex, period: activePeriod })
+        })
+        .then(res => res.json())
+        .then(() => {
+          showAlert("MR successfully submitted & uploaded to server!");
+          fetchMRDataFromServer();
+        })
+        .catch(err => {
+          showAlert("Server upload fail ho gaya, kripya internet connection check karein!", true);
+        });
+      };
+      
+      document.getElementById("customConfirmText").innerText = "Are you sure you want to submit this MR sheet? Once submitted, it will be uploaded to the server.";
+      document.getElementById("customConfirmModal").style.display = "flex";
+    }
+
+    function saveToLocal(silent = false) {
+      localStorage.setItem(`CPL_OFFLINE_SHEETS_${activePeriod}`, JSON.stringify({ mrSheets: mrSheets, lastIndex: currentMRIndex }));
+      if (!silent) showAlert("Data successfully saved locally!");
+    }
+
+    function triggerSaveAlert() { 
+      saveToLocal(false);
+    }
+
+    function insertGrandTotalRow() {
+      const curRows = mrSheets[currentMRIndex].rows;
+      if (!curRows || curRows.length === 0) return showAlert("Empty MR!", true);
+      
+      let sumAmt = 0;
+      curRows.forEach(r => {
+        if (!r.isGrandTotal) {
+          sumAmt += parseFloat(r.rowData[19]) || 0;
+        }
+      });
+
+      pushUndoState();
+      const idx = curRows.findIndex(r => r.isGrandTotal); 
+      if (idx !== -1) curRows.splice(idx, 1);
+
+      const gData = new Array(24).fill(''); 
+      gData[17] = "G/TOTAL"; 
+      gData[19] = String(sumAmt); 
+      gData[20] = String(sumAmt);
+
+      curRows.push({ code: "", name: "G/TOTAL", isGrandTotal: true, rowData: gData });
+      selectedRowIdx = curRows.length - 1;
+      renderBody(); 
+      saveToLocal(true); 
+      showAlert("Grand Total is added successfully!");
+    }
+
+    function openPageTotalModal() { document.getElementById("pageTotalModal").style.display = "flex"; }
+
+    function applyPageTotal() {
+      const startNo = parseInt(document.getElementById("pageTotalStart").value) || 1;
+      const endNo = parseInt(document.getElementById("pageTotalEnd").value) || 20;
+      const curRows = mrSheets[currentMRIndex].rows;
+
+      if (startNo > endNo || startNo < 1) {
+        showAlert("Invalid S/No range!", true);
+        return;
+      }
+
+      let pageSum = 0;
+      let nonGrandTotalCount = 0;
+      let targetRowIndex = -1;
+
+      for (let i = 0; i < curRows.length; i++) {
+        if (!curRows[i].isGrandTotal) {
+          nonGrandTotalCount++;
+          if (nonGrandTotalCount >= startNo && nonGrandTotalCount <= endNo) {
+            pageSum += parseFloat(curRows[i].rowData[19]) || 0;
+            targetRowIndex = i;
+          }
+        }
+      }
+
+      if (targetRowIndex === -1 || pageSum === 0) {
+        showAlert("No records found in the specified S/No range!", true);
+        return;
+      }
+
+      pushUndoState();
+      curRows[targetRowIndex].rowData[20] = String(pageSum);
+
+      closeModal("pageTotalModal"); 
+      renderBody(); 
+      saveToLocal(true); 
+      showAlert(`Page Total (Rs ${pageSum.toLocaleString('en-IN')}) applied successfully to S/No ${endNo}!`);
+    }
+
+    let activeEditMode = 'form';
+
+    function switchEditTab(mode) {
+      activeEditMode = mode;
+      document.getElementById("tabBtnForm").className = `edit-tab-btn ${mode === 'form' ? 'active' : ''}`;
+      document.getElementById("tabBtnTable").className = `edit-tab-btn ${mode === 'table' ? 'active' : ''}`;
+      document.getElementById("tabBtnCalendar").className = `edit-tab-btn ${mode === 'calendar' ? 'active' : ''}`;
+
+      document.getElementById("editFormView").style.display = mode === 'form' ? 'grid' : 'none';
+      document.getElementById("editTableView").style.display = mode === 'table' ? 'block' : 'none';
+      document.getElementById("editCalendarView").style.display = mode === 'calendar' ? 'block' : 'none';
+
+      if (mode === 'table') renderEditGridTable();
+      if (mode === 'calendar') renderAttendanceCalendar();
+    }
+
+    function navigateEmployee(direction) {
+      const curRows = mrSheets[currentMRIndex].rows.filter(r => !r.isGrandTotal);
+      let newIdx = selectedRowIdx + direction;
+      if (newIdx >= 0 && newIdx < curRows.length) {
+        selectedRowIdx = newIdx;
+        renderEditFormView();
+        if (activeEditMode === 'table') renderEditGridTable();
+        if (activeEditMode === 'calendar') renderAttendanceCalendar();
+        document.getElementById("editModalTitle").innerText = `EDIT EMPLOYEE (S/No: ${selectedRowIdx + 1})`;
+      } else {
+        showAlert(direction > 0 ? "Yeh aakhri employee hai!" : "Yeh pehla employee hai!", true);
+      }
+    }
+
+    function renderAttendanceCalendar() {
+      const container = document.getElementById("editCalendarView");
+      const curRows = mrSheets[currentMRIndex].rows;
+      const row = curRows[selectedRowIdx];
+
+      if (!row.absentDates) row.absentDates = [];
+
+      const parts = activePeriod.trim().toUpperCase().split(/\s+/);
+      let curMonthStr = parts[0] || "SEP";
+      let curYear = parseInt(parts[1]) || 2026;
+      const monthsMap = { "JAN": 0, "FEB": 1, "MAR": 2, "APR": 3, "MAY": 4, "JUN": 5, "JUL": 6, "AUG": 7, "SEP": 8, "OCT": 9, "NOV": 10, "DEC": 11 };
+      
+      let mIdx = monthsMap[curMonthStr] !== undefined ? monthsMap[curMonthStr] : 8;
+      let prevMIdx = mIdx - 1;
+      let prevYear = curYear;
+      if (prevMIdx < 0) { prevMIdx = 11; prevYear -= 1; }
+      const monthNamesShort = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+
+      let datesArray = [];
+      let prevMonthLastDay = new Date(curYear, mIdx, 0).getDate();
+      for (let d = 21; d <= prevMonthLastDay; d++) {
+        datesArray.push({ day: d, month: monthNamesShort[prevMIdx], year: prevYear, dateStr: `${d}-${monthNamesShort[prevMIdx]}-${prevYear}` });
+      }
+      for (let d = 1; d <= 20; d++) {
+        datesArray.push({ day: d, month: monthNamesShort[mIdx], year: curYear, dateStr: `${d}-${monthNamesShort[mIdx]}-${curYear}` });
+      }
+
+      let weeks = [];
+      let currentWeek = [];
+      
+      datesArray.forEach(item => {
+        let dObj = new Date(`${item.month} ${item.day}, ${item.year}`);
+        let dayOfWeek = dObj.getDay();
+        
+        currentWeek.push(item);
+        if (dayOfWeek === 0 || item === datesArray[datesArray.length - 1]) {
+          weeks.push([...currentWeek]);
+          currentWeek = [];
+        }
+      });
+
+      let calculatedWorkingDays = 0;
+      let totalAbsentCount = row.absentDates.length;
+
+      weeks.forEach(week => {
+        let sundayItem = week.find(i => {
+          let dObj = new Date(`${i.month} ${i.day}, ${i.year}`);
+          return dObj.getDay() === 0;
+        });
+
+        let nonSundayItems = week.filter(i => i !== sundayItem);
+        let hasAbsentInWeek = nonSundayItems.some(i => row.absentDates.includes(i.dateStr));
+
+        nonSundayItems.forEach(i => {
+          if (!row.absentDates.includes(i.dateStr)) {
+            calculatedWorkingDays += 1;
+          }
+        });
+
+        if (sundayItem) {
+          if (!hasAbsentInWeek && !row.absentDates.includes(sundayItem.dateStr)) {
+            calculatedWorkingDays += 1; 
+          }
+        }
+      });
+
+      const paymentSheetDays = parseInt(row.rowData[17]) || 0;
+      const isMatch = (calculatedWorkingDays === paymentSheetDays);
+
+      let html = `<h4 style="color:#2b579a; margin-bottom:4px;">Period Attendance Calendar (${activePeriod})</h4>`;
+      html += `<p style="font-size:10.5px; color:#555; margin-bottom:8px;">Kisi bhi date par click karke Absent mark/unmark karein:</p>`;
+      
+      html += `<div class="calendar-footer-stats">
+        <div>1. Payment Sheet Working Days: <span style="color:#2b579a;">${paymentSheetDays}</span></div>
+        <div>2. Attendance Working Days (Sunday Rule): <span style="color:#007e33;">${calculatedWorkingDays}</span> (Absent: ${totalAbsentCount})</div>
+        <div>Status: <span class="${isMatch ? 'match-ok' : 'blink-not-match'}">${isMatch ? 'MATCHED (OK)' : 'NOT MATCH'}</span></div>
+      </div>`;
+
+      html += `<div class="cal-grid">`;
+
+      datesArray.forEach(item => {
+        let dObj = new Date(`${item.month} ${item.day}, ${item.year}`);
+        let isSunday = (dObj.getDay() === 0);
+        const isAbsent = row.absentDates.includes(item.dateStr);
+
+        html += `<div class="cal-day-cell ${isAbsent ? 'absent' : ''}" onclick="toggleAbsentDate('${item.dateStr}')">
+          <div style="${isSunday ? 'color:#c0392b; font-weight:900;' : ''}">${isSunday ? 'SUNDAY' : item.dateStr}</div>
+        </div>`;
+      });
+
+      html += `</div>`;
+      container.innerHTML = html;
+    }
+
+    function toggleAbsentDate(dateStr) {
+      const curRows = mrSheets[currentMRIndex].rows;
+      const row = curRows[selectedRowIdx];
+      if (!row.absentDates) row.absentDates = [];
+
+      const idx = row.absentDates.indexOf(dateStr);
+      if (idx !== -1) {
+        row.absentDates.splice(idx, 1);
+      } else {
+        row.absentDates.push(dateStr);
+      }
+
+      saveToLocal(true);
+      renderAttendanceCalendar();
+    }
+
+    function openEditModal() {
+      const curMR = mrSheets[currentMRIndex];
+      const curRows = curMR?.rows;
+      if (!curRows || curRows.length === 0) return showAlert("Add row first!", true);
+      
+      activeEditMode = 'form';
+      switchEditTab('form');
+      renderEditFormView();
+      document.getElementById("editModal").style.display = "flex";
+    }
+
+    function renderEditFormView() {
+      const curRows = mrSheets[currentMRIndex].rows;
+      const row = curRows[selectedRowIdx];
+      document.getElementById("editModalTitle").innerText = row.isGrandTotal ? `EDIT G/TOTAL` : `EDIT EMPLOYEE (S/No: ${selectedRowIdx + 1})`;
+      const grid = document.getElementById("editFormView");
+      grid.innerHTML = "";
+
+      for (let i = 0; i < 24; i++) {
+        const colLetter = String.fromCharCode(65 + i);
+        const colTitle = masterHeaders[i] || `Col ${colLetter}`;
+        const val = row.rowData[i] || '';
+        const div = document.createElement("div");
+        div.className = "form-group";
+        if (i === 7) div.style.gridColumn = "span 2";
+
+        if (i === 2) {
+          let opts = `<option value="">-- Select Trade --</option>`;
+          tradeOptions.forEach(t => { opts += `<option value="${t}" ${val === t ? 'selected' : ''}>${t}</option>`; });
+          div.innerHTML = `<label><strong>${colLetter}:</strong> ${colTitle}</label><select id="editField_${i}" style="height:30px;">${opts}</select>`;
+        } 
+        else if (i === 4) {
+          div.innerHTML = `<label><strong>${colLetter}:</strong> ${colTitle}</label><input type="date" id="editField_${i}" value="${dateToISO(val)}" style="height:30px;">`;
+        }
+        else if (i === 21) {
+          div.innerHTML = `<label><strong>${colLetter}:</strong> ${colTitle}</label><input type="text" id="editField_${i}" value="${val}">`;
+        }
+        else if (i === 22) {
+          div.innerHTML = `<label><strong>${colLetter}:</strong> ${colTitle}</label><input type="date" id="editField_${i}" value="${dateToISO(val)}" style="height:30px;">`;
+        } 
+        else if (i === 23) {
+          let parts = String(val).trim().split(/\s+/);
+          let dateVal = parts[0] || "";
+          let sessionVal = "(F/N)";
+          
+          if (val.toUpperCase().includes("A/N") || (parts[1] && parts[1].toUpperCase() === "(A/N)")) {
+            sessionVal = "(A/N)";
+          }
+
+          div.style.gridColumn = "span 2";
+          div.innerHTML = `
+            <label><strong>${colLetter}:</strong> ${colTitle}</label>
+            <div style="display:flex; gap:6px;">
+              <input type="date" id="editField_${i}" value="${dateToISO(dateVal)}" style="height:30px; flex:2;">
+              <select id="editDischargeSession" style="height:30px; flex:1; font-weight:bold;">
+                <option value="(F/N)" ${sessionVal === '(F/N)' ? 'selected' : ''}>(F/N)</option>
+                <option value="(A/N)" ${sessionVal === '(A/N)' ? 'selected' : ''}>(A/N)</option>
+              </select>
+            </div>`;
+        }
+        else {
+          div.innerHTML = `<label><strong>${colLetter}:</strong> ${colTitle}</label>${i === 7 ? `<textarea id="editField_${i}" style="height:50px;">${val}</textarea>` : `<input type="text" id="editField_${i}" value="${val}">`}`;
+        }
+        grid.appendChild(div);
+      }
+    }
+
+    function renderEditGridTable() {
+      const container = document.getElementById("editTableView");
+      const curRows = mrSheets[currentMRIndex].rows;
+
+      let html = `<table class="edit-table"><thead><tr><th>S/No</th>`;
+      gridColsList.forEach(cIdx => {
+        html += `<th>${String.fromCharCode(65 + cIdx)} (${masterHeaders[cIdx] || ''})</th>`;
+      });
+      html += `</tr></thead><tbody>`;
+
+      curRows.forEach((r, rIdx) => {
+        if (!r.isGrandTotal) {
+          html += `<tr><td style="text-align:center; font-weight:bold; background:#eee;">${r.rowData[0] || rIdx+1}</td>`;
+          gridColsList.forEach((cIdx, colArrIdx) => {
+            let val = r.rowData[cIdx] || '';
+            html += `<td><input type="text" value="${val}" data-row="${rIdx}" data-col="${cIdx}" oninput="updateGridCellVal(this)" onkeydown="handleGridKeyNav(event, ${rIdx}, ${colArrIdx})"></td>`;
+          });
+          html += `</tr>`;
+        }
+      });
+      html += `</tbody></table>`;
+      container.innerHTML = html;
+    }
+
+    function updateGridCellVal(input) {
+      const rIdx = parseInt(input.getAttribute("data-row"));
+      const cIdx = parseInt(input.getAttribute("data-col"));
+      const curRows = mrSheets[currentMRIndex].rows;
+      curRows[rIdx].rowData[cIdx] = input.value.trim();
+      saveToLocal(true);
+    }
+
+    function handleGridKeyNav(e, rIdx, colArrIdx) {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        const nextInput = document.querySelector(`input[data-row="${rIdx + 1}"][data-col="${gridColsList[colArrIdx]}"]`);
+        if (nextInput) {
+          nextInput.focus();
+          nextInput.select();
+        }
+      }
+    }
+
+    function saveEditedData() {
+      pushUndoState();
+      const curRows = mrSheets[currentMRIndex].rows;
+      const row = curRows[selectedRowIdx];
+
+      if (activeEditMode === 'form') {
+        for (let i = 0; i < 24; i++) {
+          const input = document.getElementById(`editField_${i}`);
+          if (input) {
+            if (i === 4 || i === 22) {
+              const rawDate = input.value.trim();
+              row.rowData[i] = rawDate ? isoToDisplayDate(rawDate) : "";
+            } 
+            else if (i === 23) {
+              const dVal = input.value.trim();
+              const sVal = document.getElementById("editDischargeSession")?.value || "(F/N)";
+              row.rowData[i] = dVal ? `${isoToDisplayDate(dVal)} ${sVal}` : "";
+            } 
+            else {
+              row.rowData[i] = input.value.trim();
+            }
+          }
+        }
+        row.code = row.rowData[1];
+        row.name = row.rowData[3];
+        row.rowData[18] = calculateRateByTrade(row.rowData[2]);
+        const days = parseFloat(row.rowData[17]) || 0, rate = parseFloat(row.rowData[18]) || 0;
+        row.rowData[19] = String(days * rate);
+      }
+      closeModal("editModal");
+      renderBody(); 
+      saveToLocal(true); 
+      showAlert("Data successfully saved!");
+    }
+
+    function deleteCurrentRow() {
+      const curRows = mrSheets[currentMRIndex].rows;
+      if (!curRows || curRows.length <= 1) return showAlert("Cannot delete the last row!", true);
+      if (confirm("Are you sure you want to delete this row?")) {
+        pushUndoState();
+        curRows.splice(selectedRowIdx, 1);
+        selectedRowIdx = Math.max(0, selectedRowIdx - 1);
+        closeModal("editModal"); renderBody(); saveToLocal(true); showAlert("Row deleted!");
+      }
+    }
+
+    function insertBlankRowBelow() {
+      pushUndoState();
+      const curMR = mrSheets[currentMRIndex];
+      curMR.rows.splice(selectedRowIdx + 1, 0, { code: "", name: "", rowData: new Array(24).fill("") });
+      selectedRowIdx++;
+      closeModal("editModal"); renderBody(); saveToLocal(true); showAlert("Blank row inserted!");
+    }
+
+    function openPageTotalModal() { document.getElementById("pageTotalModal").style.display = "flex"; }
+
+    function dateToISO(str) {
+      if (!str) return "";
+      if (/^\d{4}-\d{2}-\d{2}$/.test(str)) return str;
+      let parts = str.split(/[-/]/);
+      if (parts.length === 3) {
+        let d = parts[0];
+        let m = parts[1];
+        let y = parts[2];
+        const monthsMap = { "JAN": "01", "FEB": "02", "MAR": "03", "APR": "04", "MAY": "05", "JUN": "06", "JUL": "07", "AUG": "08", "SEP": "09", "OCT": "10", "NOV": "11", "DEC": "12", "1": "01", "2": "02", "3": "03", "4": "04", "5": "05", "6": "06", "7": "07", "8": "08", "9": "09", "10": "10", "11": "11", "12": "12" };
+        if (isNaN(m)) {
+          m = monthsMap[m.toUpperCase()] || "01";
+        } else {
+          m = String(m).padStart(2, '0');
+        }
+        d = String(d).padStart(2, '0');
+        if (y.length === 2) y = "20" + y;
+        return `${y}-${m}-${d}`;
+      }
+      return "";
+    }
+
+    function isoToDisplayDate(isoStr) {
+      if (!isoStr) return "";
+      let parts = isoStr.split("-");
+      if (parts.length === 3) {
+        let y = parts[0];
+        let m = parseInt(parts[1], 10);
+        let d = parts[2];
+        const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+        let mName = months[m - 1] || "Jan";
+        return `${d}-${mName}-${y}`;
+      }
+      return isoStr;
+    }
+  </script>
+</body>
+</html>

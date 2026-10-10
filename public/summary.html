@@ -1,0 +1,423 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CPL DATA SUMMARY & AUDIT</title>
+  <!-- SHEETJS LIBRARY FOR EXCEL EXPORT -->
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: Arial, Helvetica, sans-serif;
+    }
+    body {
+      background: #2b271d;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 15px;
+      color: #000;
+    }
+    .app-toolbar {
+      width: 100%;
+      max-width: 1100px;
+      background: #ffffff;
+      padding: 10px 16px;
+      border-radius: 6px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 14px;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+      border: 1px solid #ccc;
+    }
+    .toolbar-actions {
+      display: flex;
+      gap: 8px;
+    }
+    .btn-nav {
+      background: #4b6584;
+      color: #ffffff;
+      text-decoration: none;
+      font-size: 12px;
+      font-weight: 900;
+      padding: 8px 16px;
+      border-radius: 4px;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      border: none;
+      cursor: pointer;
+    }
+    .summary-container {
+      width: 100%;
+      max-width: 1100px;
+      background: #ffffff;
+      border-radius: 6px;
+      padding: 20px;
+      box-shadow: 0 6px 20px rgba(0,0,0,0.4);
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+    h2 {
+      color: #2b579a;
+      font-size: 18px;
+      font-weight: 900;
+      border-bottom: 2px solid #2b579a;
+      padding-bottom: 6px;
+    }
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 10px;
+    }
+    .stat-card {
+      background: #f8f9fa;
+      border: 1.5px solid #ccc;
+      border-radius: 6px;
+      padding: 10px;
+      text-align: center;
+    }
+    .stat-card h3 {
+      font-size: 11px;
+      color: #555;
+      margin-bottom: 4px;
+    }
+    .stat-card .val {
+      font-size: 20px;
+      font-weight: 900;
+      color: #2b579a;
+    }
+    .alert-section {
+      background: #fff3cd;
+      border: 1.5px solid #ffeeba;
+      color: #856404;
+      padding: 10px 12px;
+      border-radius: 6px;
+      font-size: 12px;
+      line-height: 1.4;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 11px;
+      margin-top: 4px;
+    }
+    th, td {
+      border: 1px solid #000;
+      padding: 5px 8px;
+      text-align: left;
+    }
+    th {
+      background: #2b579a;
+      color: #ffffff;
+      font-weight: bold;
+      text-align: center;
+      position: sticky;
+      top: 0;
+    }
+    .badge-error {
+      background: #dc3545;
+      color: #fff;
+      padding: 2px 6px;
+      border-radius: 3px;
+      font-weight: bold;
+      font-size: 10px;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="app-toolbar">
+    <a href="/index.html" class="btn-nav">🏠 BACK TO HOME / PAYMENT</a>
+    <div class="toolbar-actions">
+      <button class="btn-nav" style="background: #16a085;" onclick="exportAuditExcel()">📊 EXPORT EXCEL</button>
+      <button class="btn-nav" style="background: #27ae60;" onclick="window.print()">🖨️ PRINT REPORT</button>
+    </div>
+  </div>
+
+  <div class="summary-container">
+    <h2>📊 AUDIT & SANITY REPORT (<span id="periodTitleDisplay">SEP 2026</span>)</h2>
+
+    <div class="stats-grid">
+      <div class="stat-card">
+        <h3>TOTAL MASTER</h3>
+        <div class="val" id="totalMaster">0</div>
+      </div>
+      <div class="stat-card">
+        <h3>COPIED IN PAYMENT</h3>
+        <div class="val" id="totalCopied" style="color:#007e33;">0</div>
+      </div>
+      <div class="stat-card" style="border-color: #d35400;">
+        <h3>MULTIPLE MR (DUPLICATES)</h3>
+        <div class="val" id="totalDuplicates" style="color:#d35400;">0</div>
+      </div>
+      <div class="stat-card" style="border-color: #dc3545;">
+        <h3>DISCHARGED & COPIED</h3>
+        <div class="val" id="totalDischargedCopied" style="color:#dc3545;">0</div>
+      </div>
+    </div>
+
+    <div class="alert-section" id="auditSummaryText">
+      Loading and analyzing records...
+    </div>
+
+    <!-- MULTIPLE MR / DUPLICATES SECTION -->
+    <div>
+      <h3 style="font-size: 13px; font-weight: bold; margin-bottom: 6px; color: #d35400;">⚠️ EMPLOYEES COPIED IN MULTIPLE MR SHEETS (DUPLICATES):</h3>
+      <div style="max-height: 180px; overflow-y: auto; border: 1px solid #000;">
+        <table>
+          <thead>
+            <tr>
+              <th style="width:40px;">S/No</th>
+              <th style="width:80px;">Code</th>
+              <th style="width:200px;">Name</th>
+              <th style="width:120px;">Trade</th>
+              <th>Found In Multiple MR Sheets</th>
+            </tr>
+          </thead>
+          <tbody id="duplicateTableBody">
+            <tr><td colspan="5" style="text-align:center; font-style:italic;">Loading...</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- DISCHARGED BUT COPIED SECTION -->
+    <div>
+      <h3 style="font-size: 13px; font-weight: bold; margin-bottom: 6px; color: #c0392b;">⚠️ DISCHARGED EMPLOYEES FOUND IN PAYMENT LIST:</h3>
+      <div style="max-height: 180px; overflow-y: auto; border: 1px solid #000;">
+        <table>
+          <thead>
+            <tr>
+              <th style="width:40px;">S/No</th>
+              <th style="width:80px;">Code</th>
+              <th style="width:200px;">Name</th>
+              <th style="width:100px;">Enrolment</th>
+              <th style="width:100px;">Discharge</th>
+              <th>Found In MR Sheet</th>
+            </tr>
+          </thead>
+          <tbody id="dischargedTableBody">
+            <tr><td colspan="6" style="text-align:center; font-style:italic;">Loading...</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- NOT YET COPIED SECTION -->
+    <div>
+      <h3 style="font-size: 13px; font-weight: bold; margin-bottom: 6px; color: #2b579a;">📋 MASTER RECORDS NOT YET COPIED TO ANY MR SHEET:</h3>
+      <div style="max-height: 180px; overflow-y: auto; border: 1px solid #000;">
+        <table>
+          <thead>
+            <tr>
+              <th style="width:40px;">S/No</th>
+              <th style="width:80px;">Code</th>
+              <th style="width:220px;">Name</th>
+              <th style="width:120px;">Trade</th>
+              <th>Status</th>
+            </tr>
+          </thead>
+          <tbody id="missingTableBody">
+            <tr><td colspan="5" style="text-align:center; font-style:italic;">Loading...</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    let globalAuditData = {
+      duplicateList: [],
+      dischargedList: [],
+      missingList: []
+    };
+    let activePeriod = localStorage.getItem("CPL_GLOBAL_MONTH") || "SEP 2026";
+
+    function exportAuditExcel() {
+      const wb = XLSX.utils.book_new();
+
+      // Sheet 1: Not Copied (Missing)
+      const missingData = [["S/No", "Code", "Name", "Trade", "Status"]];
+      globalAuditData.missingList.forEach((m, i) => {
+        missingData.push([i + 1, m.code, m.name, m.trade, "NOT COPIED YET"]);
+      });
+      const wsMissing = XLSX.utils.aoa_to_sheet(missingData);
+      wsMissing['!cols'] = [{ wch: 6 }, { wch: 12 }, { wch: 25 }, { wch: 15 }, { wch: 18 }];
+      XLSX.utils.book_append_sheet(wb, wsMissing, "NOT_COPIED_MASTER");
+
+      // Sheet 2: Discharged but Copied
+      const disData = [["S/No", "Code", "Name", "Enrolment Date", "Discharge Date", "Found In MR Sheet"]];
+      globalAuditData.dischargedList.forEach((d, i) => {
+        disData.push([i + 1, d.code, d.name, d.enrolment, d.discharge, d.foundInMR]);
+      });
+      const wsDis = XLSX.utils.aoa_to_sheet(disData);
+      wsDis['!cols'] = [{ wch: 6 }, { wch: 12 }, { wch: 25 }, { wch: 15 }, { wch: 15 }, { wch: 20 }];
+      XLSX.utils.book_append_sheet(wb, wsDis, "DISCHARGED_IN_PAYMENT");
+
+      // Sheet 3: Duplicate Entries
+      const dupData = [["S/No", "Code", "Name", "Trade", "Found In Multiple MR Sheets"]];
+      globalAuditData.duplicateList.forEach((d, i) => {
+        dupData.push([i + 1, d.code, d.name, d.trade, d.mrSheets]);
+      });
+      const wsDup = XLSX.utils.aoa_to_sheet(dupData);
+      wsDup['!cols'] = [{ wch: 6 }, { wch: 12 }, { wch: 25 }, { wch: 15 }, { wch: 30 }];
+      XLSX.utils.book_append_sheet(wb, wsDup, "DUPLICATE_ENTRIES");
+
+      XLSX.writeFile(wb, `CPL_AUDIT_REPORT_${activePeriod.replace(/[^a-zA-Z0-9]/g, '_')}.xlsx`);
+    }
+
+    window.addEventListener("DOMContentLoaded", async () => {
+      document.getElementById("periodTitleDisplay").innerText = activePeriod;
+
+      try {
+        const resMaster = await fetch('/api/master-data');
+        const jsonMaster = await resMaster.json();
+        const masterList = jsonMaster.data || [];
+
+        const resSheets = await fetch(`/api/mr-sheets?period=${encodeURIComponent(activePeriod)}`);
+        const jsonSheets = await resSheets.json();
+        const mrSheets = jsonSheets.mrSheets || [];
+
+        const codeOccurrences = new Map();
+        const copiedCodes = new Set();
+
+        mrSheets.forEach(mr => {
+          const seenInThisMR = new Set();
+          (mr.rows || []).forEach(r => {
+            if (!r.isGrandTotal && r.code) {
+              const cleanCode = String(r.code).trim().toLowerCase();
+              copiedCodes.add(cleanCode);
+
+              if (!seenInThisMR.has(cleanCode)) {
+                seenInThisMR.add(cleanCode);
+                if (!codeOccurrences.has(cleanCode)) {
+                  codeOccurrences.set(cleanCode, []);
+                }
+                codeOccurrences.get(cleanCode).push(mr.label);
+              }
+            }
+          });
+        });
+
+        let totalMaster = masterList.length;
+        let totalCopied = copiedCodes.size;
+        globalAuditData.dischargedList = [];
+        globalAuditData.duplicateList = [];
+        globalAuditData.missingList = [];
+
+        masterList.forEach(emp => {
+          const code = String(emp.code || '').trim();
+          const cleanCode = code.toLowerCase();
+          const name = emp.rowData[3] || '';
+          const trade = emp.rowData[2] || '';
+          const enrolmentDate = String(emp.rowData[22] || '').trim();
+          const dischargeDate = String(emp.rowData[23] || '').trim();
+
+          const isCopied = copiedCodes.has(cleanCode);
+          const occurrences = codeOccurrences.get(cleanCode) || [];
+
+          if (occurrences.length > 1) {
+            globalAuditData.duplicateList.push({
+              code: code,
+              name: name,
+              trade: trade,
+              mrSheets: occurrences.join(", ")
+            });
+          }
+
+          if (dischargeDate !== '' && isCopied) {
+            globalAuditData.dischargedList.push({
+              code: code,
+              name: name,
+              enrolment: enrolmentDate,
+              discharge: dischargeDate,
+              foundInMR: occurrences.join(", ")
+            });
+          }
+
+          if (!isCopied && dischargeDate === '') {
+            globalAuditData.missingList.push({ code: code, name: name, trade: trade });
+          }
+        });
+
+        document.getElementById("totalMaster").innerText = totalMaster;
+        document.getElementById("totalCopied").innerText = totalCopied;
+        document.getElementById("totalDuplicates").innerText = globalAuditData.duplicateList.length;
+        document.getElementById("totalDischargedCopied").innerText = globalAuditData.dischargedList.length;
+
+        document.getElementById("auditSummaryText").innerHTML = `
+          <strong>Audit Status for ${activePeriod}:</strong> Out of ${totalMaster} master records, <strong>${totalCopied}</strong> are in payment sheets. 
+          ${globalAuditData.duplicateList.length > 0 ? `<span style="color:#d35400; font-weight:bold;">⚠️ Warning: ${globalAuditData.duplicateList.length} employee(s) duplicated.</span> ` : ''}
+          ${globalAuditData.dischargedList.length > 0 ? `<span style="color:#c0392b; font-weight:bold;">⚠️ Warning: ${globalAuditData.dischargedList.length} discharged staff found in payment!</span>` : (globalAuditData.duplicateList.length === 0 ? '<span style="color:#27ae60; font-weight:bold;">✅ All records clean and consistent!</span>' : '')}
+        `;
+
+        // Render Duplicates Table
+        const dupBody = document.getElementById("duplicateTableBody");
+        if (globalAuditData.duplicateList.length === 0) {
+          dupBody.innerHTML = `<tr><td colspan="5" style="text-align:center; color:#27ae60; font-weight:bold;">✅ No duplicate entries found across multiple MR sheets.</td></tr>`;
+        } else {
+          let html = "";
+          globalAuditData.duplicateList.forEach((d, i) => {
+            html += `<tr>
+              <td style="text-align:center;">${i+1}</td>
+              <td style="text-align:center; font-weight:bold;">${d.code}</td>
+              <td>${d.name}</td>
+              <td>${d.trade}</td>
+              <td style="font-weight:bold; color:#d35400;">${d.mrSheets}</td>
+            </tr>`;
+          });
+          dupBody.innerHTML = html;
+        }
+
+        // Render Discharged Table
+        const disBody = document.getElementById("dischargedTableBody");
+        if (globalAuditData.dischargedList.length === 0) {
+          disBody.innerHTML = `<tr><td colspan="6" style="text-align:center; color:#27ae60; font-weight:bold;">✅ Perfect! No discharged staff included in payment.</td></tr>`;
+        } else {
+          let html = "";
+          globalAuditData.dischargedList.forEach((d, i) => {
+            html += `<tr>
+              <td style="text-align:center;">${i+1}</td>
+              <td style="text-align:center; font-weight:bold;">${d.code}</td>
+              <td>${d.name}</td>
+              <td style="text-align:center;">${d.enrolment}</td>
+              <td style="text-align:center; color:#dc3545; font-weight:bold;">${d.discharge}</td>
+              <td style="font-weight:bold; color:#2b579a;">${d.foundInMR}</td>
+            </tr>`;
+          });
+          disBody.innerHTML = html;
+        }
+
+        // Render Missing Table
+        const missBody = document.getElementById("missingTableBody");
+        if (globalAuditData.missingList.length === 0) {
+          missBody.innerHTML = `<tr><td colspan="5" style="text-align:center; color:#27ae60; font-weight:bold;">✅ All active master records have been copied into payment sheets!</td></tr>`;
+        } else {
+          let html = "";
+          globalAuditData.missingList.forEach((m, i) => {
+            html += `<tr>
+              <td style="text-align:center;">${i+1}</td>
+              <td style="text-align:center; font-weight:bold;">${m.code}</td>
+              <td>${m.name}</td>
+              <td>${m.trade}</td>
+              <td style="text-align:center;"><span class="badge-error">NOT COPIED YET</span></td>
+            </tr>`;
+          });
+          missBody.innerHTML = html;
+        }
+
+      } catch(err) {
+        console.error("Audit load error:", err);
+        alert("Error loading audit summary data!");
+      }
+    });
+  </script>
+</body>
+</html>

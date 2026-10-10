@@ -1,0 +1,745 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CPL FORWARDING LETTER</title>
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: Arial, Helvetica, sans-serif;
+    }
+
+    body {
+      background: #2b271d;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 10px 0 20px 0;
+      color: #000;
+    }
+
+    /* TOP ACTION TOOLBAR */
+    .app-toolbar {
+      width: 210mm;
+      background: #ffffff;
+      padding: 6px 12px;
+      border-radius: 4px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 10px;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+      border: 1px solid #ccc;
+    }
+    .toolbar-left, .toolbar-actions {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .btn-nav {
+      background: #4b6584;
+      color: #ffffff;
+      text-decoration: none;
+      font-size: 11px;
+      font-weight: 900;
+      padding: 6px 12px;
+      border-radius: 4px;
+      height: 28px;
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      cursor: pointer;
+    }
+    .btn-tool {
+      font-size: 11px;
+      font-weight: bold;
+      padding: 5px 10px;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      color: #fff;
+      height: 28px;
+      display: inline-flex;
+      align-items: center;
+      gap: 3px;
+    }
+    .btn-completed-mr { background: #007e33; }
+    .btn-edit-modal { background: #2980b9; }
+    .btn-print { background: #27ae60; }
+    .btn-export { background: #16a085; }
+
+    /* CLEAN A4 CONTAINER */
+    .excel-container {
+      width: 210mm;
+      min-height: 297mm;
+      background: #ffffff;
+      padding: 19.05mm 17.78mm;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.4);
+      border: 1px solid #bbb;
+      overflow: hidden;
+    }
+
+    table.excel-sheet {
+      border-collapse: collapse;
+      font-size: 10px;
+      width: 100%;
+      background: #ffffff;
+      table-layout: fixed;
+    }
+    table.excel-sheet td {
+      border: none;
+      padding: 1.5px 3px;
+      vertical-align: top;
+    }
+
+    .cell-bold { font-weight: bold; }
+    .cell-center { text-align: center; }
+    .cell-right { text-align: right; }
+    .cell-underline { text-decoration: underline; }
+
+    .tight-block {
+      line-height: 1.25;
+    }
+
+    /* INNER TABLE BORDERS - SOLID GRID EVERYWHERE */
+    .table-head-cell {
+      border: 1.5px solid #000000 !important;
+      font-weight: 900 !important;
+      text-align: center;
+      background: #ffffff;
+      font-size: 10px;
+      height: 22px;
+      vertical-align: middle !important;
+    }
+    .data-row-cell {
+      border: 1px solid #000000 !important;
+      height: 20px;
+      font-size: 9.5px;
+      font-weight: 600;
+      vertical-align: middle !important;
+    }
+
+    /* TOTAL ROW BORDER */
+    .total-row-cell {
+      border: 1.5px solid #000000 !important;
+      height: 22px;
+      vertical-align: middle !important;
+    }
+
+    /* MODAL */
+    .modal-overlay {
+      display: none;
+      position: fixed;
+      top: 0; left: 0; width: 100vw; height: 100vh;
+      background: rgba(0,0,0,0.6);
+      z-index: 200;
+      justify-content: center;
+      align-items: center;
+    }
+    .modal-box {
+      background: #ffffff;
+      border-radius: 6px;
+      width: 90%;
+      max-width: 620px;
+      padding: 16px 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.5);
+    }
+    .modal-box label {
+      font-size: 11px;
+      font-weight: bold;
+      display: block;
+      margin-bottom: 2px;
+    }
+    .modal-box input {
+      width: 100%;
+      padding: 6px 8px;
+      font-size: 12px;
+      border: 1.5px solid #2b579a;
+      border-radius: 4px;
+      outline: none;
+    }
+
+    @page {
+      size: A4 portrait;
+      margin: 19.05mm 17.78mm;
+    }
+    @media print {
+      body {
+        background: none;
+        padding: 0;
+        margin: 0;
+      }
+      .app-toolbar, .modal-overlay {
+        display: none !important;
+      }
+      .excel-container {
+        box-shadow: none;
+        border: none;
+        padding: 0;
+        margin: 0;
+        width: 100%;
+        min-height: auto;
+      }
+      table.excel-sheet {
+        font-size: 9.5px;
+      }
+      table.excel-sheet td {
+        border: none;
+        padding: 1px 3px;
+      }
+      .table-head-cell {
+        border: 1.5px solid #000000 !important;
+        -webkit-print-color-adjust: exact;
+      }
+      .data-row-cell, .total-row-cell {
+        border: 1px solid #000000 !important;
+        -webkit-print-color-adjust: exact;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- ACTION TOOLBAR -->
+  <div class="app-toolbar">
+    <div class="toolbar-left">
+      <a href="/payment.html" class="btn-nav">💳 PAYMENT</a>
+      <button class="btn-nav" style="background:#576574; border:none; cursor:pointer;" onclick="goToHome()">🏠 HOME</button>
+    </div>
+
+    <div class="toolbar-actions">
+      <button class="btn-tool btn-completed-mr" onclick="goToCompletedMR()">📁 GO TO COMPLETED MR</button>
+      <button class="btn-tool btn-edit-modal" onclick="openEditModal()">✏️ EDIT FORM</button>
+      <button class="btn-tool btn-export" onclick="exportLetterExcel()">📊 EXPORT EXCEL</button>
+      <button class="btn-tool btn-print" onclick="window.print()">🖨️ PRINT / PDF</button>
+    </div>
+  </div>
+
+  <!-- A4 SPREADSHEET -->
+  <div class="excel-container">
+    <table class="excel-sheet">
+      <colgroup>
+        <col style="width:36px;">
+        <col style="width:130px;">
+        <col style="width:250px;">
+        <col style="width:110px;">
+        <col style="width:125px;">
+      </colgroup>
+      <tbody>
+        <!-- HEADER TOP RIGHT -->
+        <tr>
+          <td></td><td></td><td></td><td></td>
+          <td class="cell-bold tight-block">
+            HQ 74 RCC (GREF)<br>
+            <span style="font-weight:normal;">Pin - 930 074</span><br>
+            <span style="font-weight:normal;">C/o 99 APO</span>
+          </td>
+        </tr>
+
+        <tr style="height:4px;"><td colspan="5"></td></tr>
+
+        <!-- REF NO AND DATE -->
+        <tr>
+          <td colspan="3" class="cell-bold" style="vertical-align:middle;">
+            2014-B/CPL/ <span id="dispRefNo" style="display:inline-block; min-width:45px; border-bottom:1px solid #000; text-align:center;"></span> /E2
+          </td>
+          <td></td>
+          <td class="cell-bold" id="dispDate" style="vertical-align:middle;">SEP 2026</td>
+        </tr>
+
+        <tr style="height:4px;"><td colspan="5"></td></tr>
+
+        <!-- AO 24 BRTF ADDRESS -->
+        <tr>
+          <td colspan="4" class="tight-block">
+            <span class="cell-bold">AO 24 BRTF (Through E5 Section)</span><br>
+            Pin - 930024<br>
+            C/o 99 APO
+          </td>
+          <td></td>
+        </tr>
+
+        <tr style="height:6px;"><td colspan="5"></td></tr>
+
+        <!-- SUBJECT TITLE -->
+        <tr>
+          <td colspan="5" class="cell-bold cell-center cell-underline" id="letterSubjectTitle" style="font-size:10px; line-height:1.3;">
+            FORWARDING OF BILLS ON ACCOUNT OF WAGES OF CPL's FOR THE MONTH OF SEP 2026<br>
+            (PERIOD FROM 21 AUG 2026 TO 20 SEP 2026)
+          </td>
+        </tr>
+
+        <tr style="height:6px;"><td colspan="5"></td></tr>
+
+        <!-- PARA 1 -->
+        <tr>
+          <td colspan="5" id="letterPara1" style="text-align: justify; line-height: 1.35; padding-bottom: 4px;">
+            1. &nbsp;&nbsp; The under mentioned Special Wages Bills on account of wages of SEP 2026 (Period from 21 Aug 2026 to 20 Sep 2026) alongwith Mandate form, DLRs and Part-II orders of CPLs are forwarded herewith for your pre-audit and early payment, please.
+          </td>
+        </tr>
+
+        <!-- TABLE HEADERS -->
+        <tr>
+          <th class="table-head-cell">S/No</th>
+          <th class="table-head-cell">Mr No</th>
+          <th class="table-head-cell">Job No.</th>
+          <th class="table-head-cell">Amount (Rs)</th>
+          <th class="table-head-cell">REMARKS</th>
+        </tr>
+      </tbody>
+
+      <!-- DYNAMIC ROWS -->
+      <tbody id="letterTableBody"></tbody>
+
+      <tbody>
+        <!-- TOTAL ROW -->
+        <tr>
+          <td class="total-row-cell"></td>
+          <td class="total-row-cell"></td>
+          <td class="total-row-cell cell-bold cell-right" style="padding-right:8px; font-size:10px;">TOTAL (Rs)</td>
+          <td class="total-row-cell cell-bold cell-right" id="dispGrandTotal" style="padding-right:6px; font-size:10.5px;">0.00</td>
+          <td class="total-row-cell"></td>
+        </tr>
+
+        <!-- WORDS ROW -->
+        <tr>
+          <td colspan="5" class="cell-bold cell-center" id="dispWordsAmount" style="font-size:10.5px; padding: 10px 0 6px 0;">
+            Rupees Zero Only
+          </td>
+        </tr>
+
+        <!-- CLOSED MR ROW -->
+        <tr>
+          <td colspan="5" class="cell-bold" id="dispClosedMrCount" style="font-size:10px; padding-bottom: 10px;">
+            (TOTAL CLOSED MR ZERO NOS)
+          </td>
+        </tr>
+
+        <!-- SIGNATURE AND COPY TO -->
+        <tr>
+          <td colspan="2" class="tight-block" style="vertical-align: top;">
+            <span class="cell-bold cell-underline">Copy to:-</span><br>
+            <span class="cell-bold">HQ 24 BRTF</span><br>
+            <span class="cell-bold">C/O 99 APO</span><br>
+            <span class="cell-bold">Pin: 930 024</span>
+          </td>
+          <td class="cell-bold" style="vertical-align: middle; font-size: 10px; padding-left: 10px;">
+            } FOR INFO PLEASE
+          </td>
+          <td></td>
+          <td class="tight-block cell-bold" id="dispSignBlock" style="vertical-align: top; white-space: nowrap;">
+            (Sujit Debnath)<br>
+            EE (Civ)<br>
+            Officer Commanding<br>
+            74 RCC (GREF)
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- POPUP EDIT MODAL -->
+  <div class="modal-overlay" id="editModal">
+    <div class="modal-box">
+      <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1.5px solid #2b579a; padding-bottom:6px;">
+        <h3 style="color:#2b579a; font-size:14px; font-weight:900;">EDIT LETTER CONFIGURATION</h3>
+        <span style="cursor:pointer; font-weight:bold; font-size:16px;" onclick="closeModal()">✖</span>
+      </div>
+
+      <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px;">
+        <div>
+          <label>LETTER REFERENCE NO:</label>
+          <input type="text" id="modalRefNo" placeholder="e.g. 248">
+        </div>
+        <div>
+          <label>LETTER MONTH/DATE:</label>
+          <input type="text" id="modalDate" value="SEP 2026">
+        </div>
+        <div>
+          <label>SIGNATURE NAME:</label>
+          <input type="text" id="modalSignName" value="Sujit Debnath">
+        </div>
+        <div>
+          <label>SIGNATURE DESIGNATION:</label>
+          <input type="text" id="modalSignDesig" value="EE (Civ)">
+        </div>
+        <div>
+          <label>ORGANIZATION LINE 1:</label>
+          <input type="text" id="modalSignOrg" value="Officer Commanding">
+        </div>
+        <div>
+          <label>ORGANIZATION LINE 2:</label>
+          <input type="text" id="modalSignUnit" value="74 RCC (GREF)">
+        </div>
+      </div>
+
+      <div style="display:flex; justify-content:flex-end; gap:8px; border-top:1px solid #ddd; padding-top:10px; margin-top:4px;">
+        <button class="btn-tool" style="background:#777;" onclick="closeModal()">CANCEL</button>
+        <button class="btn-tool" style="background:#007e33;" onclick="saveModalEdits()">APPLY & UPDATE</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- CUSTOM CONFIRMATION MODAL FOR HOME -->
+  <div class="modal-overlay" id="customConfirmModal">
+    <div class="modal-window" style="width: 380px; padding: 20px; gap: 14px; text-align: center; background:#fff; border-radius:6px;">
+      <h3 style="color:#2b579a; font-size:16px;">CONFIRMATION</h3>
+      <p id="customConfirmText" style="font-size: 13px; font-weight: bold; color: #333; line-height: 1.4;">Are you sure you want to go to Home?</p>
+      <div style="display:flex; justify-content:center; gap:10px; margin-top:6px;">
+        <button class="btn-tool" style="background:#666;" onclick="closeCustomConfirm(false)">NO</button>
+        <button class="btn-tool" style="background:#007e33;" onclick="closeCustomConfirm(true)">YES</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    let letterConfig = {
+      refNo: "",
+      letterDate: "SEP 2026",
+      signName: "Sujit Debnath",
+      signDesig: "EE (Civ)",
+      signOrg: "Officer Commanding",
+      signUnit: "74 RCC (GREF)"
+    };
+    let letterRows = [];
+    let activePeriod = localStorage.getItem("CPL_GLOBAL_MONTH") || "SEP 2026";
+    let pendingConfirmAction = null;
+
+    function numberToIndianWords(num) {
+      const a = ['', 'One ', 'Two ', 'Three ', 'Four ', 'Five ', 'Six ', 'Seven ', 'Eight ', 'Nine ', 'Ten ', 'Eleven ', 'Twelve ', 'Thirteen ', 'Fourteen ', 'Fifteen ', 'Sixteen ', 'Seventeen ', 'Eighteen ', 'Nineteen '];
+      const b = ['', '', 'Twenty', 'Thirty', 'Forty', 'Fifty', 'Sixty', 'Seventy', 'Eighty', 'Ninety'];
+
+      function inWords(n) {
+        let str = "";
+        if (n > 99) {
+          str += a[Math.floor(n / 100)] + "Hundred ";
+          n %= 100;
+        }
+        if (n > 19) {
+          str += b[Math.floor(n / 10)] + " " + a[n % 10];
+        } else {
+          str += a[n];
+        }
+        return str.trim();
+      }
+
+      num = Math.floor(Number(num) || 0);
+      if (num === 0) return "Rupees Zero Only";
+
+      let crore = Math.floor(num / 10000000);
+      num %= 10000000;
+      let lakh = Math.floor(num / 100000);
+      num %= 100000;
+      let thousand = Math.floor(num / 1000);
+      num %= 1000;
+      let rem = num;
+
+      let result = "Rupees ";
+      if (crore > 0) result += inWords(crore) + " Crore ";
+      if (lakh > 0) result += inWords(lakh) + " Lakh ";
+      if (thousand > 0) result += inWords(thousand) + " Thousand ";
+      if (rem > 0) result += inWords(rem) + " ";
+
+      result = result.replace(/\s+/g, ' ').trim() + " Only";
+      return result;
+    }
+
+    function numberToWordSimple(num) {
+      const ones = ['', 'ONE', 'TWO', 'THREE', 'FOUR', 'FIVE', 'SIX', 'SEVEN', 'EIGHT', 'NINE', 'TEN', 'ELEVEN', 'TWELVE', 'THIRTEEN', 'FOURTEEN', 'FIFTEEN', 'SIXTEEN', 'SEVENTEEN', 'EIGHTEEN', 'NINETEEN'];
+      const tens = ['', '', 'TWENTY', 'THIRTY', 'FORTY', 'FIFTY', 'SIXTY', 'SEVENTY', 'EIGHTY', 'NINETY'];
+
+      num = parseInt(num, 10) || 0;
+      if (num === 0) return "ZERO";
+      if (num < 20) return ones[num];
+      if (num < 100) return (tens[Math.floor(num / 10)] + " " + ones[num % 10]).trim();
+      return String(num);
+    }
+
+    window.addEventListener("DOMContentLoaded", () => {
+      letterConfig.letterDate = activePeriod.toUpperCase();
+      document.getElementById("dispDate").innerText = letterConfig.letterDate;
+      
+      document.getElementById("letterSubjectTitle").innerHTML = `FORWARDING OF BILLS ON ACCOUNT OF WAGES OF CPL's FOR THE MONTH OF ${activePeriod.toUpperCase()}<br>(PERIOD FROM 21 AUG 2026 TO 20 SEP 2026)`;
+      document.getElementById("letterPara1").innerHTML = `1. &nbsp;&nbsp; The under mentioned Special Wages Bills on account of wages of ${activePeriod.toUpperCase()} (Period from 21 Aug 2026 to 20 Sep 2026) alongwith Mandate form, DLRs and Part-II orders of CPLs are forwarded herewith for your pre-audit and early payment, please.`;
+
+      const savedCfg = localStorage.getItem(`CPL_SAVED_LETTER_CONFIG_${activePeriod}`);
+      if (savedCfg) {
+        try { letterConfig = JSON.parse(savedCfg); } catch(e){}
+      }
+      
+      fetchOnlineCompletedMRs();
+    });
+
+    function goToCompletedMR() {
+      window.location.href = "/completed.html";
+    }
+
+    function goToHome() {
+      pendingConfirmAction = () => {
+        localStorage.removeItem("CPL_IN_PAYMENT_SCREEN");
+        localStorage.removeItem("CPL_ADMIN_LOGGED");
+        window.location.href = "/login.html";
+      };
+      document.getElementById("customConfirmText").innerText = "Did you check everything yourself? Are you sure you want to go to Home (Login Screen)?";
+      document.getElementById("customConfirmModal").style.display = "flex";
+    }
+
+    function closeCustomConfirm(yes) {
+      document.getElementById("customConfirmModal").style.display = "none";
+      if (yes && pendingConfirmAction) {
+        pendingConfirmAction();
+      }
+      pendingConfirmAction = null;
+    }
+
+    function fetchOnlineCompletedMRs() {
+      let allSheets = [];
+      const localActive = localStorage.getItem(`CPL_OFFLINE_SHEETS_${activePeriod}`);
+      if (localActive) {
+        try {
+          let parsed = JSON.parse(localActive);
+          allSheets = parsed.mrSheets || [];
+        } catch(e){}
+      }
+
+      let completedSheets = allSheets.filter(m => m.isSubmitted === true || String(m.isSubmitted) === "true" || m.submitted === true);
+
+      if (completedSheets.length > 0) {
+        processCompletedMRsToLetter(completedSheets);
+      }
+
+      if (navigator.onLine) {
+        fetch(`/api/mr-sheets?period=${encodeURIComponent(activePeriod)}`)
+          .then(res => res.json())
+          .then(data => {
+            let sSheets = data.mrSheets || [];
+            let sCompleted = sSheets.filter(m => m.isSubmitted === true || String(m.isSubmitted) === "true" || m.submitted === true);
+            if (sCompleted.length > completedSheets.length) {
+              processCompletedMRsToLetter(sCompleted);
+            }
+          })
+          .catch(err => console.error("Server sync warning:", err));
+      }
+    }
+
+    function processCompletedMRsToLetter(completedSheets) {
+      letterRows = [];
+      completedSheets.forEach((mr, idx) => {
+        let totalAmt = 0;
+        let gtotalRowIdx = -1;
+
+        if (mr.rows && mr.rows.length > 0) {
+          mr.rows.forEach((r, rIdx) => {
+            const rowName = String(r.name || (r.rowData && r.rowData[3]) || '').trim().toUpperCase();
+            const colType = String((r.rowData && r.rowData[17]) || '').trim().toUpperCase();
+            if (r.isGrandTotal || rowName === "G/TOTAL" || colType === "G/TOTAL") {
+              gtotalRowIdx = rIdx;
+              totalAmt = parseFloat(r.rowData[19]) || 0;
+            }
+          });
+
+          if (gtotalRowIdx === -1) {
+            mr.rows.forEach(r => {
+              if (!r.isGrandTotal && String(r.name || '').toUpperCase() !== "G/TOTAL") {
+                totalAmt += parseFloat(r.rowData && r.rowData[19] ? r.rowData[19] : 0) || 0;
+              }
+            });
+          }
+        }
+
+        const excelTargetRow = (gtotalRowIdx !== -1) ? (gtotalRowIdx + 3) : (mr.rows.length + 3);
+
+        let jobClean = mr.title || '';
+        const jobMatch = jobClean.match(/JOB\s*No\.?\s*(.*)/i);
+        if (jobMatch && jobMatch[1]) {
+          jobClean = jobMatch[1].trim();
+        }
+
+        let tabName = mr.label || `MR NO. ${idx + 1}`;
+        const numMatch = tabName.match(/\d+/);
+        const mrNum = numMatch ? numMatch[0] : (idx + 1);
+        let mrClean = `74 RCC/${mrNum}/${activePeriod.toUpperCase()}`;
+
+        letterRows.push({
+          tabName: tabName,
+          targetCell: `T${excelTargetRow}`,
+          mrNo: mrClean,
+          jobNo: jobClean,
+          amount: totalAmt,
+          remarks: ""
+        });
+      });
+
+      renderLetter();
+    }
+
+    function renderLetter() {
+      document.getElementById("dispRefNo").innerText = letterConfig.refNo || "";
+      document.getElementById("dispDate").innerText = letterConfig.letterDate || activePeriod.toUpperCase();
+
+      document.getElementById("dispSignBlock").innerHTML = `
+        (${letterConfig.signName || 'Sujit Debnath'})<br>
+        ${letterConfig.signDesig || 'EE (Civ)'}<br>
+        ${letterConfig.signOrg || 'Officer Commanding'}<br>
+        ${letterConfig.signUnit || '74 RCC (GREF)'}
+      `;
+
+      const tbody = document.getElementById("letterTableBody");
+      tbody.innerHTML = "";
+      let grandTotal = 0;
+
+      if (letterRows.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="5" style="text-align:center; padding:15px; color:#666; font-style:italic;">No completed MR records linked.</td></tr>`;
+      }
+
+      letterRows.forEach((r, idx) => {
+        grandTotal += Number(r.amount) || 0;
+        const formattedAmt = Number(r.amount || 0).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+
+        const tr = document.createElement("tr");
+        tr.className = `data-row`;
+        tr.innerHTML = `
+          <td class="data-row-cell cell-bold cell-center">${idx + 1}</td>
+          <td class="data-row-cell cell-bold cell-center">${r.mrNo}</td>
+          <td class="data-row-cell cell-bold" style="padding-left:4px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${r.jobNo}</td>
+          <td class="data-row-cell cell-bold cell-right" style="padding-right:4px;">${formattedAmt}</td>
+          <td class="data-row-cell cell-center">${r.remarks || ''}</td>
+        `;
+        tbody.appendChild(tr);
+      });
+
+      document.getElementById("dispGrandTotal").innerText = grandTotal.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+      document.getElementById("dispWordsAmount").innerText = numberToIndianWords(grandTotal);
+
+      const countWord = numberToWordSimple(letterRows.length);
+      document.getElementById("dispClosedMrCount").innerText = `(TOTAL CLOSED MR ${countWord} NOS)`;
+    }
+
+    function openEditModal() {
+      document.getElementById("modalRefNo").value = letterConfig.refNo || "";
+      document.getElementById("modalDate").value = letterConfig.letterDate || activePeriod.toUpperCase();
+      document.getElementById("modalSignName").value = letterConfig.signName || "Sujit Debnath";
+      document.getElementById("modalSignDesig").value = letterConfig.signDesig || "EE (Civ)";
+      document.getElementById("modalSignOrg").value = letterConfig.signOrg || "Officer Commanding";
+      document.getElementById("modalSignUnit").value = letterConfig.signUnit || "74 RCC (GREF)";
+
+      document.getElementById("editModal").style.display = "flex";
+    }
+
+    function closeModal() {
+      document.getElementById("editModal").style.display = "none";
+    }
+
+    function saveModalEdits() {
+      letterConfig.refNo = document.getElementById("modalRefNo").value.trim();
+      letterConfig.letterDate = document.getElementById("modalDate").value.trim() || activePeriod.toUpperCase();
+      letterConfig.signName = document.getElementById("modalSignName").value.trim() || "Sujit Debnath";
+      letterConfig.signDesig = document.getElementById("modalSignDesig").value.trim() || "EE (Civ)";
+      letterConfig.signOrg = document.getElementById("modalSignOrg").value.trim() || "Officer Commanding";
+      letterConfig.signUnit = document.getElementById("modalSignUnit").value.trim() || "74 RCC (GREF)";
+
+      closeModal();
+      renderLetter();
+      localStorage.setItem(`CPL_SAVED_LETTER_CONFIG_${activePeriod}`, JSON.stringify(letterConfig));
+      alert("Letter configuration successfully updated!");
+    }
+
+    function exportLetterExcel() {
+      if (!letterRows.length) return alert("No letter records to export!");
+
+      let grandTotal = 0;
+      letterRows.forEach(r => { grandTotal += Number(r.amount) || 0; });
+
+      const wsData = [
+        ["", "", "", "", "HQ 74 RCC (GREF)"],
+        ["", "", "", "", "Pin - 930 074"],
+        ["", "", "", "", "C/o 99 APO"],
+        [],
+        [`2014-B/CPL/    ${letterConfig.refNo || ''}    /E2`, "", "", "", letterConfig.letterDate || activePeriod.toUpperCase()],
+        [],
+        ["AO 24 BRTF (Through E5 Section)"],
+        ["Pin - 930024"],
+        ["C/o 99 APO"],
+        [],
+        [`FORWARDING OF BILLS ON ACCOUNT OF WAGES OF CPL's FOR THE MONTH OF ${activePeriod.toUpperCase()}`],
+        ["(PERIOD FROM 21 AUG 2026 TO 20 SEP 2026)"],
+        [],
+        [`1.   The under mentioned Special Wages Bills on account of wages of ${activePeriod.toUpperCase()} (Period from 21 Aug 2026 to 20 Sep 2026) alongwith Mandate form, DLRs and Part-II orders of CPLs are forwarded herewith for your pre-audit and early payment, please.`],
+        [],
+        ["S/No", "Mr No", "Job No.", "Amount (Rs)", "REMARKS"]
+      ];
+
+      const startRowExcel = 17;
+
+      letterRows.forEach((r, idx) => {
+        wsData.push([
+          idx + 1,
+          r.mrNo,
+          r.jobNo,
+          Number(r.amount || 0),
+          r.remarks || ""
+        ]);
+      });
+
+      const totalRowExcel = startRowExcel + letterRows.length;
+
+      wsData.push([
+        "",
+        "",
+        "TOTAL (Rs)",
+        Number(grandTotal),
+        ""
+      ]);
+      wsData.push([]);
+      wsData.push([numberToIndianWords(grandTotal)]);
+      wsData.push([]);
+      wsData.push([`(TOTAL CLOSED MR ${numberToWordSimple(letterRows.length)} NOS)`]);
+      wsData.push([]);
+      wsData.push(["Copy to:-", "", "", "", `(${letterConfig.signName || 'Sujit Debnath'})`]);
+      wsData.push(["HQ 24 BRTF", "FOR INFO PLEASE", "", "", letterConfig.signDesig || "EE (Civ)"]);
+      wsData.push(["C/O 99 APO", "", "", "", letterConfig.signOrg || "Officer Commanding"]);
+      wsData.push(["Pin: 930 024", "", "", "", letterConfig.signUnit || "74 RCC (GREF)"]);
+
+      const wb = XLSX.utils.book_new();
+      const ws = XLSX.utils.aoa_to_sheet(wsData);
+
+      letterRows.forEach((r, idx) => {
+        const rowNum = startRowExcel + idx;
+        const cellRef = `D${rowNum}`;
+        const tabSafe = (r.tabName || `MR NO. ${idx + 1}`).replace(/'/g, "''");
+        const formulaStr = `'${tabSafe}'!${r.targetCell || 'T73'}`;
+
+        ws[cellRef] = {
+          t: 'n',
+          f: formulaStr,
+          v: Number(r.amount || 0),
+          z: '#,##0.00'
+        };
+      });
+
+      const grandTotalCellRef = `D${totalRowExcel}`;
+      ws[grandTotalCellRef] = {
+        t: 'n',
+        f: `SUM(D${startRowExcel}:D${totalRowExcel - 1})`,
+        v: Number(grandTotal),
+        z: '#,##0.00'
+      };
+
+      ws['!cols'] = [
+        { wch: 6 }, { wch: 24 }, { wch: 45 }, { wch: 18 }, { wch: 18 }
+      ];
+
+      XLSX.utils.book_append_sheet(wb, ws, "FORWARDING_LETTER");
+      XLSX.writeFile(wb, `CPL_WAGES_FORWARDING_LETTER_${activePeriod}.xlsx`);
+    }
+  </script>
+</body>
+</html>

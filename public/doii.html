@@ -1,0 +1,947 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CPL DO PART-II ORDER</title>
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: Arial, Helvetica, sans-serif;
+    }
+
+    body {
+      background: #2b271d;
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+      padding: 8px 12px;
+      color: #000;
+      overflow: hidden;
+    }
+
+    /* TOP SINGLE-LINE APP TOOLBAR */
+    .app-toolbar {
+      background: #ffffff;
+      padding: 5px 10px;
+      border-radius: 6px;
+      display: flex;
+      flex-direction: row;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 6px;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+      border: 1px solid #ccc;
+      gap: 8px;
+      flex-wrap: nowrap;
+      flex-shrink: 0;
+    }
+    .toolbar-left, .toolbar-actions {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      white-space: nowrap;
+    }
+    .btn-nav-home {
+      background: #4b6584;
+      color: #ffffff;
+      text-decoration: none;
+      font-size: 11px;
+      font-weight: 900;
+      padding: 6px 12px;
+      border-radius: 4px;
+      height: 28px;
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      cursor: pointer;
+      border: none;
+    }
+    .btn-tool {
+      font-size: 11px;
+      font-weight: bold;
+      padding: 5px 9px;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      color: #fff;
+      height: 28px;
+      display: inline-flex;
+      align-items: center;
+      gap: 3px;
+      white-space: nowrap;
+      text-decoration: none;
+    }
+    .btn-refresh-codes { background: #d35400; }
+    .btn-edit-tool { background: #8e44ad; }
+    .btn-export { background: #16a085; }
+    .btn-completed-mr { background: #007e33; }
+    .btn-increase { background: #9b59b6; }
+
+    /* FULL SCREEN CLEAN CONTAINER */
+    .paper-container {
+      background: #ffffff;
+      border-radius: 4px;
+      padding: 12px;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.4);
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      overflow-y: auto;
+    }
+
+    .doc-header {
+      text-align: center;
+      margin-bottom: 8px;
+      flex-shrink: 0;
+    }
+    .doc-header h4 {
+      font-size: 12px;
+      text-decoration: underline;
+      font-weight: 900;
+      letter-spacing: 1px;
+    }
+    .doc-header h3 {
+      font-size: 13px;
+      font-weight: 900;
+      text-decoration: underline;
+      margin: 2px 0;
+    }
+    .doc-header p {
+      font-size: 10.5px;
+      font-weight: bold;
+      text-decoration: underline;
+      margin-bottom: 2px;
+    }
+    .last-code-badge {
+      font-size: 11.5px;
+      font-weight: 900;
+      text-decoration: underline;
+    }
+
+    .order-ref-row {
+      display: flex;
+      justify-content: space-between;
+      font-size: 10.5px;
+      font-weight: 900;
+      text-decoration: underline;
+      margin: 6px 0 6px 0;
+      padding: 0 4px;
+      flex-shrink: 0;
+    }
+
+    /* TABLE CONTAINER */
+    .table-responsive-box {
+      width: 100%;
+      border: 1px solid #000;
+      background: #fff;
+      margin-bottom: 15px;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 11px;
+    }
+    th, td {
+      border: 1px solid #000000;
+      padding: 4px 6px;
+      text-align: center;
+      height: 28px;
+    }
+    thead th {
+      background: #ffffff;
+      font-weight: 900;
+      text-transform: uppercase;
+      font-size: 10px;
+      position: sticky;
+      top: 0;
+      z-index: 5;
+    }
+
+    .mr-header-row td {
+      background: #f8f9fa;
+      text-align: left !important;
+      font-weight: 900;
+      font-style: italic;
+      text-decoration: underline;
+      padding: 5px 8px;
+      font-size: 11px;
+    }
+
+    .col-left { text-align: left !important; }
+    .col-bold { font-weight: bold; }
+    .col-remark {
+      text-align: left !important;
+      font-size: 10.5px;
+      white-space: normal;
+      min-width: 250px;
+    }
+
+    /* FOOTER SIGNATURE SECTION */
+    .doc-footer {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-end;
+      margin-top: auto;
+      padding-top: 15px;
+      padding-bottom: 5px;
+      border-top: 1px dashed #ccc;
+      font-size: 11px;
+      font-weight: bold;
+      flex-shrink: 0;
+    }
+    .doc-footer-right {
+      text-align: left;
+      line-height: 1.3;
+    }
+
+    /* CUSTOM CONFIRMATION MODAL */
+    .custom-confirm-overlay {
+      display: none;
+      position: fixed;
+      top: 0; left: 0; width: 100vw; height: 100vh;
+      background: rgba(0,0,0,0.6);
+      z-index: 999;
+      justify-content: center;
+      align-items: center;
+    }
+    .custom-confirm-box {
+      background: #fff;
+      padding: 20px;
+      border-radius: 6px;
+      width: 360px;
+      box-shadow: 0 6px 20px rgba(0,0,0,0.4);
+      text-align: center;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+    .custom-confirm-box p {
+      font-size: 13px;
+      font-weight: bold;
+      color: #333;
+    }
+
+    /* MODALS */
+    .modal-overlay {
+      display: none;
+      position: fixed;
+      top: 0; left: 0; width: 100vw; height: 100vh;
+      background: rgba(0,0,0,0.7);
+      z-index: 99999;
+      justify-content: center;
+      align-items: center;
+    }
+    .modal-box {
+      background: #ffffff;
+      border-radius: 6px;
+      padding: 18px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      box-shadow: 0 8px 30px rgba(0,0,0,0.6);
+      border: 2px solid #2b579a;
+    }
+    .modal-box label {
+      font-size: 11px;
+      font-weight: bold;
+      display: block;
+      margin-bottom: 2px;
+      color: #333;
+    }
+    .modal-box input, .modal-box select, .modal-box textarea {
+      width: 100%;
+      height: 32px;
+      padding: 4px 8px;
+      font-size: 12px;
+      border: 1.5px solid #2b579a;
+      border-radius: 4px;
+      outline: none;
+      background: #fff;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- SINGLE-LINE COMPACT TOOLBAR -->
+  <div class="app-toolbar">
+    <div class="toolbar-left">
+      <button class="btn-nav-home" onclick="confirmNavigate('completed_mr')">📁 GO TO COMPLETED MR</button>
+      <button class="btn-nav-home" style="background:#576574;" onclick="confirmNavigate('home')">🏠 HOME</button>
+    </div>
+
+    <div class="toolbar-actions">
+      <button class="btn-tool btn-completed-mr" onclick="confirmNavigate('completed_mr')">📁 COMPLETED MR</button>
+      <button class="btn-tool btn-increase" onclick="confirmNavigate('increase')">📊 INCREASE & DECREASE</button>
+      <button class="btn-tool btn-refresh-codes" onclick="refreshNewCodesAction()" title="Refresh New Codes">🔄 REFRESH NEW CODE</button>
+      <button class="btn-tool btn-edit-tool" id="btnEditConfig" onclick="openConfigModal()">✏️ EDIT CONFIG</button>
+      <button class="btn-tool btn-export" onclick="exportDO2Excel()">📊 EXPORT DO-II EXCEL (.XLSX)</button>
+    </div>
+  </div>
+
+  <!-- CUSTOM CONFIRMATION MODAL -->
+  <div class="custom-confirm-overlay" id="customConfirmModal">
+    <div class="custom-confirm-box">
+      <h3 style="color:#2b579a; font-size:16px;">CONFIRMATION</h3>
+      <p id="customConfirmText">Kya aap yahan jana chahte hain?</p>
+      <div style="display:flex; justify-content:center; gap:10px; margin-top:4px;">
+        <button class="btn-tool" style="background:#777; padding:6px 14px;" onclick="closeConfirmModal(false)">NO</button>
+        <button class="btn-tool" style="background:#2b579a; padding:6px 14px; font-weight:900;" onclick="closeConfirmModal(true)">YES</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- OFFICIAL DO-II FORMAT PRINT AREA -->
+  <div class="paper-container">
+    <div class="doc-header">
+      <h4>RESTRICTED</h4>
+      <h3 id="doHeaderTitle">DO PART - II ORDER OF CPLs FOR THE MONTH OF SEP 2026</h3>
+      <p>BY<br><span id="displayOCName">SHRI SUJIT DEBNATH, EE (CIV), OFFICER COMMANDING, 74 RCC (GREF)</span></p>
+      <div class="last-code-badge">(LAST CODE No.<span id="lastCodeNum">8541</span>)</div>
+    </div>
+
+    <div class="order-ref-row">
+      <span id="displayPrevOrder">PREVIOUS PART-II ORDER No : 01/62/CPL/2026 DATED 22 Aug 2026.</span>
+      <span id="presentOrderRef">PRESENT PART-II ORDER No : 01/63/CPL/2026 DATED ____ Sep 2026.</span>
+    </div>
+
+    <!-- TABLE WRAPPER -->
+    <div class="table-responsive-box">
+      <table>
+        <thead>
+          <tr>
+            <th style="width: 35px;">S/No</th>
+            <th style="width: 45px;">MR S/NO</th>
+            <th style="width: 55px;">CODE</th>
+            <th style="width: 55px;">NEW CODE</th>
+            <th style="width: 90px;">TRADE</th>
+            <th style="width: 180px;">NAME</th>
+            <th style="width: 180px;">FATHER'S NAME</th>
+            <th style="width: 100px;">DATE OF RECRUITMENT/<br>RE-RECRUITMENT</th>
+            <th style="width: 100px;">DATE OF DISCHARGED/<br>DIED/INJURED</th>
+            <th style="width: 90px;">DATE OF<br>TFR</th>
+            <th style="width: 100px;">DATE OF<br>UPGRADATION/<br>DOWNGRADATION</th>
+            <th style="width: 200px;">REMARKS</th>
+          </tr>
+        </thead>
+        <tbody id="do2TableBody"></tbody>
+      </table>
+    </div>
+
+    <!-- OFFICIAL FOOTER SECTION -->
+    <div class="doc-footer">
+      <div id="displayStation">Station : C/o 99 APO<br><br>Dated : <span id="displayDatedText">____ SEP 2026</span></div>
+      <div class="doc-footer-right">
+        (<span id="displaySignName">Sujit Debnath</span>)<br>
+        <span id="displaySignDesig">EE (Civ)</span><br>
+        <span id="displaySignOrg">Officer Commanding</span><br>
+        <span id="displaySignUnit">74 RCC (GREF)</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: CONFIG & MANUAL OVERRIDE -->
+  <div class="modal-overlay" id="configModal">
+    <div class="modal-box" style="width: 540px;">
+      <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid #ddd; padding-bottom:6px;">
+        <span style="font-weight:900; color:#2b579a; font-size:15px;">EDIT DO-II CONFIG & MANUAL MR / TRANSFER ENTRY</span>
+        <span style="cursor:pointer; font-weight:bold;" onclick="closeModal('configModal')">✖</span>
+      </div>
+      
+      <div style="display:flex; flex-direction:column; gap:10px; font-size:11px; max-height: 65vh; overflow-y: auto; padding: 4px;">
+        
+        <!-- MANUAL OVERRIDE SECTION -->
+        <div style="background: #f0f4f8; border: 1.5px solid #2b579a; border-radius: 6px; padding: 10px; display: flex; flex-direction: column; gap: 8px;">
+          <strong style="color: #2b579a; font-size: 12px;">➕ Manual MR & S/No Override (Transfer / Remarks):</strong>
+          
+          <div style="display:flex; gap:6px;">
+            <div style="flex:1;">
+              <label>Select MR Sheet:</label>
+              <select id="manualMrSelect" onchange="loadMrRowsForManual()" style="height:30px; font-weight:bold;">
+                <option value="">-- Select MR --</option>
+              </select>
+            </div>
+            <div style="flex:1;">
+              <label>Select Employee (S/No):</label>
+              <select id="manualSnoSelect" onchange="fillEmployeeDetailsForManual()" style="height:30px; font-weight:bold;">
+                <option value="">-- Select S/No --</option>
+              </select>
+            </div>
+          </div>
+
+          <div id="selectedEmpPreview" style="font-size: 11px; font-weight: bold; color: #007e33; background: #fff; padding: 6px; border: 1px solid #ccc; border-radius: 4px; display: none;">
+            Selected: <span id="previewEmpName">---</span> (Code: <span id="previewEmpCode">---</span>)
+          </div>
+
+          <div style="display:flex; gap:6px;">
+            <div style="flex:1;">
+              <label>Date of Transfer (TFR):</label>
+              <select id="manualTfrDate" style="height:30px; font-weight:bold;">
+                <option value="">-- Select Transfer Date --</option>
+              </select>
+            </div>
+            <div style="flex:2;">
+              <label>Custom Remark:</label>
+              <input type="text" id="manualRemark" placeholder="e.g. Transferred w.e.f. ...">
+            </div>
+          </div>
+
+          <button class="btn-tool" style="background:#27ae60; font-weight:900; justify-content:center; margin-top:2px;" onclick="saveManualDo2Override()">💾 SAVE MANUAL ENTRY</button>
+        </div>
+
+        <hr style="border:0; border-top:1px solid #ccc;">
+
+        <div>
+          <label>Last Code Number:</label>
+          <input type="text" id="cfgLastCode" value="8541">
+        </div>
+        <div>
+          <label>Previous Order No & Date:</label>
+          <input type="text" id="cfgPrevOrder" value="PREVIOUS PART-II ORDER No : 01/62/CPL/2026 DATED 22 Aug 2026.">
+        </div>
+        <div>
+          <label>Present Order No & Date:</label>
+          <input type="text" id="cfgPresentOrder" value="PRESENT PART-II ORDER No : 01/63/CPL/2026 DATED ____ Sep 2026.">
+        </div>
+        <div>
+          <label>Officer Commanding Name:</label>
+          <input type="text" id="cfgOcName" value="SHRI SUJIT DEBNATH, EE (CIV), OFFICER COMMANDING, 74 RCC (GREF)">
+        </div>
+        <div>
+          <label>Footer Station Text:</label>
+          <input type="text" id="cfgStation" value="Station : C/o 99 APO">
+        </div>
+        <div>
+          <label>Footer Dated Text:</label>
+          <input type="text" id="cfgDated" value="____ SEP 2026">
+        </div>
+        <div>
+          <label>Signature Name:</label>
+          <input type="text" id="cfgSignName" value="Sujit Debnath">
+        </div>
+        <div>
+          <label>Signature Designation:</label>
+          <input type="text" id="cfgSignDesig" value="EE (Civ)">
+        </div>
+        <div>
+          <label>Signature Organization Line 1:</label>
+          <input type="text" id="cfgSignOrg" value="Officer Commanding">
+        </div>
+        <div>
+          <label>Signature Organization Line 2:</label>
+          <input type="text" id="cfgSignUnit" value="74 RCC (GREF)">
+        </div>
+      </div>
+      <div style="display:flex; justify-content:flex-end; gap:8px; border-top:1px solid #ddd; padding-top:8px;">
+        <button class="btn-tool" style="background:#777;" onclick="closeModal('configModal')">CANCEL</button>
+        <button class="btn-tool" style="background:#2b579a;" onclick="saveConfigData()">SAVE CONFIG</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    let do2Groups = [];
+    let activePeriod = localStorage.getItem("CPL_GLOBAL_MONTH") || "SEP 2026";
+    let pendingNavigationUrl = "";
+    let cachedSubmittedSheets = [];
+    let isAdmin = localStorage.getItem("CPL_ADMIN_LOGGED") === "true";
+
+    let do2Config = {
+      lastCode: "8541",
+      prevOrder: "PREVIOUS PART-II ORDER No : 01/62/CPL/2026 DATED 22 Aug 2026.",
+      presentOrder: `PRESENT PART-II ORDER No : 01/63/CPL/2026 DATED ____ ${activePeriod}.`,
+      ocName: "SHRI SUJIT DEBNATH, EE (CIV), OFFICER COMMANDING, 74 RCC (GREF)",
+      station: "Station : C/o 99 APO",
+      dated: `____ ${activePeriod.toUpperCase()}`,
+      signName: "Sujit Debnath",
+      signDesig: "EE (Civ)",
+      signOrg: "Officer Commanding",
+      signUnit: "74 RCC (GREF)"
+    };
+
+    const TRADE_RANKS = ["MAZ", "MATE", "SKD-III", "SKD-II", "CPDVR", "SKD-I"];
+    const MONTH_NAMES = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+
+    window.addEventListener("DOMContentLoaded", () => {
+      // Check admin status for Edit Config button
+      const editBtn = document.getElementById("btnEditConfig");
+      if (editBtn) {
+        if (!isAdmin) {
+          editBtn.style.opacity = "0.5";
+          editBtn.title = "Access Denied! Only Admin can edit config.";
+        }
+      }
+
+      loadAndRenderDO2();
+      populateManualDateDropdown();
+    });
+
+    function confirmNavigate(target) {
+      if (target === 'home') {
+        pendingNavigationUrl = "/login.html";
+        document.getElementById("customConfirmText").innerText = "Did you check everything yourself? Are you sure you want to go to Home (Login Screen)?";
+      } else if (target === 'completed_mr') {
+        pendingNavigationUrl = "/completed.html";
+        document.getElementById("customConfirmText").innerText = "Did you check everything yourself? Are you sure you want to go to Completed MR?";
+      } else if (target === 'increase') {
+        pendingNavigationUrl = "/increase.html";
+        document.getElementById("customConfirmText").innerText = "Did you check everything yourself? Are you sure you want to go to Increase & Decrease page?";
+      }
+      document.getElementById("customConfirmModal").style.display = "flex";
+    }
+
+    function closeConfirmModal(yes) {
+      document.getElementById("customConfirmModal").style.display = "none";
+      if (yes && pendingNavigationUrl) {
+        window.location.href = pendingNavigationUrl;
+      }
+      pendingNavigationUrl = "";
+    }
+
+    function refreshNewCodesAction() {
+      loadAndRenderDO2();
+      alert("New codes refreshed successfully!");
+    }
+
+    function formatToStandardDate(inputDate) {
+      if (!inputDate || inputDate === "00-00-0000" || inputDate === "-- Select Date --") return "";
+      let str = String(inputDate).trim();
+      str = str.replace(/\s*\(F\/N\)|\s*\(A\/N\)/gi, "").trim();
+
+      if (str.match(/^\d{2}-[A-Za-z]{3}-\d{4}$/)) return str;
+
+      const slashParts = str.split("/");
+      if (slashParts.length === 3) {
+        const d = slashParts[0].padStart(2, '0');
+        const m = parseInt(slashParts[1], 10);
+        const y = slashParts[2];
+        const mName = MONTH_NAMES[m - 1] || 'Aug';
+        return `${d}-${mName}-${y}`;
+      }
+      return str;
+    }
+
+    function generateRemarkFormula(row) {
+      if (row.isBlank) return "";
+      
+      const code = String(row.code || '').trim();
+      const trade = String(row.trade || '').trim();
+      const recruitDate = formatToStandardDate(row.dateRecruit);
+      const dischargeRaw = String(row.dateDischarge || '').trim();
+      
+      let dischargeDateOnly = formatToStandardDate(dischargeRaw.split(" ")[0]);
+      let dischargeSession = dischargeRaw.includes("(A/N)") ? "(A/N)" : "(F/N)";
+
+      const tfrRaw = String(row.dateTfr || '').trim();
+      let tfrDateOnly = formatToStandardDate(tfrRaw.split(" ")[0]);
+      let tfrSession = tfrRaw.includes("(A/N)") ? "(A/N)" : "(F/N)";
+
+      const upgradeDate = formatToStandardDate(row.dateUpgrade);
+      const time = row.time || "(F/N)";
+
+      if (row.customRemark && row.customRemark.trim() !== "") {
+        return row.customRemark;
+      }
+
+      let remarksArr = [];
+
+      if (code.toUpperCase() === "NEW" || recruitDate) {
+        if (recruitDate) {
+          remarksArr.push(`Newly recruited as ${trade || 'MAZ'} w.e.f. ${recruitDate} ${time}`);
+        }
+      }
+
+      if (trade.includes("/") && upgradeDate) {
+        const parts = trade.split("/");
+        const oldTrade = parts[0].trim();
+        const newTrade = parts[1].trim();
+        const oldRank = TRADE_RANKS.indexOf(oldTrade);
+        const newRank = TRADE_RANKS.indexOf(newTrade);
+        const actionWord = (oldRank < newRank) ? "Upgraded" : "Downgraded";
+        remarksArr.push(`${actionWord} ${oldTrade} to ${newTrade} w.e.f. ${upgradeDate} ${time}`);
+      }
+
+      if (dischargeDateOnly) {
+        remarksArr.push(`Discharged w.e.f. ${dischargeDateOnly} ${dischargeSession}`);
+      }
+
+      if (tfrDateOnly) {
+        remarksArr.push(`Transferred w.e.f. ${tfrDateOnly} ${tfrSession}`);
+      }
+
+      if (remarksArr.length > 0) {
+        return remarksArr.join(" and ");
+      }
+
+      return row.customRemark || "";
+    }
+
+    function populateManualDateDropdown() {
+      const dateSelect = document.getElementById("manualTfrDate");
+      if (!dateSelect) return;
+      dateSelect.innerHTML = `<option value="">-- Select Transfer Date --</option>`;
+
+      const parts = activePeriod.trim().toUpperCase().split(/\s+/);
+      let curMonthStr = parts[0] || "SEP";
+      let curYear = parseInt(parts[1]) || 2026;
+
+      const monthsMap = { "JAN": "Jan", "FEB": "Feb", "MAR": "Mar", "APR": "Apr", "MAY": "May", "JUN": "Jun", "JUL": "Jul", "AUG": "Aug", "SEP": "Sep", "OCT": "Oct", "NOV": "Nov", "DEC": "Dec" };
+      const monthKeys = ["JAN", "FEB", "MAR", "APR", "MAY", "JUN", "JUL", "AUG", "SEP", "OCT", "NOV", "DEC"];
+
+      let mIdx = monthKeys.indexOf(curMonthStr);
+      let prevMIdx = mIdx - 1;
+      let prevYear = curYear;
+      if (prevMIdx < 0) { prevMIdx = 11; prevYear -= 1; }
+
+      let prevMonthStr = monthsMap[monthKeys[prevMIdx]] || "Aug";
+
+      for (let d = 21; d <= 31; d++) {
+        dateSelect.innerHTML += `<option value="${d}-${prevMonthStr}-${prevYear}">${d} ${prevMonthStr} ${prevYear}</option>`;
+      }
+      for (let d = 1; d <= 20; d++) {
+        dateSelect.innerHTML += `<option value="${d}-${monthsMap[curMonthStr] || 'Sep'}-${curYear}">${d} ${monthsMap[curMonthStr] || 'Sep'} ${curYear}</option>`;
+      }
+    }
+
+    function loadAndRenderDO2() {
+      const localCfg = localStorage.getItem(`CPL_DO2_CONFIG_${activePeriod}`);
+      if (localCfg) {
+        try { do2Config = JSON.parse(localCfg); } catch(e){}
+      } else {
+        do2Config.presentOrder = `PRESENT PART-II ORDER No : 01/63/CPL/2026 DATED ____ ${activePeriod}.`;
+        do2Config.dated = `____ ${activePeriod.toUpperCase()}`;
+      }
+
+      updateUIHeaderFooterDisplay();
+
+      const localActive = localStorage.getItem(`CPL_OFFLINE_SHEETS_${activePeriod}`);
+      let completedSheets = [];
+      if (localActive) {
+        try {
+          let parsed = JSON.parse(localActive);
+          completedSheets = (parsed.mrSheets || []).filter(m => m.isSubmitted === true);
+        } catch(e){}
+      }
+      cachedSubmittedSheets = completedSheets;
+
+      let manualOverrides = [];
+      const savedManual = localStorage.getItem(`CPL_DO2_MANUAL_OVERRIDES_${activePeriod}`);
+      if (savedManual) {
+        try { manualOverrides = JSON.parse(savedManual); } catch(e){}
+      }
+
+      do2Groups = [];
+      let baseCode = parseInt(do2Config.lastCode, 10) || 8541;
+      let nextNewCodeCounter = baseCode + 1;
+
+      completedSheets.forEach(mr => {
+        const matchingRows = [];
+
+        (mr.rows || []).forEach((r, idx) => {
+          const colCode = String((r.rowData && r.rowData[1]) || r.code || '').trim();
+          const colTrade = String((r.rowData && r.rowData[2]) || '').trim();
+          const colName = String((r.rowData && r.rowData[3]) || r.name || '').trim();
+          const colFather = String((r.rowData && r.rowData[5]) || '').trim();
+          
+          const colEnrolmentDate = String((r.rowData && r.rowData[22]) || '').trim();
+          const colDischargeDate = String((r.rowData && r.rowData[23]) || r.dischargeDate || '').trim();
+
+          const manualMatch = manualOverrides.find(mo => mo.mrLabel.toUpperCase() === mr.label.toUpperCase() && mo.sno === (idx + 1));
+
+          const isNew = (colCode.toUpperCase() === "NEW");
+          const hasSlash = colTrade.includes("/");
+          const hasDischarge = (colDischargeDate !== "");
+          const hasManual = (manualMatch !== undefined);
+
+          if (isNew || hasSlash || hasDischarge || hasManual) {
+            let assignedNewCode = "";
+            if (isNew) {
+              assignedNewCode = String(nextNewCodeCounter++);
+            }
+
+            const rowObj = {
+              mrSno: idx + 1,
+              code: colCode || (isNew ? "NEW" : ""),
+              newCode: assignedNewCode,
+              trade: colTrade || (isNew ? "MAZ" : ""),
+              name: colName,
+              father: colFather,
+              dateRecruit: isNew ? colEnrolmentDate : "",
+              dateDischarge: colDischargeDate,
+              dateTfr: manualMatch ? manualMatch.tfrDate : "",
+              dateUpgrade: hasSlash ? "21-Aug-2026" : "",
+              time: "(F/N)",
+              customRemark: manualMatch ? manualMatch.remark : ""
+            };
+            rowObj.remark = generateRemarkFormula(rowObj);
+            matchingRows.push(rowObj);
+          }
+        });
+
+        if (matchingRows.length > 0) {
+          do2Groups.push({ mrHeading: mr.title, rows: matchingRows });
+        }
+      });
+
+      localStorage.setItem(`CPL_SAVED_DO2_GROUPS_${activePeriod}`, JSON.stringify(do2Groups));
+
+      if (navigator.onLine) {
+        fetch(`/api/do2-groups`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ period: activePeriod, groups: do2Groups })
+        }).catch(e => {});
+      }
+
+      renderDO2Table();
+      populateManualMrDropdown();
+    }
+
+    function populateManualMrDropdown() {
+      const select = document.getElementById("manualMrSelect");
+      if (!select) return;
+      let opts = `<option value="">-- Select MR --</option>`;
+      cachedSubmittedSheets.forEach(mr => {
+        opts += `<option value="${mr.label}">${mr.label} (${mr.title})</option>`;
+      });
+      select.innerHTML = opts;
+    }
+
+    function loadMrRowsForManual() {
+      const mrLabel = document.getElementById("manualMrSelect").value;
+      const snoSelect = document.getElementById("manualSnoSelect");
+      document.getElementById("selectedEmpPreview").style.display = "none";
+      if (!mrLabel) {
+        snoSelect.innerHTML = `<option value="">-- Select S/No --</option>`;
+        return;
+      }
+
+      const mr = cachedSubmittedSheets.find(m => m.label.toUpperCase() === mrLabel.toUpperCase());
+      if (!mr) return;
+
+      let opts = `<option value="">-- Select S/No --</option>`;
+      (mr.rows || []).forEach((r, idx) => {
+        if (!r.isGrandTotal) {
+          const name = r.name || (r.rowData && r.rowData[3]) || 'Unknown';
+          opts += `<option value="${idx + 1}">S/No ${idx + 1} - ${name}</option>`;
+        }
+      });
+      snoSelect.innerHTML = opts;
+    }
+
+    function fillEmployeeDetailsForManual() {
+      const mrLabel = document.getElementById("manualMrSelect").value;
+      const sno = parseInt(document.getElementById("manualSnoSelect").value);
+      const previewBox = document.getElementById("selectedEmpPreview");
+
+      if (!mrLabel || isNaN(sno)) {
+        previewBox.style.display = "none";
+        return;
+      }
+
+      const mr = cachedSubmittedSheets.find(m => m.label.toUpperCase() === mrLabel.toUpperCase());
+      if (!mr) return;
+
+      const row = mr.rows[sno - 1];
+      if (row) {
+        const name = row.name || (row.rowData && row.rowData[3]) || '';
+        const code = row.code || (row.rowData && row.rowData[1]) || '';
+        document.getElementById("previewEmpName").innerText = name;
+        document.getElementById("previewEmpCode").innerText = code;
+        previewBox.style.display = "block";
+      }
+    }
+
+    function saveManualDo2Override() {
+      const mrLabel = document.getElementById("manualMrSelect").value;
+      const sno = parseInt(document.getElementById("manualSnoSelect").value);
+      const tfrDate = document.getElementById("manualTfrDate").value.trim();
+      const remark = document.getElementById("manualRemark").value.trim();
+
+      if (!mrLabel || isNaN(sno)) {
+        alert("Please select MR and S/No!");
+        return;
+      }
+
+      let manualOverrides = [];
+      const savedManual = localStorage.getItem(`CPL_DO2_MANUAL_OVERRIDES_${activePeriod}`);
+      if (savedManual) {
+        try { manualOverrides = JSON.parse(savedManual); } catch(e){}
+      }
+
+      const existingIdx = manualOverrides.findIndex(mo => mo.mrLabel.toUpperCase() === mrLabel.toUpperCase() && mo.sno === sno);
+      if (existingIdx !== -1) {
+        manualOverrides[existingIdx] = { mrLabel, sno, tfrDate, remark };
+      } else {
+        manualOverrides.push({ mrLabel, sno, tfrDate, remark });
+      }
+
+      localStorage.setItem(`CPL_DO2_MANUAL_OVERRIDES_${activePeriod}`, JSON.stringify(manualOverrides));
+      alert("Manual entry saved successfully! DO-II updated.");
+      closeModal('configModal');
+      loadAndRenderDO2();
+    }
+
+    function updateUIHeaderFooterDisplay() {
+      document.getElementById("doHeaderTitle").innerText = `DO PART - II ORDER OF CPLs FOR THE MONTH OF ${activePeriod}`;
+      document.getElementById("displayOCName").innerText = do2Config.ocName;
+      document.getElementById("lastCodeNum").innerText = do2Config.lastCode;
+      document.getElementById("displayPrevOrder").innerText = do2Config.prevOrder;
+      document.getElementById("presentOrderRef").innerText = do2Config.presentOrder;
+
+      document.getElementById("displayStation").innerHTML = `${do2Config.station}<br><br>Dated : <span id="displayDatedText">${do2Config.dated}</span>`;
+      document.getElementById("displaySignName").innerText = do2Config.signName;
+      document.getElementById("displaySignDesig").innerText = do2Config.signDesig;
+      document.getElementById("displaySignOrg").innerText = do2Config.signOrg;
+      document.getElementById("displaySignUnit").innerText = do2Config.signUnit;
+    }
+
+    function renderDO2Table() {
+      const tbody = document.getElementById("do2TableBody");
+      tbody.innerHTML = "";
+      let globalSNo = 1;
+
+      if (do2Groups.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="12" style="padding:20px; color:#666;">No COMPLETED (Submitted) MR sheets found. Pehle Payment screen se MR submit karein.</td></tr>`;
+        return;
+      }
+
+      do2Groups.forEach((group) => {
+        const headTr = document.createElement("tr");
+        headTr.className = `mr-header-row`;
+        headTr.innerHTML = `<td colspan="12">${group.mrHeading}</td>`;
+        tbody.appendChild(headTr);
+
+        group.rows.forEach((r) => {
+          if (!r.isBlank) r.remark = generateRemarkFormula(r);
+
+          const tr = document.createElement("tr");
+          tr.innerHTML = `
+            <td class="col-bold">${r.isBlank ? '' : globalSNo++}</td>
+            <td>${r.mrSno || ''}</td>
+            <td class="col-bold">${r.code || ''}</td>
+            <td class="col-bold" style="color:#007e33;">${r.newCode || ''}</td>
+            <td class="col-bold">${r.trade || ''}</td>
+            <td class="col-left col-bold">${r.name || ''}</td>
+            <td class="col-left">${r.father || ''}</td>
+            <td>${formatToStandardDate(r.dateRecruit)}</td>
+            <td>${formatToStandardDate(r.dateDischarge)}</td>
+            <td>${formatToStandardDate(r.dateTfr)}</td>
+            <td>${formatToStandardDate(r.dateUpgrade)}</td>
+            <td class="col-remark">${r.remark || ''}</td>
+          `;
+          tbody.appendChild(tr);
+        });
+      });
+    }
+
+    function openConfigModal() {
+      if (!isAdmin) {
+        alert("Access Denied! Only Admin can access Edit Config");
+        return;
+      }
+      document.getElementById("cfgLastCode").value = do2Config.lastCode;
+      document.getElementById("cfgPrevOrder").value = do2Config.prevOrder;
+      document.getElementById("cfgPresentOrder").value = do2Config.presentOrder;
+      document.getElementById("cfgOcName").value = do2Config.ocName;
+      document.getElementById("cfgStation").value = do2Config.station;
+      document.getElementById("cfgDated").value = do2Config.dated;
+      document.getElementById("cfgSignName").value = do2Config.signName;
+      document.getElementById("cfgSignDesig").value = do2Config.signDesig;
+      document.getElementById("cfgSignOrg").value = do2Config.signOrg;
+      document.getElementById("cfgSignUnit").value = do2Config.signUnit;
+      document.getElementById("configModal").style.display = "flex";
+    }
+
+    function saveConfigData() {
+      if (!isAdmin) return;
+      do2Config.lastCode = document.getElementById("cfgLastCode").value.trim() || "8541";
+      do2Config.prevOrder = document.getElementById("cfgPrevOrder").value.trim();
+      do2Config.presentOrder = document.getElementById("cfgPresentOrder").value.trim();
+      do2Config.ocName = document.getElementById("cfgOcName").value.trim();
+      do2Config.station = document.getElementById("cfgStation").value.trim();
+      do2Config.dated = document.getElementById("cfgDated").value.trim();
+      do2Config.signName = document.getElementById("cfgSignName").value.trim();
+      do2Config.signDesig = document.getElementById("cfgSignDesig").value.trim();
+      do2Config.signOrg = document.getElementById("cfgSignOrg").value.trim();
+      do2Config.signUnit = document.getElementById("cfgSignUnit").value.trim();
+
+      localStorage.setItem(`CPL_DO2_CONFIG_${activePeriod}`, JSON.stringify(do2Config));
+      updateUIHeaderFooterDisplay();
+      closeModal('configModal');
+      loadAndRenderDO2();
+    }
+
+    function closeModal(id) {
+      document.getElementById(id).style.display = "none";
+    }
+
+    function exportDO2Excel() {
+      if (do2Groups.length === 0) return alert("DO-II sheet is empty!");
+
+      const wsData = [
+        ["RESTRICTED"],
+        [`DO PART - II ORDER OF CPLs FOR THE MONTH OF ${activePeriod}`],
+        ["BY"],
+        [do2Config.ocName],
+        [],
+        [`(LAST CODE No.${do2Config.lastCode})`],
+        [],
+        [do2Config.prevOrder, "", "", "", "", do2Config.presentOrder],
+        [
+          "S/No", "MR S/NO", "CODE", "NEW CODE", "TRADE", "NAME", "FATHER'S NAME",
+          "DATE OF RECRUITMENT/ RE-RECRUITMENT", "DATE OF DISCHARGED/ DIED/INJURED",
+          "DATE OF TFR", "DATE OF UPGRADATION/ DOWNGRADATION", "REMARKS"
+        ]
+      ];
+
+      let globalNo = 1;
+      do2Groups.forEach(grp => {
+        wsData.push([grp.mrHeading]);
+
+        grp.rows.forEach(r => {
+          if (r.isBlank) {
+            wsData.push([]);
+          } else {
+            wsData.push([
+              globalNo++,
+              r.mrSno,
+              r.code,
+              r.newCode,
+              r.trade,
+              r.name,
+              r.father,
+              formatToStandardDate(r.dateRecruit),
+              formatToStandardDate(r.dateDischarge),
+              formatToStandardDate(r.dateTfr),
+              formatToStandardDate(r.dateUpgrade),
+              r.remark
+            ]);
+          }
+        });
+      });
+
+      wsData.push([]);
+      wsData.push([do2Config.station, "", "", "", "", "", "", "", "", "", "", `(${do2Config.signName})`]);
+      wsData.push([`Dated : ${do2Config.dated}`, "", "", "", "", "", "", "", "", "", "", do2Config.signDesig]);
+      wsData.push(["", "", "", "", "", "", "", "", "", "", "", do2Config.signOrg]);
+      wsData.push(["", "", "", "", "", "", "", "", "", "", "", do2Config.signUnit]);
+
+      const wb = XLSX.utils.book_new();
+      const ws = XLSX.utils.aoa_to_sheet(wsData);
+
+      ws['!cols'] = [
+        { wch: 6 }, { wch: 8 }, { wch: 8 }, { wch: 10 }, { wch: 14 },
+        { wch: 24 }, { wch: 24 }, { wch: 18 }, { wch: 18 }, { wch: 14 },
+        { wch: 18 }, { wch: 55 }
+      ];
+
+      XLSX.utils.book_append_sheet(wb, ws, "DO_PART_II");
+      XLSX.writeFile(wb, `DO_PART_II_ORDER_${activePeriod.replace(/[^a-zA-Z0-9]/g, '_')}.xlsx`);
+    }
+  </script>
+</body>
+</html>
