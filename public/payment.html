@@ -1028,6 +1028,12 @@
         } else {
           for (let c = 0; c < 24; c++) {
             let val = r.rowData[c] || '';
+            
+            // Agar cell value object hai toh uski .v value nikal lo
+            if (typeof val === 'object' && val !== null) {
+              val = val.v !== undefined ? val.v : '';
+            }
+
             if (c === 23 && val) {
               val = val.replace(/\s*\(F\/N\)|\s*\(A\/N\)/gi, "").trim();
             }
@@ -1294,32 +1300,50 @@
         return;
       }
 
+      const excelStartRow = 3 + (startNo - 1);
+      const excelEndRow = 3 + (endNo - 1);
+
       let pageSum = 0;
-      let nonGrandTotalCount = 0;
       let targetRowIndex = -1;
+      let nonGrandTotalCount = 0;
 
       for (let i = 0; i < curRows.length; i++) {
         if (!curRows[i].isGrandTotal) {
           nonGrandTotalCount++;
           if (nonGrandTotalCount >= startNo && nonGrandTotalCount <= endNo) {
-            pageSum += parseFloat(curRows[i].rowData[19]) || 0;
+            let amt = parseFloat(curRows[i].rowData[19]) || 0;
+            pageSum += amt;
             targetRowIndex = i;
           }
         }
       }
 
-      if (targetRowIndex === -1 || pageSum === 0) {
+      if (targetRowIndex === -1) {
+        for (let i = curRows.length - 1; i >= 0; i--) {
+          if (!curRows[i].isGrandTotal) {
+            targetRowIndex = i;
+            break;
+          }
+        }
+      }
+
+      if (targetRowIndex === -1) {
         showAlert("No records found in the specified S/No range!", true);
         return;
       }
 
       pushUndoState();
-      curRows[targetRowIndex].rowData[20] = String(pageSum);
+
+      // Formula ke sath 'v' mein calculated pageSum store karna taaki screen par exact amount dikhe
+      curRows[targetRowIndex].rowData[20] = {
+        f: `SUM(T${excelStartRow}:T${excelEndRow})`,
+        v: pageSum
+      };
 
       closeModal("pageTotalModal"); 
       renderBody(); 
       saveToLocal(true); 
-      showAlert(`Page Total (Rs ${pageSum.toLocaleString('en-IN')}) applied successfully to S/No ${endNo}!`);
+      showAlert(`Page Total formula (SUM(T${excelStartRow}:T${excelEndRow})) applied successfully!`);
     }
 
     let activeEditMode = 'form';

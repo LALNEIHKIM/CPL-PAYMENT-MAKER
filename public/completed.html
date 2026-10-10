@@ -587,7 +587,11 @@
 
         let html = "";
         for (let c = 0; c < 24; c++) {
-          const val = r.rowData[c] || '';
+          let val = r.rowData[c] || '';
+          // Agar cell value object hai toh uski .v value nikal lo
+          if (typeof val === 'object' && val !== null) {
+            val = val.v !== undefined ? val.v : '';
+          }
           html += `<td title="${val}">${val}</td>`;
         }
         tr.innerHTML = html;
@@ -605,6 +609,14 @@
       }
     }
 
+    // Clean border style with no background fill (matching green row clean style)
+    const borderStyleThin = {
+      top: { style: "thin", color: { rgb: "000000" } },
+      bottom: { style: "thin", color: { rgb: "000000" } },
+      left: { style: "thin", color: { rgb: "000000" } },
+      right: { style: "thin", color: { rgb: "000000" } }
+    };
+
     function exportSingleFromScreen3Active() {
       if (!isAdmin) {
         alert("Access Denied! Only Admin can access this feature");
@@ -614,7 +626,6 @@
       if (submittedMRs.length === 0) return showAlert("No sheet to export!", true);
       const target = submittedMRs[completeActiveIdx];
       
-      // 1. Prepare base worksheet data (Title + Headers + Rows)
       const wsData = [[target.title], masterHeaders.slice(0, 24)];
       
       let dataRowsCount = 0;
@@ -625,24 +636,28 @@
         }
       });
 
+      const startRow = 3; // Row 1 = Title, Row 2 = Headers, Row 3 = First Data Row
+      const endRow = startRow + dataRowsCount - 1;
+
+      const gTotalRow = endRow + 1; // Sirf ek single G/TOTAL row
+
+      wsData.push(new Array(24).fill('')); // G/TOTAL row placeholder
+
       const wb = XLSX.utils.book_new();
       const ws = XLSX.utils.aoa_to_sheet(wsData);
 
-      // 2. Data rows start from Excel row 3 (Row 1 = Title, Row 2 = Headers, Row 3 = First Data Row)
-      const startRow = 3;
-      const endRow = startRow + dataRowsCount - 1;
-
+      // 1. Data rows mein formulas apply karna
       for (let i = 0; i < dataRowsCount; i++) {
         const excelRow = startRow + i;
 
-        // No 1: S Column (Index 18) -> Rate formula based on Trade in C Column
+        // S Column (Index 18) -> Rate Formula
         ws[XLSX.utils.encode_cell({ r: excelRow - 1, c: 18 })] = {
           t: 'n',
           f: `IF(RIGHT(C${excelRow},3)="MAZ",550,IF(RIGHT(C${excelRow},4)="MATE",570,IF(RIGHT(C${excelRow},7)="SKD-III",640,IF(RIGHT(C${excelRow},6)="SKD-II",770,IF(RIGHT(C${excelRow},5)="SKD-I",900,IF(RIGHT(C${excelRow},5)="CPDVR",770,""))))))`,
           z: '0.00'
         };
 
-        // No 2: T Column (Index 19) -> R * S multiplication
+        // T Column (Index 19) -> R * S multiplication
         ws[XLSX.utils.encode_cell({ r: excelRow - 1, c: 19 })] = {
           t: 'n',
           f: `R${excelRow}*S${excelRow}`,
@@ -650,31 +665,41 @@
         };
       }
 
-      // No 3: Page Total (e.g., at row end or row 22 depending on data)
-      const pageTotalRow = endRow + 1;
-      ws[XLSX.utils.encode_cell({ r: pageTotalRow - 1, c: 19 })] = {
+      // 2. G/TOTAL row: Text merged in R & S (Index 17 & 18), Formulas in T and U (Index 19 & 20)
+      ws[XLSX.utils.encode_cell({ r: gTotalRow - 1, c: 17 })] = { t: 's', v: 'G/TOTAL' };
+      ws[XLSX.utils.encode_cell({ r: gTotalRow - 1, c: 19 })] = {
+        t: 'n',
+        f: `SUM(T${startRow}:T${endRow})`,
+        z: '#,##0.00'
+      };
+      ws[XLSX.utils.encode_cell({ r: gTotalRow - 1, c: 20 })] = {
         t: 'n',
         f: `SUM(T${startRow}:T${endRow})`,
         z: '#,##0.00'
       };
 
-      // No 4: Grant Total rows
-      const grantTotalRow1 = pageTotalRow + 1;
-      const grantTotalRow2 = grantTotalRow1 + 1;
+      // Merge R & S columns (Index 17 to 18) for G/TOTAL
+      if (!ws['!merges']) ws['!merges'] = [];
+      ws['!merges'].push({ s: { r: gTotalRow - 1, c: 17 }, e: { r: gTotalRow - 1, c: 18 } });
 
-      // Grant Total in T column
-      ws[XLSX.utils.encode_cell({ r: grantTotalRow1 - 1, c: 19 })] = {
-        t: 'n',
-        f: `SUM(T2:T${endRow})`,
-        z: '#,##0.00'
+      // Apply clean grid borders without any background color filling
+      const borderStyleThin = {
+        top: { style: "thin", color: { rgb: "000000" } },
+        bottom: { style: "thin", color: { rgb: "000000" } },
+        left: { style: "thin", color: { rgb: "000000" } },
+        right: { style: "thin", color: { rgb: "000000" } }
       };
 
-      // Grant Total in U column
-      ws[XLSX.utils.encode_cell({ r: grantTotalRow2 - 1, c: 20 })] = {
-        t: 'n',
-        f: `SUM(T${grantTotalRow1})`,
-        z: '#,##0.00'
-      };
+      for (let R = 1; R <= gTotalRow; R++) {
+        for (let C = 0; C < 24; C++) {
+          const cellRef = XLSX.utils.encode_cell({ r: R, c: C });
+          if (!ws[cellRef]) ws[cellRef] = { t: 's', v: '' };
+          ws[cellRef].s = {
+            border: borderStyleThin,
+            alignment: { vertical: "center", horizontal: C >= 17 ? "right" : "left" }
+          };
+        }
+      }
 
       XLSX.utils.book_append_sheet(wb, ws, "MR_Sheet");
       XLSX.writeFile(wb, `${target.label}.xlsx`);
@@ -688,7 +713,59 @@
       const wb = XLSX.utils.book_new();
       mrSheets.forEach(m => {
         if (m.isSubmitted && m.rows.length) {
-          const ws = XLSX.utils.aoa_to_sheet([[m.title], masterHeaders.slice(0, 24), ...m.rows.map(r => r.rowData)]);
+          const wsData = [[m.title], masterHeaders.slice(0, 24)];
+          let dataRowsCount = 0;
+          m.rows.forEach(r => {
+            if (!r.isGrandTotal) {
+              wsData.push(r.rowData);
+              dataRowsCount++;
+            }
+          });
+
+          const startRow = 3;
+          const endRow = startRow + dataRowsCount - 1;
+          const gTotalRow = endRow + 1;
+
+          wsData.push(new Array(24).fill(''));
+
+          const ws = XLSX.utils.aoa_to_sheet(wsData);
+
+          for (let i = 0; i < dataRowsCount; i++) {
+            const excelRow = startRow + i;
+            ws[XLSX.utils.encode_cell({ r: excelRow - 1, c: 18 })] = {
+              t: 'n',
+              f: `IF(RIGHT(C${excelRow},3)="MAZ",550,IF(RIGHT(C${excelRow},4)="MATE",570,IF(RIGHT(C${excelRow},7)="SKD-III",640,IF(RIGHT(C${excelRow},6)="SKD-II",770,IF(RIGHT(C${excelRow},5)="SKD-I",900,IF(RIGHT(C${excelRow},5)="CPDVR",770,""))))))`,
+              z: '0.00'
+            };
+            ws[XLSX.utils.encode_cell({ r: excelRow - 1, c: 19 })] = {
+              t: 'n',
+              f: `R${excelRow}*S${excelRow}`,
+              z: '#,##0.00'
+            };
+          }
+
+          ws[XLSX.utils.encode_cell({ r: gTotalRow - 1, c: 17 })] = { t: 's', v: 'G/TOTAL' };
+          ws[XLSX.utils.encode_cell({ r: gTotalRow - 1, c: 19 })] = { t: 'n', f: `SUM(T${startRow}:T${endRow})`, z: '#,##0.00' };
+          ws[XLSX.utils.encode_cell({ r: gTotalRow - 1, c: 20 })] = { t: 'n', f: `SUM(T${startRow}:T${endRow})`, z: '#,##0.00' };
+
+          if (!ws['!merges']) ws['!merges'] = [];
+          ws['!merges'].push({ s: { r: gTotalRow - 1, c: 17 }, e: { r: gTotalRow - 1, c: 18 } });
+
+          const borderStyleThin = {
+            top: { style: "thin", color: { rgb: "000000" } },
+            bottom: { style: "thin", color: { rgb: "000000" } },
+            left: { style: "thin", color: { rgb: "000000" } },
+            right: { style: "thin", color: { rgb: "000000" } }
+          };
+
+          for (let R = 1; R <= gTotalRow; R++) {
+            for (let C = 0; C < 24; C++) {
+              const cellRef = XLSX.utils.encode_cell({ r: R, c: C });
+              if (!ws[cellRef]) ws[cellRef] = { t: 's', v: '' };
+              ws[cellRef].s = { border: borderStyleThin };
+            }
+          }
+
           XLSX.utils.book_append_sheet(wb, ws, m.label);
         }
       });
