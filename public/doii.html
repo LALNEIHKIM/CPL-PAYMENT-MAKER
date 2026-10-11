@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>CPL DO PART-II ORDER</title>
-  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/xlsx-js-style@1.2.0/dist/xlsx.bundle.js"></script>
   <style>
     * {
       box-sizing: border-box;
@@ -882,25 +882,29 @@
     function exportDO2Excel() {
       if (do2Groups.length === 0) return alert("DO-II sheet is empty!");
 
+      let row7 = new Array(12).fill("");
+      row7[0] = do2Config.prevOrder;
+      row7[9] = do2Config.presentOrder;
+
       const wsData = [
-        ["RESTRICTED"],
-        [`DO PART - II ORDER OF CPLs FOR THE MONTH OF ${activePeriod}`],
-        ["BY"],
-        [do2Config.ocName],
-        [],
-        [`(LAST CODE No.${do2Config.lastCode})`],
-        [],
-        [do2Config.prevOrder, "", "", "", "", do2Config.presentOrder],
+        ["RESTRICTED"], // Row 0
+        [`DO PART - II ORDER OF CPLs FOR THE MONTH OF ${activePeriod}`], // Row 1
+        ["BY"], // Row 2
+        [do2Config.ocName], // Row 3
+        [], // Row 4
+        [`(LAST CODE No.${do2Config.lastCode})`], // Row 5
+        [], // Row 6
+        row7, // Row 7 (Prev & Present Order)
         [
           "S/No", "MR S/NO", "CODE", "NEW CODE", "TRADE", "NAME", "FATHER'S NAME",
           "DATE OF RECRUITMENT/ RE-RECRUITMENT", "DATE OF DISCHARGED/ DIED/INJURED",
           "DATE OF TFR", "DATE OF UPGRADATION/ DOWNGRADATION", "REMARKS"
-        ]
+        ] // Row 8 (Table Headers)
       ];
 
       let globalNo = 1;
       do2Groups.forEach(grp => {
-        wsData.push([grp.mrHeading]);
+        wsData.push([grp.mrHeading]); // MR Heading row
 
         grp.rows.forEach(r => {
           if (r.isBlank) {
@@ -924,14 +928,126 @@
         });
       });
 
+      // Footer Rows side-by-side (Station/Dated on left, Signature on right)
       wsData.push([]);
-      wsData.push([do2Config.station, "", "", "", "", "", "", "", "", "", "", `(${do2Config.signName})`]);
-      wsData.push([`Dated : ${do2Config.dated}`, "", "", "", "", "", "", "", "", "", "", do2Config.signDesig]);
-      wsData.push(["", "", "", "", "", "", "", "", "", "", "", do2Config.signOrg]);
-      wsData.push(["", "", "", "", "", "", "", "", "", "", "", do2Config.signUnit]);
+      const footerStartIdx = wsData.length;
+      
+      let f1 = new Array(12).fill(""); f1[0] = do2Config.station; f1[9] = `(${do2Config.signName})`;
+      let f2 = new Array(12).fill(""); f2[0] = `Dated : ${do2Config.dated}`; f2[9] = do2Config.signDesig;
+      let f3 = new Array(12).fill(""); f3[9] = do2Config.signOrg;
+      let f4 = new Array(12).fill(""); f4[9] = do2Config.signUnit;
+      
+      wsData.push(f1, f2, f3, f4);
 
       const wb = XLSX.utils.book_new();
       const ws = XLSX.utils.aoa_to_sheet(wsData);
+
+      if (!ws['!merges']) ws['!merges'] = [];
+
+      // Top Header Merges (A to L) for Rows 0, 1, 2, 3, 5
+      [0, 1, 2, 3, 5].forEach(rIdx => {
+        ws['!merges'].push({ s: { r: rIdx, c: 0 }, e: { r: rIdx, c: 11 } });
+      });
+
+      // Previous Order merged A to F (Col 0 to 5)
+      ws['!merges'].push({ s: { r: 7, c: 0 }, e: { r: 7, c: 5 } });
+
+      // Present Order merged J to L (Col 9 to 11)
+      ws['!merges'].push({ s: { r: 7, c: 9 }, e: { r: 7, c: 11 } });
+
+      // MR Headings merge across A to L
+      let currentRowIdx = 9;
+      do2Groups.forEach(grp => {
+        ws['!merges'].push({ s: { r: currentRowIdx, c: 0 }, e: { r: currentRowIdx, c: 11 } });
+        currentRowIdx += 1 + grp.rows.length;
+      });
+
+      // Footer merges: Station & Dated merged A to C (Col 0 to 2)
+      ws['!merges'].push({ s: { r: footerStartIdx, c: 0 }, e: { r: footerStartIdx, c: 2 } });
+      ws['!merges'].push({ s: { r: footerStartIdx + 1, c: 0 }, e: { r: footerStartIdx + 1, c: 2 } });
+
+      // Signature block lines merged J to L (Col 9 to 11)
+      for (let i = 0; i < 4; i++) {
+        ws['!merges'].push({ s: { r: footerStartIdx + i, c: 9 }, e: { r: footerStartIdx + i, c: 11 } });
+      }
+
+      const borderStyleThin = {
+        top: { style: "thin", color: { rgb: "000000" } },
+        bottom: { style: "thin", color: { rgb: "000000" } },
+        left: { style: "thin", color: { rgb: "000000" } },
+        right: { style: "thin", color: { rgb: "000000" } }
+      };
+
+      const totalRowsCount = wsData.length;
+      for (let R = 0; R < totalRowsCount; R++) {
+        for (let C = 0; C < 12; C++) {
+          const cellRef = XLSX.utils.encode_cell({ r: R, c: C });
+          if (!ws[cellRef]) ws[cellRef] = { t: 's', v: '' };
+
+          // Check if row is inside the active table data area
+          let isTableArea = false;
+          let isMrHeadingRow = false;
+          let checkIdx = 9;
+          for (let g = 0; g < do2Groups.length; g++) {
+            if (R === checkIdx) { isMrHeadingRow = true; break; }
+            checkIdx += 1 + do2Groups[g].rows.length;
+          }
+
+          if (R === 8 || isMrHeadingRow || (R > 8 && R < footerStartIdx && wsData[R] && wsData[R].length > 0)) {
+            isTableArea = true;
+          }
+
+          if (R === 0 || R === 1 || R === 5) {
+            ws[cellRef].s = {
+              alignment: { vertical: "center", horizontal: "center" },
+              font: { bold: true, underline: true }
+            };
+          } else if (R === 2 || R === 3) {
+            ws[cellRef].s = {
+              alignment: { vertical: "center", horizontal: "center" },
+              font: { bold: true }
+            };
+          } else if (R === 7) {
+            ws[cellRef].s = {
+              alignment: { vertical: "center", horizontal: C === 9 ? "right" : "left" },
+              font: { bold: true, underline: true, sz: 9.5 }
+            };
+          } else if (isTableArea) {
+            if (R === 8) {
+              ws[cellRef].s = {
+                border: borderStyleThin,
+                alignment: { vertical: "center", horizontal: "center", wrapText: true },
+                font: { bold: true, sz: 9.5 }
+              };
+            } else if (isMrHeadingRow) {
+              ws[cellRef].s = {
+                border: borderStyleThin,
+                alignment: { vertical: "center", horizontal: "left" },
+                font: { bold: true, italic: true, underline: true, sz: 10 }
+              };
+            } else {
+              let alignH = "center";
+              if (C === 4 || C === 5 || C === 6) alignH = "left";
+              if (C === 11) alignH = "left";
+
+              ws[cellRef].s = {
+                border: borderStyleThin,
+                alignment: { vertical: "center", horizontal: alignH, wrapText: C === 11 },
+                font: { sz: 9.5 }
+              };
+            }
+          } else if (R >= footerStartIdx) {
+            // Footer formatting (Left aligned for signature block as requested)
+            ws[cellRef].s = {
+              alignment: { vertical: "center", horizontal: "left" },
+              font: { bold: true, sz: 10 }
+            };
+          } else {
+            // Blank rows (no borders)
+            ws[cellRef].s = {};
+          }
+        }
+      }
 
       ws['!cols'] = [
         { wch: 6 }, { wch: 8 }, { wch: 8 }, { wch: 10 }, { wch: 14 },
