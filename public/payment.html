@@ -676,11 +676,37 @@
       mrSheets[currentMRIndex].rows = mrSheets[currentMRIndex].rows.filter(r => !r.isGrandTotal);
       mrSheets[currentMRIndex].rows.push(newObj);
 
+      // Automatically add/update Grand Total row so R & S merge happens instantly
+      updateGrandTotalInternal();
+
       closeModal('searchEmpModal');
       renderBody();
       saveToLocal(true);
       showAlert(`Employee ${found.name} successfully added and saved locally!`);
       selectedSearchedEmp = null;
+    }
+
+    function updateGrandTotalInternal() {
+      const curRows = mrSheets[currentMRIndex].rows;
+      if (!curRows || curRows.length === 0) return;
+      
+      let sumAmt = 0;
+      curRows.forEach(r => {
+        if (!r.isGrandTotal) {
+          sumAmt += parseFloat(r.rowData[19]) || 0;
+        }
+      });
+
+      const idx = curRows.findIndex(r => r.isGrandTotal); 
+      if (idx !== -1) curRows.splice(idx, 1);
+
+      const gData = new Array(24).fill(''); 
+      gData[17] = "G/TOTAL"; 
+      gData[19] = String(sumAmt); 
+      gData[20] = "0"; // Yahan U column ko by default 0 set kar diya gaya hai
+
+      curRows.push({ code: "", name: "G/TOTAL", isGrandTotal: true, rowData: gData });
+      selectedRowIdx = curRows.length - 1;
     }
 
     function checkExcelImportAccess(e) {
@@ -815,8 +841,11 @@
       const startNoInput = document.getElementById("codeStartNo").value.trim();
       const curRows = mrSheets[currentMRIndex].rows;
 
-      let targetIndex = startNoInput !== "" ? parseInt(startNoInput) - 1 : curRows.length;
-      if (isNaN(targetIndex) || targetIndex < 0) targetIndex = curRows.length;
+      mrSheets[currentMRIndex].rows = curRows.filter(r => !r.isGrandTotal);
+      const activeRows = mrSheets[currentMRIndex].rows;
+
+      let targetIndex = startNoInput !== "" ? parseInt(startNoInput) - 1 : activeRows.length;
+      if (isNaN(targetIndex) || targetIndex < 0) targetIndex = activeRows.length;
 
       pushUndoState();
       let addedCount = 0;
@@ -833,10 +862,10 @@
             if (days > 0 && rate > 0) rowCopy[19] = String(days * rate);
 
             const newObj = { code: found.code, name: found.name, rowData: rowCopy };
-            if (targetIndex < curRows.length) {
-              curRows.splice(targetIndex, 0, newObj);
+            if (targetIndex < activeRows.length) {
+              activeRows.splice(targetIndex, 0, newObj);
             } else {
-              curRows.push(newObj);
+              activeRows.push(newObj);
             }
             targetIndex++;
             addedCount++;
@@ -844,9 +873,11 @@
         }
       });
 
+      updateGrandTotalInternal();
+
       closeModal("codeByModal");
       renderBody(); saveToLocal(true);
-      showAlert(`${addedCount} active employee(s) added successfully! (Discharged skipped)`);
+      showAlert(`${addedCount} active employee(s) added successfully!`);
     }
 
     function openDaysModal() {
@@ -924,6 +955,8 @@
           }
         }
       }
+
+      updateGrandTotalInternal();
 
       closeModal("daysModal");
       renderBody(); saveToLocal(true);
@@ -1020,7 +1053,7 @@
 
         let html = "";
         if (r.isGrandTotal) {
-          for (let c = 0; c < 17; c++) html += `<td></td>`;
+          for (let c = 0; c <= 16; c++) html += `<td></td>`;
           html += `<td colspan="2" class="td-merged-gtotal">G/TOTAL</td>`;
           html += `<td class="td-gtotal-amount">${r.rowData[19] || '0'}</td>`;
           html += `<td class="td-gtotal-page">${r.rowData[20] || r.rowData[19] || '0'}</td>`;
@@ -1029,7 +1062,6 @@
           for (let c = 0; c < 24; c++) {
             let val = r.rowData[c] || '';
             
-            // Agar cell value object hai toh uski .v value nikal lo
             if (typeof val === 'object' && val !== null) {
               val = val.v !== undefined ? val.v : '';
             }
@@ -1264,25 +1296,8 @@
     function insertGrandTotalRow() {
       const curRows = mrSheets[currentMRIndex].rows;
       if (!curRows || curRows.length === 0) return showAlert("Empty MR!", true);
-      
-      let sumAmt = 0;
-      curRows.forEach(r => {
-        if (!r.isGrandTotal) {
-          sumAmt += parseFloat(r.rowData[19]) || 0;
-        }
-      });
-
       pushUndoState();
-      const idx = curRows.findIndex(r => r.isGrandTotal); 
-      if (idx !== -1) curRows.splice(idx, 1);
-
-      const gData = new Array(24).fill(''); 
-      gData[17] = "G/TOTAL"; 
-      gData[19] = String(sumAmt); 
-      gData[20] = String(sumAmt);
-
-      curRows.push({ code: "", name: "G/TOTAL", isGrandTotal: true, rowData: gData });
-      selectedRowIdx = curRows.length - 1;
+      updateGrandTotalInternal();
       renderBody(); 
       saveToLocal(true); 
       showAlert("Grand Total is added successfully!");
@@ -1334,16 +1349,22 @@
 
       pushUndoState();
 
-      // Formula ke sath 'v' mein calculated pageSum store karna taaki screen par exact amount dikhe
+      // 1. Employee rows ke corresponding row mein formula/value daalein
       curRows[targetRowIndex].rowData[20] = {
         f: `SUM(T${excelStartRow}:T${excelEndRow})`,
         v: pageSum
       };
 
+      // 2. Grand Total row ke U column (index 20) mein bhi yeh pageSum live update kar dein
+      const gTotalRow = curRows.find(r => r.isGrandTotal);
+      if (gTotalRow) {
+        gTotalRow.rowData[20] = String(pageSum);
+      }
+
       closeModal("pageTotalModal"); 
       renderBody(); 
       saveToLocal(true); 
-      showAlert(`Page Total formula (SUM(T${excelStartRow}:T${excelEndRow})) applied successfully!`);
+      showAlert(`Page Total applied successfully!`);
     }
 
     let activeEditMode = 'form';
@@ -1625,6 +1646,8 @@
         const days = parseFloat(row.rowData[17]) || 0, rate = parseFloat(row.rowData[18]) || 0;
         row.rowData[19] = String(days * rate);
       }
+      
+      updateGrandTotalInternal();
       closeModal("editModal");
       renderBody(); 
       saveToLocal(true); 
@@ -1638,6 +1661,7 @@
         pushUndoState();
         curRows.splice(selectedRowIdx, 1);
         selectedRowIdx = Math.max(0, selectedRowIdx - 1);
+        updateGrandTotalInternal();
         closeModal("editModal"); renderBody(); saveToLocal(true); showAlert("Row deleted!");
       }
     }
@@ -1647,10 +1671,9 @@
       const curMR = mrSheets[currentMRIndex];
       curMR.rows.splice(selectedRowIdx + 1, 0, { code: "", name: "", rowData: new Array(24).fill("") });
       selectedRowIdx++;
+      updateGrandTotalInternal();
       closeModal("editModal"); renderBody(); saveToLocal(true); showAlert("Blank row inserted!");
     }
-
-    function openPageTotalModal() { document.getElementById("pageTotalModal").style.display = "flex"; }
 
     function dateToISO(str) {
       if (!str) return "";
