@@ -609,7 +609,7 @@
       }
     }
 
-    // Clean border style with no background fill (matching green row clean style)
+   // Clean border style with no background fill
     const borderStyleThin = {
       top: { style: "thin", color: { rgb: "000000" } },
       bottom: { style: "thin", color: { rgb: "000000" } },
@@ -638,8 +638,7 @@
 
       const startRow = 3; // Row 1 = Title, Row 2 = Headers, Row 3 = First Data Row
       const endRow = startRow + dataRowsCount - 1;
-
-      const gTotalRow = endRow + 1; // Sirf ek single G/TOTAL row
+      const gTotalRow = endRow + 1; // Single G/TOTAL row
 
       wsData.push(new Array(24).fill('')); // G/TOTAL row placeholder
 
@@ -665,7 +664,7 @@
         };
       }
 
-      // 2. G/TOTAL row: Text merged in R & S (Index 17 & 18), Formulas in T and U (Index 19 & 20)
+      // 2. G/TOTAL row setup
       ws[XLSX.utils.encode_cell({ r: gTotalRow - 1, c: 17 })] = { t: 's', v: 'G/TOTAL' };
       ws[XLSX.utils.encode_cell({ r: gTotalRow - 1, c: 19 })] = {
         t: 'n',
@@ -678,30 +677,46 @@
         z: '#,##0.00'
       };
 
-      // Merge R & S columns (Index 17 to 18) for G/TOTAL
       if (!ws['!merges']) ws['!merges'] = [];
+      
+      // Merge A1 to X1 (Row 0, Col 0 to Col 23) for Title row, left aligned
+      ws['!merges'].push({ s: { r: 0, c: 0 }, e: { r: 0, c: 23 } });
+
+      // Merge R & S columns (Index 17 to 18) for G/TOTAL text
       ws['!merges'].push({ s: { r: gTotalRow - 1, c: 17 }, e: { r: gTotalRow - 1, c: 18 } });
 
-      // Apply clean grid borders without any background color filling
-      const borderStyleThin = {
-        top: { style: "thin", color: { rgb: "000000" } },
-        bottom: { style: "thin", color: { rgb: "000000" } },
-        left: { style: "thin", color: { rgb: "000000" } },
-        right: { style: "thin", color: { rgb: "000000" } }
-      };
-
-      for (let R = 1; R <= gTotalRow; R++) {
+      for (let R = 0; R <= gTotalRow; R++) {
         for (let C = 0; C < 24; C++) {
           const cellRef = XLSX.utils.encode_cell({ r: R, c: C });
           if (!ws[cellRef]) ws[cellRef] = { t: 's', v: '' };
-          ws[cellRef].s = {
-            border: borderStyleThin,
-            alignment: { vertical: "center", horizontal: C >= 17 ? "right" : "left" }
-          };
+
+          // Title row (Row 0): Left aligned
+          if (R === 0) {
+            ws[cellRef].s = {
+              alignment: { vertical: "center", horizontal: "left" },
+              font: { bold: true, sz: 11 }
+            };
+          } 
+          // Table Headers row (Row 1): Bold & Centered
+          else if (R === 1) {
+            ws[cellRef].s = {
+              border: borderStyleThin,
+              alignment: { vertical: "center", horizontal: "center" },
+              font: { bold: true }
+            };
+          } 
+          // Data & Total rows
+          else {
+            ws[cellRef].s = {
+              border: borderStyleThin,
+              alignment: { vertical: "center", horizontal: C >= 17 ? "right" : "left" }
+            };
+          }
         }
       }
 
-      XLSX.utils.book_append_sheet(wb, ws, "MR_Sheet");
+      const sheetTabName = (target.label || "MR_Sheet").replace(/[:\\\/?*\[\]]/g, "_");
+      XLSX.utils.book_append_sheet(wb, ws, sheetTabName);
       XLSX.writeFile(wb, `${target.label}.xlsx`);
     }
 
@@ -710,66 +725,249 @@
         alert("Access Denied! Only Admin can access this feature");
         return;
       }
+      
       const wb = XLSX.utils.book_new();
-      mrSheets.forEach(m => {
-        if (m.isSubmitted && m.rows.length) {
-          const wsData = [[m.title], masterHeaders.slice(0, 24)];
-          let dataRowsCount = 0;
-          m.rows.forEach(r => {
-            if (!r.isGrandTotal) {
-              wsData.push(r.rowData);
-              dataRowsCount++;
+      const submittedMRs = mrSheets.filter(m => m.isSubmitted && m.rows.length > 0);
+      
+      if (submittedMRs.length === 0) {
+        return showAlert("No submitted MR sheets available to export!", true);
+      }
+
+      // 1. FORWARDING LETTER SHEET (First Tab)
+      let letterRowsData = [];
+      let grandTotalSum = 0;
+
+      submittedMRs.forEach((m, idx) => {
+        let totalAmt = 0;
+        let gtotalRowIdx = -1;
+
+        if (m.rows && m.rows.length > 0) {
+          m.rows.forEach((r, rIdx) => {
+            const rowName = String(r.name || (r.rowData && r.rowData[3]) || '').trim().toUpperCase();
+            const colType = String((r.rowData && r.rowData[17]) || '').trim().toUpperCase();
+            if (r.isGrandTotal || rowName === "G/TOTAL" || colType === "G/TOTAL") {
+              gtotalRowIdx = rIdx;
+              totalAmt = parseFloat(r.rowData[19]) || 0;
             }
           });
 
-          const startRow = 3;
-          const endRow = startRow + dataRowsCount - 1;
-          const gTotalRow = endRow + 1;
-
-          wsData.push(new Array(24).fill(''));
-
-          const ws = XLSX.utils.aoa_to_sheet(wsData);
-
-          for (let i = 0; i < dataRowsCount; i++) {
-            const excelRow = startRow + i;
-            ws[XLSX.utils.encode_cell({ r: excelRow - 1, c: 18 })] = {
-              t: 'n',
-              f: `IF(RIGHT(C${excelRow},3)="MAZ",550,IF(RIGHT(C${excelRow},4)="MATE",570,IF(RIGHT(C${excelRow},7)="SKD-III",640,IF(RIGHT(C${excelRow},6)="SKD-II",770,IF(RIGHT(C${excelRow},5)="SKD-I",900,IF(RIGHT(C${excelRow},5)="CPDVR",770,""))))))`,
-              z: '0.00'
-            };
-            ws[XLSX.utils.encode_cell({ r: excelRow - 1, c: 19 })] = {
-              t: 'n',
-              f: `R${excelRow}*S${excelRow}`,
-              z: '#,##0.00'
-            };
+          if (gtotalRowIdx === -1) {
+            m.rows.forEach(r => {
+              if (!r.isGrandTotal && String(r.name || '').toUpperCase() !== "G/TOTAL") {
+                totalAmt += parseFloat(r.rowData && r.rowData[19] ? r.rowData[19] : 0) || 0;
+              }
+            });
           }
+        }
 
-          ws[XLSX.utils.encode_cell({ r: gTotalRow - 1, c: 17 })] = { t: 's', v: 'G/TOTAL' };
-          ws[XLSX.utils.encode_cell({ r: gTotalRow - 1, c: 19 })] = { t: 'n', f: `SUM(T${startRow}:T${endRow})`, z: '#,##0.00' };
-          ws[XLSX.utils.encode_cell({ r: gTotalRow - 1, c: 20 })] = { t: 'n', f: `SUM(T${startRow}:T${endRow})`, z: '#,##0.00' };
+        grandTotalSum += totalAmt;
+        const excelTargetRow = (gtotalRowIdx !== -1) ? (gtotalRowIdx + 3) : (m.rows.length + 3);
 
-          if (!ws['!merges']) ws['!merges'] = [];
-          ws['!merges'].push({ s: { r: gTotalRow - 1, c: 17 }, e: { r: gTotalRow - 1, c: 18 } });
+        let jobClean = m.title || '';
+        const jobMatch = jobClean.match(/JOB\s*No\.?\s*(.*)/i);
+        if (jobMatch && jobMatch[1]) {
+          jobClean = jobMatch[1].trim();
+        }
 
-          const borderStyleThin = {
-            top: { style: "thin", color: { rgb: "000000" } },
-            bottom: { style: "thin", color: { rgb: "000000" } },
-            left: { style: "thin", color: { rgb: "000000" } },
-            right: { style: "thin", color: { rgb: "000000" } }
+        let tabName = m.label || `MR NO. ${idx + 1}`;
+        const numMatch = tabName.match(/\d+/);
+        const mrNum = numMatch ? numMatch[0] : (idx + 1);
+        let mrClean = `74 RCC/${mrNum}/${activePeriod.toUpperCase()}`;
+
+        letterRowsData.push({
+          tabName: tabName,
+          targetCell: `T${excelTargetRow}`,
+          mrNo: mrClean,
+          jobNo: jobClean,
+          amount: totalAmt
+        });
+      });
+
+      const wsLetterData = [
+        ["", "", "", "", "HQ 74 RCC (GREF)"], // 0
+        ["", "", "", "", "Pin - 930 074"],    // 1
+        ["", "", "", "", "C/o 99 APO"],       // 2
+        [],                                   // 3
+        ["2014-B/CPL/    /E2", "", "", "", activePeriod.toUpperCase()], // 4
+        [],                                   // 5
+        ["AO 24 BRTF (Through E5 Section)"],  // 6
+        ["Pin - 930024"],                     // 7
+        ["C/O 99 APO"],                       // 8
+        [],                                   // 9
+        [`FORWARDING OF BILLS ON ACCOUNT OF WAGES OF CPL's FOR THE MONTH OF ${activePeriod.toUpperCase()}`], // 10
+        [`(PERIOD FROM 21 AUG 2026 TO 20 SEP 2026)`], // 11
+        [],                                   // 12
+        [`1.   The under mentioned Special Wages Bills on account of wages of ${activePeriod.toUpperCase()} (Period from 21 Aug 2026 to 20 Sep 2026) alongwith Mandate form, DLRs and Part-II orders of CPLs are forwarded herewith for your pre-audit and early payment, please.`], // 13
+        [],                                   // 14
+        ["S/No", "Mr No", "Job No.", "Amount (Rs)", "REMARKS"] // 15
+      ];
+
+      const startRowExcel = 16;
+      letterRowsData.forEach((r, idx) => {
+        wsLetterData.push([idx + 1, r.mrNo, r.jobNo, Number(r.amount || 0), ""]);
+      });
+
+      const totalRowExcel = startRowExcel + letterRowsData.length;
+      wsLetterData.push(["", "", "TOTAL (Rs)", Number(grandTotalSum), ""]);
+      wsLetterData.push([]);
+      wsLetterData.push([`Total Amount in Words`]);
+      wsLetterData.push([]);
+      wsLetterData.push([`(TOTAL CLOSED MR NOS)`]);
+      wsLetterData.push([]);
+      
+      const copyToStartIdx = wsLetterData.length;
+      wsLetterData.push(["Copy to:-", "", "FOR INFO PLEASE", "", "(Sujit Debnath)"]);
+      wsLetterData.push(["HQ 24 BRTF", "", "", "", "EE (Civ)"]);
+      wsLetterData.push(["C/O 99 APO", "", "", "", "Officer Commanding"]);
+      wsLetterData.push(["Pin: 930 024", "", "", "", "74 RCC (GREF)"]);
+
+      const wsLetter = XLSX.utils.aoa_to_sheet(wsLetterData);
+
+      // Formulas linking
+      letterRowsData.forEach((r, idx) => {
+        const rowNum = startRowExcel + idx + 1;
+        const cellRef = `D${rowNum}`;
+        const tabSafe = (r.tabName || `MR NO. ${idx + 1}`).replace(/'/g, "''");
+        wsLetter[cellRef] = {
+          t: 'n',
+          f: `'${tabSafe}'!${r.targetCell}`,
+          v: Number(r.amount || 0),
+          z: '#,##0.00'
+        };
+      });
+
+      wsLetter[`D${totalRowExcel + 1}`] = {
+        t: 'n',
+        f: `SUM(D${startRowExcel + 1}:D${totalRowExcel})`,
+        v: Number(grandTotalSum),
+        z: '#,##0.00'
+      };
+
+      // Merges and Row Heights for Letter Sheet
+        if (!wsLetter['!merges']) wsLetter['!merges'] = [];
+        
+        // Reference No. merged A to B (Row 4)
+        wsLetter['!merges'].push({ s: { r: 4, c: 0 }, e: { r: 4, c: 1 } });
+
+        // 1 & 2. Title and Period merged A to E (Row 10 and 11)
+        wsLetter['!merges'].push({ s: { r: 10, c: 0 }, e: { r: 10, c: 4 } });
+        wsLetter['!merges'].push({ s: { r: 11, c: 0 }, e: { r: 11, c: 4 } });
+
+      // 3. Para 1 merged A to E (Row 13)
+      wsLetter['!merges'].push({ s: { r: 13, c: 0 }, e: { r: 13, c: 4 } });
+
+      // 4. Copy to section: A to B merge for 4 rows
+      for (let rOffset = 0; rOffset < 4; rOffset++) {
+        wsLetter['!merges'].push({ s: { r: copyToStartIdx + rOffset, c: 0 }, e: { r: copyToStartIdx + rOffset, c: 1 } });
+      }
+
+      // Row Heights setup (!rows)
+      if (!wsLetter['!rows']) wsLetter['!rows'] = [];
+      wsLetter['!rows'][13] = { hpt: 36 }; // Para 1 row height 36 for two lines
+
+      // Styling Letter sheet cells
+      const borderStyleThin = {
+        top: { style: "thin", color: { rgb: "000000" } },
+        bottom: { style: "thin", color: { rgb: "000000" } },
+        left: { style: "thin", color: { rgb: "000000" } },
+        right: { style: "thin", color: { rgb: "000000" } }
+      };
+
+      // Apply styles to table header & rows in letter
+      for (let R = 15; R <= totalRowExcel; R++) {
+        for (let C = 0; C < 5; C++) {
+          const cellRef = XLSX.utils.encode_cell({ r: R, c: C });
+          if (!wsLetter[cellRef]) wsLetter[cellRef] = { t: 's', v: '' };
+          wsLetter[cellRef].s = {
+            border: borderStyleThin,
+            alignment: { vertical: "center", horizontal: C === 3 ? "right" : "left" },
+            font: { bold: R === 15 || R === totalRowExcel }
           };
+        }
+      }
 
-          for (let R = 1; R <= gTotalRow; R++) {
-            for (let C = 0; C < 24; C++) {
-              const cellRef = XLSX.utils.encode_cell({ r: R, c: C });
-              if (!ws[cellRef]) ws[cellRef] = { t: 's', v: '' };
-              ws[cellRef].s = { border: borderStyleThin };
+      // Title & Period Styling (Bold, Underline, Center)
+      [10, 11].forEach(rIdx => {
+        const cellRef = XLSX.utils.encode_cell({ r: rIdx, c: 0 });
+        if (!wsLetter[cellRef]) wsLetter[cellRef] = { t: 's', v: '' };
+        wsLetter[cellRef].s = {
+          alignment: { vertical: "center", horizontal: "center", wrapText: true },
+          font: { bold: true, underline: true, sz: 10 }
+        };
+      });
+
+      // Para 1 Styling (Wrap text / Left aligned)
+      const paraRef = XLSX.utils.encode_cell({ r: 13, c: 0 });
+      if (!wsLetter[paraRef]) wsLetter[paraRef] = { t: 's', v: '' };
+      wsLetter[paraRef].s = {
+        alignment: { vertical: "center", horizontal: "left", wrapText: true },
+        font: { sz: 10 }
+      };
+
+      wsLetter['!cols'] = [{ wch: 6 }, { wch: 24 }, { wch: 45 }, { wch: 18 }, { wch: 18 }];
+      XLSX.utils.book_append_sheet(wb, wsLetter, "FORWARDING_LETTER");
+
+
+      // 2. SUBMITTED MR SHEETS (Baaki ki saari sheets)
+      submittedMRs.forEach(m => {
+        const wsData = [[m.title], masterHeaders.slice(0, 24)];
+        let dataRowsCount = 0;
+        m.rows.forEach(r => {
+          if (!r.isGrandTotal) {
+            wsData.push(r.rowData);
+            dataRowsCount++;
+          }
+        });
+
+        const startRow = 3;
+        const endRow = startRow + dataRowsCount - 1;
+        const gTotalRow = endRow + 1;
+
+        wsData.push(new Array(24).fill(''));
+        const ws = XLSX.utils.aoa_to_sheet(wsData);
+
+        for (let i = 0; i < dataRowsCount; i++) {
+          const excelRow = startRow + i;
+          ws[XLSX.utils.encode_cell({ r: excelRow - 1, c: 18 })] = {
+            t: 'n',
+            f: `IF(RIGHT(C${excelRow},3)="MAZ",550,IF(RIGHT(C${excelRow},4)="MATE",570,IF(RIGHT(C${excelRow},7)="SKD-III",640,IF(RIGHT(C${excelRow},6)="SKD-II",770,IF(RIGHT(C${excelRow},5)="SKD-I",900,IF(RIGHT(C${excelRow},5)="CPDVR",770,""))))))`,
+            z: '0.00'
+          };
+          ws[XLSX.utils.encode_cell({ r: excelRow - 1, c: 19 })] = {
+            t: 'n',
+            f: `R${excelRow}*S${excelRow}`,
+            z: '#,##0.00'
+          };
+        }
+
+        ws[XLSX.utils.encode_cell({ r: gTotalRow - 1, c: 17 })] = { t: 's', v: 'G/TOTAL' };
+        ws[XLSX.utils.encode_cell({ r: gTotalRow - 1, c: 19 })] = { t: 'n', f: `SUM(T${startRow}:T${endRow})`, z: '#,##0.00' };
+        ws[XLSX.utils.encode_cell({ r: gTotalRow - 1, c: 20 })] = { t: 'n', f: `SUM(T${startRow}:T${endRow})`, z: '#,##0.00' };
+
+        if (!ws['!merges']) ws['!merges'] = [];
+        ws['!merges'].push({ s: { r: 0, c: 0 }, e: { r: 0, c: 23 } });
+        ws['!merges'].push({ s: { r: gTotalRow - 1, c: 17 }, e: { r: gTotalRow - 1, c: 18 } });
+
+        for (let R = 0; R <= gTotalRow; R++) {
+          for (let C = 0; C < 24; C++) {
+            const cellRef = XLSX.utils.encode_cell({ r: R, c: C });
+            if (!ws[cellRef]) ws[cellRef] = { t: 's', v: '' };
+
+            if (R === 0) {
+              ws[cellRef].s = { alignment: { vertical: "center", horizontal: "left" }, font: { bold: true, sz: 11 } };
+            } else if (R === 1) {
+              ws[cellRef].s = { border: borderStyleThin, alignment: { vertical: "center", horizontal: "center" }, font: { bold: true } };
+            } else {
+              ws[cellRef].s = { border: borderStyleThin, alignment: { vertical: "center", horizontal: C >= 17 ? "right" : "left" } };
             }
           }
-
-          XLSX.utils.book_append_sheet(wb, ws, m.label);
         }
+
+        const sheetTabName = (m.label || "MR").replace(/[:\\\/?*\[\]]/g, "_");
+        XLSX.utils.book_append_sheet(wb, ws, sheetTabName);
       });
-      XLSX.writeFile(wb, `Completed_MRs_${activePeriod}.xlsx`);
+
+      XLSX.writeFile(wb, `Completed_MRs_With_Letter_${activePeriod}.xlsx`);
     }
   </script>
 </body>
