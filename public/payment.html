@@ -51,10 +51,14 @@
 
     .table-container { flex: 1; overflow: auto; border: 1.5px solid #000000; background: #ffffff; }
     table { border-collapse: collapse; font-size: 11px; width: 100%; white-space: nowrap; }
-    th, td { border: 1px solid #000000; padding: 3px 6px; text-align: left; height: 28px; }
-    th { background: #ffffff; font-weight: bold; position: sticky; top: 0; z-index: 5; text-align: center; }
-    .row-letter th { font-size: 11.5px; font-weight: 900; background: #f0f0f0; height: 20px; z-index: 5; }
-    .row-name th { font-size: 10px; font-weight: 800; height: 28px; background: #ffffff; text-transform: uppercase; z-index: 5; }
+    th, td { border: 1px solid #000000; padding: 3px 6px; height: 28px; }
+    
+    /* ONLY HEADINGS WRAP TEXT */
+    th { background: #ffffff; font-weight: bold; position: sticky; top: 0; z-index: 5; text-align: center; white-space: normal !important; word-wrap: break-word !important; }
+    
+    .row-letter th { font-size: 11.5px; font-weight: 900; background: #f0f0f0; height: 20px; z-index: 5; white-space: nowrap !important; }
+    .row-name th { font-size: 10px; font-weight: 800; min-height: 35px; background: #ffffff; text-transform: uppercase; z-index: 5; }
+    
     tbody tr { height: 28px; cursor: pointer; }
     tbody tr:hover { background-color: #f1f7ff; }
     
@@ -65,12 +69,15 @@
     .td-merged-gtotal { text-align: center !important; font-weight: 900 !important; background-color: #fff3cd !important; color: #000 !important; }
     .td-gtotal-amount { text-align: center !important; font-weight: 900 !important; color: #c0392b !important; background-color: #fff3cd !important; }
     .td-gtotal-page { text-align: center !important; font-weight: 900 !important; color: #856404 !important; background-color: #fff3cd !important; }
-    tbody td { font-weight: 600; }
+    
+    /* DATA CELLS SINGLE-LINE & ELLIPSIS (NO UNWANTED WRAP) */
+    tbody td { font-weight: 600; white-space: nowrap !important; text-align: left; }
 
     th:nth-child(1), td:nth-child(1) { position: sticky; left: 0; z-index: 6; background-color: #ffffff; width: 45px; min-width: 45px; border-right: 1px solid #000000 !important; }
     th:nth-child(2), td:nth-child(2) { position: sticky; left: 45px; z-index: 6; background-color: #ffffff; width: 65px; min-width: 65px; border-right: 1px solid #000000 !important; }
     th:nth-child(3), td:nth-child(3) { position: sticky; left: 110px; z-index: 6; background-color: #ffffff; width: 90px; min-width: 90px; border-right: 2px solid #000000 !important; }
 
+    /* NOK DETAILS COLUMN H FIXED WIDTH & ELLIPSIS */
     th:nth-child(8), td:nth-child(8) { width: 130px !important; min-width: 130px !important; max-width: 180px !important; white-space: nowrap !important; overflow: hidden !important; text-overflow: ellipsis !important; }
 
     .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.6); z-index: 200; justify-content: center; align-items: center; }
@@ -206,6 +213,15 @@
         <div class="action-buttons">
           <button class="btn-action btn-edit" id="btnEditRow" onclick="openEditModal()">✏️ EDIT INDL</button>
           
+          <!-- VIEW 1 / VIEW 2 DROPDOWN -->
+          <div class="dropdown">
+            <button class="btn-action" style="background:#27ae60; font-weight:900;" onclick="">👁️ VIEW ▾</button>
+            <div class="dropdown-content">
+              <button onclick="setTableView('view1')">📄 View 1 (A-F & P-U)</button>
+              <button onclick="setTableView('view2')">📑 View 2 (All Columns)</button>
+            </div>
+          </div>
+
           <div class="dropdown">
             <button class="btn-action" style="background:#d35400; font-weight:900;" onclick="checkExcelImportAccess(event)">⚙️ OPTIONS ▾</button>
             <div class="dropdown-content">
@@ -282,11 +298,6 @@
         <option value="JOB No. 709/157 FMN ON S-T ROAD">JOB No. 709/157 PMT ON S-T ROAD</option>
         <option value="MAINTENANCE KDA ROAD 2026-27">JOB No. MAINTENANCE KDA ROAD 2026-27</option>
         <option value="MAINT S-T ROAD 2026-27 (KM 31.12 TO 42.00)">JOB No. MAINT S-T ROAD 2026-27 (KM 31.12 TO 42.00)</option>
-        <option value="ADG (B)/ BFR Cell/ (A/A & E/S) / 2024/832 FMN">JOB No. ADG (B)/ BFR Cell/ (A/A & E/S) / 2024/832 FMN</option>
-        <option value="ADG (B)/ BFR Cell/ (A/A & E/S) / 2024/832 SURF">JOB No. ADG (B)/ BFR Cell/ (A/A & E/S) / 2024/832 SURF</option>
-        <option value="ADG (B)/ BFR Cell/ (A/A & E/S) / 2024/831 FMN">JOB No. ADG (B)/ BFR Cell/ (A/A & E/S) / 2024/831 FMN</option>
-        <option value="ADG (B)/ BFR Cell/ (A/A & E/S) / 2024/831 FMN">JOB No. ADG (B)/ BFR Cell/ (A/A & E/S) / 2024/831 SURF </option>
-        
       </select>
       <div style="display:flex; justify-content:flex-end; gap:10px;">
         <button class="btn-modal" style="background:#666; color:#fff;" onclick="closeModal('mrModal')">CANCEL</button>
@@ -446,6 +457,7 @@
     let activePeriod = localStorage.getItem("CPL_GLOBAL_MONTH") || "SEP 2026";
     let pendingConfirmAction = null;
     let activeColorMode = 'font';
+    let currentTableView = 'view1'; // Default View 1
 
     let undoStack = [];
     let redoStack = [];
@@ -481,6 +493,18 @@
       if (t.endsWith("SKD-I")) return "900";
       if (t.endsWith("CPDVR")) return "770";
       return "550";
+    }
+
+    // NOK Details Cleaner: Removes extra spaces and blank newlines
+    function cleanNokDetails(nokStr) {
+      if (!nokStr) return "";
+      return String(nokStr)
+        .replace(/\r\n/g, "\n")
+        .replace(/\r/g, "\n")
+        .split("\n")
+        .map(line => line.trim())
+        .filter(line => line.length > 0)
+        .join("\n");
     }
 
     window.addEventListener("DOMContentLoaded", () => {
@@ -586,7 +610,6 @@
         document.getElementById("nameSearch").value = "";
         selectedSearchedEmp = matchedEmp;
 
-        const code = matchedEmp.code || matchedEmp.rowData[1] || '';
         const name = matchedEmp.name || matchedEmp.rowData[3] || '';
         const father = matchedEmp.rowData[5] || '';
         const account = matchedEmp.rowData[15] || '';
@@ -602,7 +625,7 @@
               if (!r.isGrandTotal) {
                 const rCode = String(r.code || r.rowData[1] || '').trim().toLowerCase();
                 const rName = String(r.name || r.rowData[3] || '').trim().toLowerCase();
-                if ((code && rCode === code.toLowerCase()) || (name && rName === name.toLowerCase())) {
+                if ((matchedEmp.code && rCode === matchedEmp.code.toLowerCase()) || (name && rName === name.toLowerCase())) {
                   duplicateFound = true;
                   duplicateInfoText = `Yes! Found in Sheet: <strong>${mr.label}</strong> at S/No: <strong>${rIdx + 1}</strong>`;
                 }
@@ -617,7 +640,7 @@
         if (dischargeVal !== "") {
           contentBox.innerHTML = `
             <div style="color: #c0392b; font-weight: 900; font-size: 13px; margin-bottom: 6px;">⚠️ WARNING: THIS EMPLOYEE IS DISCHARGED!</div>
-            <div><strong>Code:</strong> ${code}</div>
+            <div><strong>Code:</strong> [Redacted]</div>
             <div><strong>Name:</strong> ${name}</div>
             <div><strong>Discharge Date/Status:</strong> <span style="color: #c0392b;">${dischargeVal}</span></div>
             <div style="margin-top: 6px; color: #555; font-size: 11px;">Discharged employee cannot be added to active MR sheet.</div>
@@ -626,7 +649,7 @@
         } else {
           let duplicateHtmlColor = duplicateFound ? "#c0392b" : "#007e33";
           contentBox.innerHTML = `
-            <div><strong>Code:</strong> <span style="color: #007e33; font-weight: 900; font-size: 13px;">${code}</span></div>
+            <div><strong>Code:</strong> <span style="color: #007e33; font-weight: 900; font-size: 13px;">[Redacted]</span></div>
             <div><strong>Name:</strong> <span style="color: #007e33; font-weight: 900;">${name}</span></div>
             <div><strong>Father's Name:</strong> <span style="color: #007e33; font-weight: 900;">${father}</span></div>
             <div><strong>Account No:</strong> <span style="color: #007e33; font-weight: 900;">${account}</span></div>
@@ -663,6 +686,12 @@
       
       const found = selectedSearchedEmp;
       const rowCopy = [...found.rowData];
+      
+      // Clean NoK details (Column H -> index 7) to remove extra spaces/newlines
+      if (rowCopy[7]) {
+        rowCopy[7] = cleanNokDetails(rowCopy[7]);
+      }
+
       rowCopy[18] = calculateRateByTrade(rowCopy[2]);
       const days = parseFloat(rowCopy[17]) || 0;
       const rate = parseFloat(rowCopy[18]) || 0;
@@ -676,7 +705,6 @@
       mrSheets[currentMRIndex].rows = mrSheets[currentMRIndex].rows.filter(r => !r.isGrandTotal);
       mrSheets[currentMRIndex].rows.push(newObj);
 
-      // Automatically add/update Grand Total row so R & S merge happens instantly
       updateGrandTotalInternal();
 
       closeModal('searchEmpModal');
@@ -692,8 +720,9 @@
       
       let sumAmt = 0;
       curRows.forEach(r => {
-        if (!r.isGrandTotal) {
-          sumAmt += parseFloat(r.rowData[19]) || 0;
+        if (!r.isGrandTotal && r.rowData) {
+          let amt = parseFloat(r.rowData[19]) || 0;
+          sumAmt += amt;
         }
       });
 
@@ -703,7 +732,15 @@
       const gData = new Array(24).fill(''); 
       gData[17] = "G/TOTAL"; 
       gData[19] = String(sumAmt); 
-      gData[20] = "0"; // Yahan U column ko by default 0 set kar diya gaya hai
+      
+      let totalPageSum = 0;
+      curRows.forEach(r => {
+        if (!r.isGrandTotal && r.rowData && r.rowData[20]) {
+          let pVal = typeof r.rowData[20] === 'object' ? (r.rowData[20].v || 0) : parseFloat(r.rowData[20]) || 0;
+          totalPageSum += pVal;
+        }
+      });
+      gData[20] = totalPageSum > 0 ? String(totalPageSum) : "0";
 
       curRows.push({ code: "", name: "G/TOTAL", isGrandTotal: true, rowData: gData });
       selectedRowIdx = curRows.length - 1;
@@ -738,11 +775,23 @@
       pendingConfirmAction = null;
     }
 
+    function setTableView(view) {
+      currentTableView = view;
+      renderHeaders();
+      renderBody();
+    }
+
     function renderHeaders() {
       let r1 = "", r2 = "";
       for (let i = 0; i < 24; i++) {
-        r1 += `<th>${String.fromCharCode(65 + i)}</th>`;
-        r2 += `<th>${masterHeaders[i] || ''}</th>`;
+        let displayStyle = "";
+        if (currentTableView === 'view1') {
+          if ((i > 5 && i < 15) || (i > 20)) {
+            displayStyle = "display:none;";
+          }
+        }
+        r1 += `<th style="${displayStyle}">${String.fromCharCode(65 + i)}</th>`;
+        r2 += `<th style="${displayStyle}">${masterHeaders[i] || ''}</th>`;
       }
       document.getElementById("letterHead").innerHTML = r1;
       document.getElementById("nameHead").innerHTML = r2;
@@ -856,6 +905,12 @@
           const dischargeVal = String(found.rowData[23] || '').trim();
           if (dischargeVal === "") {
             const rowCopy = [...found.rowData];
+            
+            // Clean NoK details for bulk import
+            if (rowCopy[7]) {
+              rowCopy[7] = cleanNokDetails(rowCopy[7]);
+            }
+
             rowCopy[18] = calculateRateByTrade(rowCopy[2]);
             const days = parseFloat(rowCopy[17]) || 0;
             const rate = parseFloat(rowCopy[18]) || 0;
@@ -1053,11 +1108,24 @@
 
         let html = "";
         if (r.isGrandTotal) {
-          for (let c = 0; c <= 16; c++) html += `<td></td>`;
-          html += `<td colspan="2" class="td-merged-gtotal">G/TOTAL</td>`;
+          for (let c = 0; c <= 16; c++) {
+            let displayStyle = "";
+            if (currentTableView === 'view1') {
+              if ((c > 5 && c < 15) || (c > 20)) displayStyle = "display:none;";
+            }
+            html += `<td style="${displayStyle}"></td>`;
+          }
+          
+          let gTotalColStyle = "";
+          html += `<td colspan="2" class="td-merged-gtotal" style="${gTotalColStyle}">G/TOTAL</td>`;
+          
           html += `<td class="td-gtotal-amount">${r.rowData[19] || '0'}</td>`;
           html += `<td class="td-gtotal-page">${r.rowData[20] || r.rowData[19] || '0'}</td>`;
-          for (let c = 21; c < 24; c++) html += `<td></td>`;
+          for (let c = 21; c < 24; c++) {
+            let displayStyle = "";
+            if (currentTableView === 'view1') displayStyle = "display:none;";
+            html += `<td style="${displayStyle}"></td>`;
+          }
         } else {
           for (let c = 0; c < 24; c++) {
             let val = r.rowData[c] || '';
@@ -1069,7 +1137,14 @@
             if (c === 23 && val) {
               val = val.replace(/\s*\(F\/N\)|\s*\(A\/N\)/gi, "").trim();
             }
-            html += `<td title="${val}">${val}</td>`;
+
+            let displayStyle = "";
+            if (currentTableView === 'view1') {
+              if ((c > 5 && c < 15) || (c > 20)) {
+                displayStyle = "display:none;";
+              }
+            }
+            html += `<td style="${displayStyle}" title="${val}">${val}</td>`;
           }
         }
         tr.innerHTML = html; tbody.appendChild(tr);
@@ -1303,11 +1378,38 @@
       showAlert("Grand Total is added successfully!");
     }
 
-    function openPageTotalModal() { document.getElementById("pageTotalModal").style.display = "flex"; }
+    // 1. PAGE TOTAL AUTO-INCREMENT & CAPPING LOGIC (FIXED)
+    let lastPageTotalEndIndex = 0;
+
+    function openPageTotalModal() {
+      const curRows = mrSheets[currentMRIndex].rows.filter(r => !r.isGrandTotal);
+      const totalRowsCount = curRows.length;
+
+      const startInput = document.getElementById("pageTotalStart");
+      const endInput = document.getElementById("pageTotalEnd");
+      
+      let nextStart = lastPageTotalEndIndex > 0 ? lastPageTotalEndIndex + 1 : 1;
+      if (nextStart > totalRowsCount) {
+        nextStart = 1;
+      }
+      
+      let nextEnd = nextStart + 19; // 20 rows chunk
+      if (nextEnd > totalRowsCount) {
+        nextEnd = totalRowsCount; // Capped at actual available rows (e.g. 6 rows)
+      }
+
+      startInput.value = nextStart;
+      endInput.value = nextEnd;
+
+      document.getElementById("pageTotalModal").style.display = "flex";
+    }
 
     function applyPageTotal() {
       const startNo = parseInt(document.getElementById("pageTotalStart").value) || 1;
       const endNo = parseInt(document.getElementById("pageTotalEnd").value) || 20;
+      
+      lastPageTotalEndIndex = endNo;
+
       const curRows = mrSheets[currentMRIndex].rows;
 
       if (startNo > endNo || startNo < 1) {
@@ -1349,22 +1451,18 @@
 
       pushUndoState();
 
-      // 1. Employee rows ke corresponding row mein formula/value daalein
+      // U cell (index 20) mein page total set karna
       curRows[targetRowIndex].rowData[20] = {
         f: `SUM(T${excelStartRow}:T${excelEndRow})`,
         v: pageSum
       };
 
-      // 2. Grand Total row ke U column (index 20) mein bhi yeh pageSum live update kar dein
-      const gTotalRow = curRows.find(r => r.isGrandTotal);
-      if (gTotalRow) {
-        gTotalRow.rowData[20] = String(pageSum);
-      }
+      updateGrandTotalInternal();
 
       closeModal("pageTotalModal"); 
       renderBody(); 
       saveToLocal(true); 
-      showAlert(`Page Total applied successfully!`);
+      showAlert(`Page Total applied successfully for S/No ${startNo} to ${endNo}!`);
     }
 
     let activeEditMode = 'form';
@@ -1528,10 +1626,13 @@
       for (let i = 0; i < 24; i++) {
         const colLetter = String.fromCharCode(65 + i);
         const colTitle = masterHeaders[i] || `Col ${colLetter}`;
-        const val = row.rowData[i] || '';
+        
+        let valObj = row.rowData[i] || '';
+        const val = (typeof valObj === 'object' && valObj !== null) ? (valObj.v !== undefined ? valObj.v : '') : valObj;
+
         const div = document.createElement("div");
         div.className = "form-group";
-        if (i === 7) div.style.gridColumn = "span 2";
+        if (i === 7 || i === 20) div.style.gridColumn = "span 2"; // Column U (index 20) ko proper space dene ke liye
 
         if (i === 2) {
           let opts = `<option value="">-- Select Trade --</option>`;
@@ -1568,7 +1669,9 @@
             </div>`;
         }
         else {
-          div.innerHTML = `<label><strong>${colLetter}:</strong> ${colTitle}</label>${i === 7 ? `<textarea id="editField_${i}" style="height:50px;">${val}</textarea>` : `<input type="text" id="editField_${i}" value="${val}">`}`;
+          // Column U (index 20) ya baaki fields ke liye text input
+          div.innerHTML = `<label><strong>${colLetter}:</strong> ${colTitle} ${i === 20 ? '(Page Total)' : ''}</label>` +
+            (i === 7 ? `<textarea id="editField_${i}" style="height:50px;">${val}</textarea>` : `<input type="text" id="editField_${i}" value="${val}">`);
         }
         grid.appendChild(div);
       }
@@ -1588,7 +1691,8 @@
         if (!r.isGrandTotal) {
           html += `<tr><td style="text-align:center; font-weight:bold; background:#eee;">${r.rowData[0] || rIdx+1}</td>`;
           gridColsList.forEach((cIdx, colArrIdx) => {
-            let val = r.rowData[cIdx] || '';
+            let valObj = r.rowData[cIdx] || '';
+            let val = (typeof valObj === 'object' && valObj !== null) ? (valObj.v !== undefined ? valObj.v : '') : valObj;
             html += `<td><input type="text" value="${val}" data-row="${rIdx}" data-col="${cIdx}" oninput="updateGridCellVal(this)" onkeydown="handleGridKeyNav(event, ${rIdx}, ${colArrIdx})"></td>`;
           });
           html += `</tr>`;
@@ -1626,20 +1730,26 @@
         for (let i = 0; i < 24; i++) {
           const input = document.getElementById(`editField_${i}`);
           if (input) {
-            if (i === 4 || i === 22) {
-              const rawDate = input.value.trim();
-              row.rowData[i] = rawDate ? isoToDisplayDate(rawDate) : "";
+            let val = input.value.trim();
+            
+            if (i === 20) {
+              row.rowData[i] = val;
             } 
-            else if (i === 23) {
-              const dVal = input.value.trim();
-              const sVal = document.getElementById("editDischargeSession")?.value || "(F/N)";
-              row.rowData[i] = dVal ? `${isoToDisplayDate(dVal)} ${sVal}` : "";
-            } 
-            else {
-              row.rowData[i] = input.value.trim();
+            else if (val !== "") {
+              if (i === 4 || i === 22) {
+                row.rowData[i] = isoToDisplayDate(val);
+              } 
+              else if (i === 23) {
+                const sVal = document.getElementById("editDischargeSession")?.value || "(F/N)";
+                row.rowData[i] = `${isoToDisplayDate(val)} ${sVal}`;
+              } 
+              else {
+                row.rowData[i] = val;
+              }
             }
           }
         }
+        
         row.code = row.rowData[1];
         row.name = row.rowData[3];
         row.rowData[18] = calculateRateByTrade(row.rowData[2]);
@@ -1657,12 +1767,30 @@
     function deleteCurrentRow() {
       const curRows = mrSheets[currentMRIndex].rows;
       if (!curRows || curRows.length <= 1) return showAlert("Cannot delete the last row!", true);
+      
+      const rowToDelete = curRows[selectedRowIdx];
+      let savedPageTotal = null;
+      if (rowToDelete && rowToDelete.rowData && rowToDelete.rowData[20]) {
+        savedPageTotal = rowToDelete.rowData[20];
+      }
+
       if (confirm("Are you sure you want to delete this row?")) {
         pushUndoState();
         curRows.splice(selectedRowIdx, 1);
+
+        if (savedPageTotal) {
+          const activeRows = curRows.filter(r => !r.isGrandTotal);
+          if (activeRows.length > 0) {
+            activeRows[activeRows.length - 1].rowData[20] = savedPageTotal;
+          }
+        }
+
         selectedRowIdx = Math.max(0, selectedRowIdx - 1);
         updateGrandTotalInternal();
-        closeModal("editModal"); renderBody(); saveToLocal(true); showAlert("Row deleted!");
+        closeModal("editModal"); 
+        renderBody(); 
+        saveToLocal(true); 
+        showAlert("Row deleted and page total preserved successfully!");
       }
     }
 
