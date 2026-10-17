@@ -200,7 +200,7 @@
           <button class="btn-page-total" onclick="openPageTotalModal()">Page-Total</button>
           
           <div class="rs-total-box" onclick="insertGrandTotalRow()" title="Click to insert/update G/TOTAL row">
-            Rs <span id="grandTotalDisplay">0</span>
+            G/Total Rs= <span id="grandTotalDisplay">0</span>
           </div>
         </div>
 
@@ -730,7 +730,7 @@
       if (idx !== -1) curRows.splice(idx, 1);
 
       const gData = new Array(24).fill(''); 
-      gData[17] = "G/TOTAL"; 
+      gData[17] = "G/Total Rs="; 
       gData[19] = String(sumAmt); 
       
       let totalPageSum = 0;
@@ -742,7 +742,7 @@
       });
       gData[20] = totalPageSum > 0 ? String(totalPageSum) : "0";
 
-      curRows.push({ code: "", name: "G/TOTAL", isGrandTotal: true, rowData: gData });
+      curRows.push({ code: "", name: "G/Total Rs=", isGrandTotal: true, rowData: gData });
       selectedRowIdx = curRows.length - 1;
     }
 
@@ -1117,7 +1117,7 @@
           }
           
           let gTotalColStyle = "";
-          html += `<td colspan="2" class="td-merged-gtotal" style="${gTotalColStyle}">G/TOTAL</td>`;
+          html += `<td colspan="2" class="td-merged-gtotal" style="${gTotalColStyle}">G/Total Rs</td>`;
           
           html += `<td class="td-gtotal-amount">${r.rowData[19] || '0'}</td>`;
           html += `<td class="td-gtotal-page">${r.rowData[20] || r.rowData[19] || '0'}</td>`;
