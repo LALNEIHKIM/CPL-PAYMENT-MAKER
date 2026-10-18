@@ -462,14 +462,7 @@
     </div>
   </div>
 </div>
-      <div style="display:flex; justify-content:flex-end; gap:10px; margin-top:10px;">
-        <button class="btn-modal" style="background:#666; color:#fff;" onclick="closeModal('pageTotalModal')">CANCEL</button>
-        <button class="btn-modal" style="background:#2c3e50; color:#fff;" onclick="applyPageTotal()">APPLY PAGE TOTAL</button>
-      </div>
-    </div>
-  </div>
-
-  <div class="modal-overlay" id="findModal">
+    <div class="modal-overlay" id="findModal">
     <div class="modal-window" style="width: 380px; padding: 20px;">
       <h3 style="color:#2b579a; margin-bottom:10px;">FIND INDIVIDUAL</h3>
       <input type="text" id="findInput" placeholder="Enter name to find..." oninput="executeFind(this.value)" style="width:100%; height:32px; padding:4px 8px; border:1px solid #ccc; border-radius:4px;">
@@ -1319,6 +1312,17 @@ function onModalMrSelectChange(selectedMr) {
       const curRows = mrSheets[currentMRIndex].rows;
       let grandTotal = 0;
 
+      // 💡 1. Pehle saare employee codes ki frequency (count) nikal lo
+      let codeCounts = {};
+      curRows.forEach((r) => {
+        if (!r.isGrandTotal && r.code) {
+          let cleanCode = String(r.code).trim().toLowerCase();
+          if (cleanCode) {
+            codeCounts[cleanCode] = (codeCounts[cleanCode] || 0) + 1;
+          }
+        }
+      });
+
       curRows.forEach((r, idx) => {
         if (!r.isGrandTotal) {
           r.rowData[0] = idx + 1;
@@ -1330,8 +1334,15 @@ function onModalMrSelectChange(selectedMr) {
         if (idx === selectedRowIdx) tr.classList.add("selected-row");
         tr.onclick = () => { selectedRowIdx = idx; renderBody(); };
 
-        if (r.rowFontColor) tr.style.color = r.rowFontColor;
-        if (r.rowHighlightColor) tr.style.backgroundColor = r.rowHighlightColor;
+        // 💡 2. Check karo ki is row ka code 1 se zyada baar aaya hai ya nahi
+        let cleanCode = r.code ? String(r.code).trim().toLowerCase() : "";
+        if (cleanCode && codeCounts[cleanCode] > 1) {
+          tr.style.backgroundColor = "#f8d7da"; // Light red highlight for ALL duplicate rows
+          tr.title = "⚠️ Warning: Yeh employee code is sheet mein multiple times added hai (Duplicate)!";
+        } else {
+          if (r.rowFontColor) tr.style.color = r.rowFontColor;
+          if (r.rowHighlightColor) tr.style.backgroundColor = r.rowHighlightColor;
+        }
 
         let html = "";
         if (r.isGrandTotal) {
@@ -1560,29 +1571,55 @@ function onModalMrSelectChange(selectedMr) {
       }
 
       pendingConfirmAction = () => {
-        mrSheets[currentMRIndex].isSubmitted = true;
+        // Pehle state update karein
+        const targetIndex = currentMRIndex;
+        mrSheets[targetIndex].isSubmitted = true;
         
+        // 💡 Corrected brackets here
         let loggedUser = localStorage.getItem("CPL_LOGGED_USER") || (localStorage.getItem("CPL_ADMIN_LOGGED") === "true" ? "ADMIN" : "UNKNOWN USER");
-        mrSheets[currentMRIndex].submittedBy = loggedUser.toUpperCase();
+        mrSheets[targetIndex].submittedBy = loggedUser.toUpperCase();
         
+        // Locally turant save karein taaki data safe rahe
         saveToLocal(true);
 
-        fetch(`/api/mr-sheets`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ mrSheets, lastIndex: currentMRIndex, period: activePeriod })
-        })
-        .then(res => res.json())
-        .then(() => {
-          showAlert("MR successfully submitted & uploaded to server!");
-          fetchMRDataFromServer();
-        })
-        .catch(err => {
-          showAlert("Server upload fail ho gaya, kripya internet connection check karein!", true);
-        });
+        // Helper function for automatic retry mechanism (slow internet fix)
+        const sendWithRetry = (payload, retriesLeft = 3) => {
+          fetch(`/api/mr-sheets`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+          })
+          .then(res => {
+            if (!res.ok) throw new Error("Server response not ok");
+            return res.json();
+          })
+          .then(() => {
+            showAlert("MR successfully submitted & uploaded to server!");
+            fetchMRDataFromServer();
+          })
+          .catch(err => {
+            if (retriesLeft > 0) {
+              console.log(`Upload failed, retrying... (${retriesLeft} koshishe baaki hain)`);
+              setTimeout(() => sendWithRetry(payload, retriesLeft - 1), 3000); // 3 second baad dobara try karega
+            } else {
+              // Agar saari koshishe fail ho jayein, toh data locally safe rahega
+              showAlert("Server upload fail ho gaya! Lekin aapka data locally safe hai, kripya baad mein dobara submit karein.", true);
+              console.error("Server upload final error:", err);
+            }
+          });
+        };
+
+        // Server payload bhejain
+        const payload = {
+          mrSheets: mrSheets,
+          lastIndex: targetIndex,
+          period: activePeriod
+        };
+
+        sendWithRetry(payload, 3);
       };
       
-      document.getElementById("customConfirmText").innerText = "Are you sure you want to submit this MR sheet? Once submitted, it will be uploaded to the server and cannot be edited without Admin approval. Please check all details carefully before proceeding..";
+      document.getElementById("customConfirmText").innerText = "Are you sure you want to submit this MR sheet? Once submitted, it will be uploaded to the server and cannot be edited without Admin approval. Please check all details carefully before proceeding.";
       document.getElementById("customConfirmModal").style.display = "flex";
     }
 
