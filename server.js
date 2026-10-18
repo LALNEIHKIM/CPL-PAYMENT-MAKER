@@ -187,10 +187,45 @@ app.post('/api/mr-sheets', (req, res) => {
   });
 });
 
+// --- APPROVAL SYSTEM API ENDPOINTS ---
+const approvalFile = './approval_data.json';
+
+// Get Pending & Approved list
+app.get('/api/approvals', (req, res) => {
+  if (fs.existsSync(approvalFile)) {
+    fs.readFile(approvalFile, 'utf8', (err, data) => {
+      if (err) return res.status(500).json({ error: "Failed to read approval data" });
+      try {
+        res.json(JSON.parse(data));
+      } catch (e) {
+        res.json({ pendingUsers: [], approvedUsers: [], requests: [] });
+      }
+    });
+  } else {
+    res.json({ pendingUsers: [], approvedUsers: [], requests: [] });
+  }
+});
+
+// Post / Update Approvals & Requests
+app.post('/api/approvals', (req, res) => {
+  const { pendingUsers, approvedUsers, requests } = req.body;
+  const payload = {
+    pendingUsers: pendingUsers !== undefined ? pendingUsers : [],
+    approvedUsers: approvedUsers !== undefined ? approvedUsers : [],
+    requests: requests !== undefined ? requests : []
+  };
+
+  fs.writeFile(approvalFile, JSON.stringify(payload, null, 2), (err) => {
+    if (err) return res.status(500).json({ error: "Failed to save approval data" });
+    res.json({ success: true });
+  });
+});
+
 app.listen(PORT, '0.0.0.0', () => {
   console.log(`=========================================`);
   console.log(`Server running at http://localhost:${PORT}`);
   console.log(`CORS Enabled for multi-PC connection`);
   console.log(`Period-Wise Data Isolation Enabled`);
+  console.log(`Server-Side Approval System Enabled`);
   console.log(`=========================================`);
 });
