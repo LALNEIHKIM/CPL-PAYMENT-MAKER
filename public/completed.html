@@ -539,6 +539,8 @@
       }
       let requests = serverApprovals.requests || [];
       const req = requests[index];
+      
+      // Request ko list se hata dein
       requests.splice(index, 1);
       serverApprovals.requests = requests;
 
@@ -560,13 +562,14 @@
         return;
       }
 
-      // Sheet Edit Approval Logic (Exact matching with active selected tab / label)
+      // 💡 Sheet Edit Approval Logic (Exact matching with active selected tab / label)
       const realIdx = mrSheets.findIndex(m => m.label.toUpperCase() === req.mrLabel.toUpperCase());
       if (realIdx !== -1) {
+        // Sheet ko unblock karein
         mrSheets[realIdx].isSubmitted = false;
         
-        // 💡 YAHAN MAIN FIX HAI: Request bhejne wale ka exact naam (jaise 'KIMA') 
-        // hi is sheet ka assignedUser banega, taaki ye Admin ke bajaye KIMA ke payment screen par khule!
+        // 💡 SABSE MAIN FIX: Request bhejne wale ka exact naam (jaise 'KIMA') 
+        // hi is sheet ka assignedUser banega, taaki ye Admin ke bajaye sirf KIMA ke payment screen par khule!
         const targetUser = req.user ? req.user.trim().toUpperCase() : "ADMIN";
         mrSheets[realIdx].assignedUser = targetUser;
 
