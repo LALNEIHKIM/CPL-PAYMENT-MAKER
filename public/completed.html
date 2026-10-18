@@ -560,16 +560,17 @@
         return;
       }
 
-      // Sheet Edit Approval Logic
+      // Sheet Edit Approval Logic (Exact matching with active selected tab / label)
       const realIdx = mrSheets.findIndex(m => m.label.toUpperCase() === req.mrLabel.toUpperCase());
       if (realIdx !== -1) {
         mrSheets[realIdx].isSubmitted = false;
         
-        // 💡 SABSE MAIN FIX: Request bhejne wale ka naam uppercase karke assignedUser bana do!
+        // 💡 YAHAN MAIN FIX HAI: Request bhejne wale ka exact naam (jaise 'KIMA') 
+        // hi is sheet ka assignedUser banega, taaki ye Admin ke bajaye KIMA ke payment screen par khule!
         const targetUser = req.user ? req.user.trim().toUpperCase() : "ADMIN";
         mrSheets[realIdx].assignedUser = targetUser;
 
-        // Local storage aur Server dono jagah turant save karo
+        // Local storage aur Server dono jagah turant save karein
         localStorage.setItem(`CPL_OFFLINE_SHEETS_${activePeriod}`, JSON.stringify({ mrSheets, lastIndex: 0 }));
         
         Promise.all([
