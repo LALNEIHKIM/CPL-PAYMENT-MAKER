@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-   <!-- <style>
+  <!-- <style>
  #maintenance-overlay {
     position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
     background: #111; color: #fff; z-index: 999999;
@@ -199,20 +199,27 @@
         return;
       }
 
-      let approvedList = JSON.parse(localStorage.getItem("CPL_APPROVED_USERS") || "[]");
-      let pendingList = JSON.parse(localStorage.getItem("CPL_PENDING_USERS") || "[]");
+      // Server se approved aur pending lists fetch karein
+      fetch('/api/approvals')
+        .then(res => res.json())
+        .then(data => {
+          let approvedList = data.approvedUsers || [];
+          let pendingList = data.pendingUsers || [];
 
-      if (approvedList.includes(userName)) {
-        statusMsg.style.color = "#27ae60";
-        statusMsg.innerText = `✓ Welcome back, ${userName}! (Approved)`;
-      } else if (pendingList.includes(userName)) {
-        statusMsg.style.color = "#d35400";
-        status_msg_text = "Approving your name please, wait (Any other query talk to Admin)";
-        statusMsg.innerText = status_msg_text;
-      } else {
-        statusMsg.style.color = "#555";
-        statusMsg.innerText = "Click LOGIN to submit your name for approval.";
-      }
+          if (approvedList.includes(userName)) {
+            statusMsg.style.color = "#27ae60";
+            statusMsg.innerText = `✓ Welcome back, ${userName}! (Approved)`;
+          } else if (pendingList.includes(userName)) {
+            statusMsg.style.color = "#d35400";
+            statusMsg.innerText = "Approving your name please, wait (Any other query talk to Admin)";
+          } else {
+            statusMsg.style.color = "#555";
+            statusMsg.innerText = "Click LOGIN to submit your name for approval.";
+          }
+        }).catch(e => {
+          statusMsg.style.color = "#555";
+          statusMsg.innerText = "Click LOGIN to submit your name for approval.";
+        });
     }
 
     function loginOperatorName() {
@@ -230,41 +237,54 @@
         return;
       }
 
-      let approvedList = JSON.parse(localStorage.getItem("CPL_APPROVED_USERS") || "[]");
-      if (approvedList.includes(userName)) {
-        localStorage.setItem("CPL_LOGGED_USER", userName);
-        localStorage.setItem("CPL_ADMIN_LOGGED", "false");
-        statusMsg.style.color = "#27ae60";
-        statusMsg.innerText = `✓ Login Successful! Opening Payment...`;
-        setTimeout(() => {
-          localStorage.setItem("CPL_IN_PAYMENT_SCREEN", "true");
-          window.location.href = "/payment.html";
-        }, 400);
-        return;
-      }
+      fetch('/api/approvals')
+        .then(res => res.json())
+        .then(data => {
+          let approvedList = data.approvedUsers || [];
+          let pendingList = data.pendingUsers || [];
+          let requests = data.requests || [];
 
-      // Pending list mein add karna
-      let pendingList = JSON.parse(localStorage.getItem("CPL_PENDING_USERS") || "[]");
-      if (!pendingList.includes(userName)) {
-        pendingList.push(userName);
-        localStorage.setItem("CPL_PENDING_USERS", JSON.stringify(pendingList));
-      }
+          if (approvedList.includes(userName)) {
+            localStorage.setItem("CPL_LOGGED_USER", userName);
+            localStorage.setItem("CPL_ADMIN_LOGGED", "false");
+            statusMsg.style.color = "#27ae60";
+            statusMsg.innerText = `✓ Login Successful! Opening Payment...`;
+            setTimeout(() => {
+              localStorage.setItem("CPL_IN_PAYMENT_SCREEN", "true");
+              window.location.href = "/payment.html";
+            }, 400);
+            return;
+          }
 
-      // Msg Box ke liye edit requests list mein add karna
-      let requests = JSON.parse(localStorage.getItem("CPL_EDIT_REQUESTS") || "[]");
-      const reqExists = requests.some(r => r.user === userName && r.mrLabel === "LOGIN APPROVAL");
-      if (!reqExists) {
-        requests.push({ 
-          user: userName, 
-          mrLabel: "LOGIN APPROVAL", 
-          title: "New Operator Login Approval Request", 
-          time: new Date().toLocaleTimeString() 
+          // Pending list mein add karna
+          if (!pendingList.includes(userName)) {
+            pendingList.push(userName);
+          }
+
+          // Msg Box ke liye edit requests list mein add karna
+          const reqExists = requests.some(r => r.user === userName && r.mrLabel === "LOGIN APPROVAL");
+          if (!reqExists) {
+            requests.push({ 
+              user: userName, 
+              mrLabel: "LOGIN APPROVAL", 
+              title: "New Operator Login Approval Request", 
+              time: new Date().toLocaleTimeString() 
+            });
+          }
+
+          // Server par data save karein taaki Admin kisi bhi PC se dekh sake
+          fetch('/api/approvals', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ pendingUsers: pendingList, approvedUsers: approvedList, requests: requests })
+          }).then(() => {
+            statusMsg.style.color = "#d35400";
+            statusMsg.innerText = "Approving your name please, wait (Any other query talk to Admin)";
+          }).catch(err => {
+            statusMsg.style.color = "#c0392b";
+            statusMsg.innerText = "Server error sending request, check connection.";
+          });
         });
-        localStorage.setItem("CPL_EDIT_REQUESTS", JSON.stringify(requests));
-      }
-
-      statusMsg.style.color = "#d35400";
-      statusMsg.innerText = "Approving your name please, wait (Any other query talk to Admin)";
     }
 
     function openAdminModal() {
