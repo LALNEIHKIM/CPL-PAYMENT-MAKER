@@ -365,7 +365,6 @@
 
       submittedMRs.forEach(m => {
         let user = (m.submittedBy || "ADMIN").toUpperCase();
-        
         if (!userMap[user]) {
           userMap[user] = { count: 0, sheets: [] };
         }
@@ -589,6 +588,8 @@
     function renderCompleteMRTabs() {
       const container = document.getElementById("completeMRTabsContainer");
       container.innerHTML = "";
+      
+      // 💡 Sabhi submitted sheets ko filter karo (bina user restriction ke)
       const submittedMRs = mrSheets.filter(m => m.isSubmitted);
 
       submittedMRs.sort((a, b) => {
