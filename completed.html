@@ -1,0 +1,1037 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CPL COMPLETED MR VIEW</title>
+  <script src="https://cdn.jsdelivr.net/npm/xlsx-js-style@1.2.0/dist/xlsx.bundle.js"></script>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: Arial, Helvetica, sans-serif; }
+    body { min-height: 100vh; background-color: #332e1d; }
+    #screen3 { display: flex; height: 100vh; background: #332e1d; flex-direction: row; }
+    .sidebar { width: 140px; min-width: 140px; border-right: 2px solid #e0e0e0; padding: 8px 6px; display: flex; flex-direction: column; justify-content: space-between; background: #00796b; }
+    .sidebar-top { display: flex; flex-direction: column; gap: 6px; overflow-y: auto; max-height: 75vh; }
+    .btn-mr-tab {
+      background: #ffffff; color: #333333; font-size: 12px; font-weight: 900; padding: 5px 4px; border-radius: 4px; border: 1.5px solid #bbb; cursor: pointer; text-align: center; text-transform: uppercase; word-break: break-all;
+    }
+    .btn-mr-tab.active { background: linear-gradient(180deg, #00c853 0%, #007e33 100%); color: #ffffff; }
+    .btn-mr-tab.submitted { border: 2px solid #27ae60 !important; }
+    .sidebar-bottom { display: flex; flex-direction: column; gap: 5px; padding-top: 6px; border-top: 1px solid rgba(255,255,255,0.2); }
+    .btn-sidebar-fn { background: linear-gradient(180deg, #1b499b 0%, #0d2857 100%); color: #ffffff; font-size: 12px; font-weight: 900; 
+    padding: 7px 4px; border: none; border-radius: 4px; cursor: pointer; text-align: center; text-decoration: none; display: block; }
+    .btn-sidebar-letter { background: linear-gradient(180deg, #d35400 0%, #a04000 100%); }
+    
+    .workspace-main { flex: 1; padding: 6px 12px; display: flex; flex-direction: column; gap: 6px; overflow: hidden; background: #f4f4f4; position: relative; }
+    .main-banner { background: linear-gradient(180deg, #2b579a 0%, #153465 100%); color: #ffffff; font-size: 15px; font-weight: 900; text-align: center; padding: 5px; border-radius: 4px; }
+    .search-row { display: flex; justify-content: space-between; align-items: center; gap: 6px; background: #f8f9fa; padding: 4px 8px; border-radius: 4px; }
+    .action-buttons { display: flex; gap: 6px; align-items: center; }
+    .btn-action { font-weight: bold; font-size: 11px; border: none; padding: 6px 8px; border-radius: 4px; cursor: pointer; color: #ffffff; height: 25px; display: flex; align-items: center; text-decoration: none; }
+    .btn-goto-home { background: #2c04f7; }
+
+    /* FEATURE DROPDOWN MENU STYLES */
+    .dropdown { position: relative; display: inline-block; }
+    .dropdown-content { display: none; position: absolute; right: 0; background-color: #f9f9f9; min-width: 190px; box-shadow: 0px 8px 16px rgba(0,0,0,0.2); z-index: 10; border-radius: 4px; }
+    .dropdown-content button, .dropdown-content a { color: black; padding: 8px 12px; text-decoration: none; display: block; width: 100%; border: none; background: none; text-align: left; font-size: 11px; font-weight: bold; cursor: pointer; }
+    .dropdown-content button:hover, .dropdown-content a:hover { background-color: #f1f1f1; }
+    .dropdown:hover .dropdown-content { display: block; }
+
+    /* MSG BOX BUTTON */
+    .msg-box-btn {
+      background: linear-gradient(180deg, #e67e22 0%, #ba4a00 100%);
+      color: white; font-weight: 900; font-size: 11px; padding: 0 12px; height: 25px; border: none; border-radius: 4px; cursor: pointer;
+      display: flex; align-items: center; gap: 6px; box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+    }
+
+    /* RIGHT BOTTOM CORNER TABLE STATUS BOX */
+    #completedStatusBox {
+      position: absolute;
+      right: 15px;
+      bottom: 15px;
+      background: #ffffff;
+      border: 2px solid #2b579a;
+      border-radius: 6px;
+      font-size: 11px;
+      box-shadow: 0 6px 20px rgba(0,0,0,0.3);
+      z-index: 100;
+      width: 320px;
+      overflow: hidden;
+    }
+    #completedStatusBox table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+    #completedStatusBox th, #completedStatusBox td {
+      border: 1px solid #000;
+      padding: 4px 6px;
+      text-align: center;
+      font-size: 10.5px;
+    }
+    #completedStatusBox th {
+      background: #2b579a;
+      color: #fff;
+      font-weight: 900;
+    }
+
+    /* MODAL */
+    .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.6); z-index: 999; justify-content: center; align-items: center; }
+    .modal-window { background: #ffffff; border-radius: 6px; padding: 20px; width: 420px; box-shadow: 0 6px 20px rgba(0,0,0,0.4); display: flex; flex-direction: column; gap: 12px; text-align: center; }
+
+    .table-container { flex: 1; overflow: auto; border: 1.5px solid #000000; background: #ffffff; }
+    table { border-collapse: collapse; font-size: 11px; width: 100%; white-space: nowrap; }
+    th, td { border: 1px solid #000000; padding: 3px 6px; text-align: left; height: 28px; }
+    th { background: #ffffff; font-weight: bold; position: sticky; top: 0; z-index: 5; text-align: center; }
+    .row-letter th { font-size: 11.5px; font-weight: 900; background: #f0f0f0; height: 20px; }
+    .row-name th { font-size: 10px; font-weight: 800; height: 28px; background: #ffffff; text-transform: uppercase; }
+    
+    tbody tr { height: 28px; cursor: pointer; }
+    tbody tr:hover { background-color: #f1f7ff; }
+    tbody tr.selected-row { background-color: #2980b9 !important; color: #ffffff !important; }
+    tbody tr.selected-row td { color: #ffffff !important; border-color: #154360 !important; background-color: #2980b9 !important; }
+
+    th:nth-child(8), td:nth-child(8) {
+      width: 130px !important; min-width: 130px !important; max-width: 180px !important; white-space: nowrap !important; overflow: hidden !important; text-overflow: ellipsis !important;
+    }
+
+    #alertToast { position: fixed; top: 20px; right: 20px; background: #27ae60; color: #ffffff; padding: 10px 18px; border-radius: 4px; font-size: 13px; font-weight: bold; box-shadow: 0 4px 12px rgba(0,0,0,0.3); z-index: 9999; display: none; }
+    #alertToast.error { background: #c0392b; }
+  </style>
+</head>
+<body>
+
+  <div id="alertToast">Success Message</div>
+
+  <div id="screen3">
+    <div class="sidebar">
+      <div class="sidebar-top" id="completeMRTabsContainer"></div>
+      <div class="sidebar-bottom">
+        <a href="/letter.html" class="btn-sidebar-fn btn-sidebar-letter">LETTER</a>
+        <a href="/payment.html" class="btn-sidebar-fn btn-goto-home">💳 PAYMENT</a>
+      </div>
+    </div>
+
+    <div class="workspace-main">
+      <div class="main-banner" id="completeMRBanner">COMPLETED / SUBMITTED MR VIEW</div>
+      
+      <div class="search-row">
+        <div style="display:flex; gap:6px; align-items:center;">
+          <button class="btn-action" style="background:#c0392b; font-weight:900;" onclick="requestEditPermission()">🔓 EDIT HERE (REQUEST)</button>
+          <button class="btn-action" style="background:#576574; font-weight:900;" onclick="backToPayment()">⬅️ BACK</button>
+        </div>
+
+        <div class="action-buttons">
+          <!-- FEATURE DROPDOWN MENU -->
+          <div class="dropdown">
+            <button class="btn-action" style="background:#8e44ad; font-weight:900;" onclick="checkExportAccess()">⚙️ FEATURE ▾</button>
+            <div class="dropdown-content">
+              <button onclick="exportSingleFromScreen3Active()">📄 Export Current Sheet</button>
+              <button onclick="exportAllWorkbookFromScreen3()">📑 Export All Sheets</button>
+              <button onclick="openFindModal()">🔍 Find Individual</button>
+              <button onclick="openDeleteUserModal()" style="color:#c0392b;">🗑️ Delete User</button>
+              <a href="/doii.html">📑 CPL DO-II</a>
+              <a href="/increase.html">📊 Increase & Decrease</a>
+              <a href="/summary.html">📋 Summary Audit</a>
+            </div>
+          </div>
+          
+          <button class="msg-box-btn" id="msgBoxBtn" onclick="openMsgBoxModal()">💬 MSG BOX [<span id="msgCountBadge">0</span>]</button>
+          <button class="btn-action btn-goto-home" onclick="goToHome()">🏠 HOME</button>
+        </div>
+      </div>
+      
+      <div class="table-container">
+        <table>
+          <thead>
+            <tr class="row-letter" id="completeLetterHead"></tr>
+            <tr class="row-name" id="completeNameHead"></tr>
+          </thead>
+          <tbody id="completeTableBody"></tbody>
+        </table>
+      </div>
+
+      <!-- RIGHT BOTTOM CORNER TABLE STATUS BOX -->
+      <div id="completedStatusBox">
+        <table>
+          <thead>
+            <tr>
+              <th style="width: 110px;">USER NAME</th>
+              <th style="width: 75px;">SUBMITED NO</th>
+              <th style="width: 115px;">MR</th>
+            </tr>
+          </thead>
+          <tbody id="statusTableBody">
+            <tr><td colspan="3" style="text-align:center; font-style:italic;">Loading...</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- FIND MODAL -->
+  <div class="modal-overlay" id="findModal">
+    <div class="modal-window" style="width: 380px; padding: 20px;">
+      <h3 style="color:#2b579a; margin-bottom:10px;">FIND INDIVIDUAL</h3>
+      <input type="text" id="findInput" placeholder="Enter name to find..." oninput="executeFind(this.value)" style="width:100%; height:32px; padding:4px 8px; border:1px solid #ccc; border-radius:4px;">
+      <div id="findResultBox" style="max-height:150px; overflow-y:auto; margin-top:10px; font-size:11.5px; text-align:left;"></div>
+      <div style="display:flex; justify-content:flex-end; margin-top:10px;">
+        <button class="btn-action" style="background:#666;" onclick="closeModal('findModal')">CLOSE</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- DELETE USER MODAL -->
+  <div class="modal-overlay" id="deleteUserModal">
+    <div class="modal-window" style="width: 380px;">
+      <h3 style="color:#c0392b;">DELETE USER & THEIR MRs</h3>
+      <p style="font-size: 11.5px; color: #555; text-align: left;">Select user to delete along with their submitted MR sheets:</p>
+      <select id="deleteUserSelect" style="width:100%; height:34px; padding:6px; border:1.5px solid #c0392b; border-radius:4px; font-size:12px; font-weight:bold;">
+        <option value="">-- Select User --</option>
+      </select>
+      <div style="display:flex; justify-content:flex-end; gap:8px; margin-top:8px;">
+        <button class="btn-action" style="background:#666;" onclick="closeModal('deleteUserModal')">CANCEL</button>
+        <button class="btn-action" style="background:#c0392b;" onclick="confirmDeleteUserSheets()">DELETE USER</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- USER MR LIST MODAL -->
+  <div class="modal-overlay" id="userMrListModal">
+    <div class="modal-window" style="width: 380px;">
+      <h3 style="color:#2b579a;" id="modalUserTitle">USER MR LIST</h3>
+      <div id="userMrListContainer" style="max-height:220px; overflow-y:auto; border:1px solid #ccc; padding:8px; text-align:left; font-size:12px; display:flex; flex-direction:column; gap:6px;">
+      </div>
+      <div style="display:flex; justify-content:flex-end; gap:8px; margin-top:8px;">
+        <button class="btn-action" style="background:#666;" onclick="closeModal('userMrListModal')">CLOSE</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MSG BOX MODAL FOR ADMIN -->
+  <div class="modal-overlay" id="msgBoxModal">
+    <div class="modal-window">
+      <h3 style="color:#2b579a;">EDIT REQUESTS MSG BOX</h3>
+      <div id="msgRequestsList" style="max-height:220px; overflow-y:auto; border:1px solid #ccc; padding:8px; text-align:left; font-size:12px;">
+      </div>
+      <div style="display:flex; justify-content:flex-end; gap:8px; margin-top:8px;">
+        <button class="btn-action" style="background:#666;" onclick="closeModal('msgBoxModal')">CLOSE</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+
+    let serverApprovals = { pendingUsers: [], approvedUsers: [], requests: [] };
+
+    // Server se approval data fetch karna
+    function fetchApprovalDataFromServer() {
+      fetch('/api/approvals')
+        .then(res => res.json())
+        .then(data => {
+          serverApprovals = data;
+          updateMsgBadgeCount();
+          // Agar modal khula hai toh list bhi update kar do
+          if (document.getElementById("msgBoxModal").style.display === "flex") {
+            renderMsgRequestsList();
+          }
+        }).catch(e => {});
+    }
+    let masterHeaders = [];
+    let mrSheets = [];
+    let completeActiveIdx = 0;
+    let activePeriod = localStorage.getItem("CPL_GLOBAL_MONTH") || "SEP 2026";
+    let isAdmin = localStorage.getItem("CPL_ADMIN_LOGGED") === "true";
+    let selectedRowIdx = -1;
+
+    function showAlert(message, isError = false) {
+      const toast = document.getElementById("alertToast");
+      toast.innerText = message;
+      toast.className = isError ? "error" : "";
+      toast.style.display = "block";
+      setTimeout(() => { toast.style.display = "none"; }, 3000);
+    }
+
+    window.addEventListener("DOMContentLoaded", () => {
+      if (isAdmin && (!localStorage.getItem("CPL_LOGGED_USER") || localStorage.getItem("CPL_LOGGED_USER") === "UNKNOWN USER")) {
+        localStorage.setItem("CPL_LOGGED_USER", "ADMIN");
+      }
+
+      const savedMaster = localStorage.getItem('CPL_OFFLINE_MASTER_DATA');
+      if (savedMaster) {
+        try {
+          const pm = JSON.parse(savedMaster);
+          masterHeaders = pm.headers || [];
+        } catch(e){}
+      }
+
+      fetchApprovalDataFromServer(); // 💡 Yeh line yahan add karni hai
+      renderHeaders();
+      fetchCompletedMRsFromServer();
+    });
+
+    function openFindModal() {
+      document.getElementById("findInput").value = "";
+      document.getElementById("findResultBox").innerHTML = "";
+      document.getElementById("findModal").style.display = "flex";
+    }
+
+    function executeFind(query) {
+      const box = document.getElementById("findResultBox");
+      if (!query.trim()) { box.innerHTML = ""; return; }
+      let foundHtml = "";
+      const submittedMRs = mrSheets.filter(m => m.isSubmitted);
+      
+      submittedMRs.forEach((mr, mIdx) => {
+        (mr.rows || []).forEach((r, rIdx) => {
+          if (!r.isGrandTotal && r.rowData.some(cell => String(cell).toLowerCase().includes(query.toLowerCase()))) {
+            foundHtml += `<div style="padding:4px; border-bottom:1px solid #eee; cursor:pointer;" onclick="jumpToFoundMR(${mIdx}, ${rIdx})">
+              <b>${mr.label}</b> - S/No: ${r.rowData[0]} | Name: <b>${r.rowData[3]}</b>
+            </div>`;
+          }
+        });
+      });
+      box.innerHTML = foundHtml || "<i>No matching records found.</i>";
+    }
+
+    function jumpToFoundMR(submittedIdx, rIdx) {
+      completeActiveIdx = submittedIdx;
+      selectedRowIdx = rIdx;
+      closeModal("findModal");
+      renderCompleteMRTabs();
+    }
+
+    function checkExportAccess() {
+      if (!isAdmin) {
+        alert("Access Denied! Only Admin can access this feature");
+        return;
+      }
+    }
+
+    function openDeleteUserModal() {
+      if (!isAdmin) {
+        alert("Access Denied! Only Admin can access this feature");
+        return;
+      }
+      const submittedMRs = mrSheets.filter(m => m.isSubmitted);
+      let userSet = new Set();
+      submittedMRs.forEach(m => {
+        let u = (m.submittedBy || "ADMIN").toUpperCase();
+        userSet.add(u);
+      });
+
+      const selectBox = document.getElementById("deleteUserSelect");
+      let opts = `<option value="">-- Select User --</option>`;
+      userSet.forEach(u => {
+        opts += `<option value="${u}">${u}</option>`;
+      });
+      selectBox.innerHTML = opts;
+      document.getElementById("deleteUserModal").style.display = "flex";
+    }
+
+    function confirmDeleteUserSheets() {
+      const selectedUser = document.getElementById("deleteUserSelect").value;
+      if (!selectedUser) {
+        alert("Please select a user to delete!");
+        return;
+      }
+
+      if (confirm(`Are you sure you want to delete all submitted MR sheets of user [${selectedUser}]?`)) {
+        mrSheets = mrSheets.filter(m => {
+          if (!m.isSubmitted) return true;
+          let u = (m.submittedBy || "ADMIN").toUpperCase();
+          return u !== selectedUser;
+        });
+
+        localStorage.setItem(`CPL_OFFLINE_SHEETS_${activePeriod}`, JSON.stringify({ mrSheets, lastIndex: 0 }));
+        
+        fetch(`/api/mr-sheets`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ mrSheets, lastIndex: 0, period: activePeriod })
+        }).catch(e => {});
+
+        closeModal('deleteUserModal');
+        showAlert(`All MR sheets of user ${selectedUser} deleted successfully!`);
+        renderCompleteMRTabs();
+      }
+    }
+
+    function updateMsgBadgeCount() {
+      // 💡 Badge count bhi ab serverApprovals se aayega taaki mismatch na ho
+      let requests = serverApprovals.requests || [];
+      document.getElementById("msgCountBadge").innerText = requests.length;
+    }
+
+    function updateCompletedStatusTable() {
+      const submittedMRs = mrSheets.filter(m => m.isSubmitted);
+      const tbody = document.getElementById("statusTableBody");
+      
+      let userMap = {};
+      let totalSubmittedSheetsCount = submittedMRs.length;
+      let allSubmittedMRsList = [];
+
+      submittedMRs.forEach(m => {
+        let user = (m.submittedBy || "ADMIN").toUpperCase();
+        if (!userMap[user]) {
+          userMap[user] = { count: 0, sheets: [] };
+        }
+        userMap[user].count += 1;
+        userMap[user].sheets.push(m);
+        allSubmittedMRsList.push(m);
+      });
+
+      let html = "";
+      Object.keys(userMap).forEach(user => {
+        let uData = userMap[user];
+        html += `<tr>
+          <td style="font-weight:bold;">${user}</td>
+          <td style="text-align:center;">${uData.count}</td>
+          <td style="text-align:center;"><span style="color:#2b579a; font-weight:bold; cursor:pointer; text-decoration:underline;" onclick='openUserMrModal("${user}", ${JSON.stringify(uData.sheets.map(s => s.label))})'>MR LIST</span></td>
+        </tr>`;
+      });
+
+      html += `<tr style="background:#f0f0f0; font-weight:900;">
+        <td>TOTAL SUBMIT</td>
+        <td style="text-align:center;">${totalSubmittedSheetsCount}</td>
+        <td style="text-align:center;"><span style="color:#2b579a; cursor:pointer; text-decoration:underline;" onclick='openUserMrModal("ALL USERS", ${JSON.stringify(allSubmittedMRsList.map(s => s.label))})'>MR LIST</span></td>
+      </tr>`;
+
+      tbody.innerHTML = html;
+    }
+
+    function openUserMrModal(username, sheetLabels) {
+      document.getElementById("modalUserTitle").innerText = `${username} - SUBMITTED MRs`;
+      const container = document.getElementById("userMrListContainer");
+      if (!sheetLabels || sheetLabels.length === 0) {
+        container.innerHTML = `<i>No MR sheets found.</i>`;
+      } else {
+        let listHtml = "";
+        sheetLabels.forEach(label => {
+          listHtml += `<div style="padding:6px; background:#f9f9f9; border:1px solid #ddd; border-radius:4px; display:flex; justify-content:space-between; align-items:center;">
+            <strong>${label}</strong>
+            <button class="btn-action" style="background:#2b579a; height:24px; padding:2px 10px; font-size:10px;" onclick="jumpToSubmittedMR('${label}')">OPEN</button>
+          </div>`;
+        });
+        container.innerHTML = listHtml;
+      }
+      document.getElementById("userMrListModal").style.display = "flex";
+    }
+
+    function jumpToSubmittedMR(label) {
+      closeModal('userMrListModal');
+      const submittedMRs = mrSheets.filter(m => m.isSubmitted);
+      const idx = submittedMRs.findIndex(m => m.label.toUpperCase() === label.toUpperCase());
+      if (idx !== -1) {
+        completeActiveIdx = idx;
+        renderCompleteMRTabs();
+      }
+    }
+
+    function requestEditPermission() {
+      const submittedMRs = mrSheets.filter(m => m.isSubmitted);
+      if (submittedMRs.length === 0) return showAlert("No completed MR sheet available!", true);
+      const target = submittedMRs[completeActiveIdx];
+      
+      let username = localStorage.getItem("CPL_LOGGED_USER") || (isAdmin ? "ADMIN" : "UNKNOWN USER");
+      if (isAdmin) username = "ADMIN";
+      let reqLabel = target.label;
+
+      // 💡 Server se pehle current approvals aur requests fetch karein
+      fetch('/api/approvals')
+        .then(res => res.json())
+        .then(data => {
+          let pendingUsers = data.pendingUsers || [];
+          let approvedUsers = data.approvedUsers || [];
+          let requests = data.requests || [];
+
+          // Check karein ki pehle se request bheji gayi hai ya nahi
+          const exists = requests.some(r => r.user === username && r.mrLabel === reqLabel);
+          if (exists) {
+            return showAlert("Request already sent to Admin for this sheet!", true);
+          }
+
+          // Nayi request add karein
+          requests.push({ 
+            user: username, 
+            mrLabel: reqLabel, 
+            title: target.title, 
+            time: new Date().toLocaleTimeString() 
+          });
+
+          // Server par save karein
+          fetch('/api/approvals', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ pendingUsers: pendingUsers, approvedUsers: approvedUsers, requests: requests })
+          })
+          .then(res => res.json())
+          .then(() => {
+            showAlert("Edit request sent to Admin successfully!");
+          })
+          .catch(err => {
+            showAlert("Request send karne mein error aayi, internet check karein!", true);
+          });
+        })
+        .catch(err => {
+          showAlert("Server connection error!", true);
+        });
+    }
+
+    function openMsgBoxModal() {
+      if (!isAdmin) {
+        alert("Access Denied! Only Admin can access this feature");
+        return;
+      }
+      // 💡 Click karte hi server se fresh requests fetch karein
+      fetch('/api/approvals')
+        .then(res => res.json())
+        .then(data => {
+          serverApprovals = data;
+          updateMsgBadgeCount();
+          renderMsgRequestsList();
+          document.getElementById("msgBoxModal").style.display = "flex";
+        }).catch(e => {
+          renderMsgRequestsList();
+          document.getElementById("msgBoxModal").style.display = "flex";
+        });
+    }
+
+    function closeModal(id) { document.getElementById(id).style.display = "none"; }
+
+    function renderMsgRequestsList() {
+      // 💡 Local storage ke bajaye server wali requests list use karein
+      let requests = serverApprovals.requests || [];
+      const box = document.getElementById("msgRequestsList");
+      if (requests.length === 0) {
+        box.innerHTML = `<i style="color:#666;">No pending edit requests.</i>`;
+        return;
+      }
+      let html = "";
+      requests.forEach((req, idx) => {
+        html += `<div style="display:flex; justify-content:space-between; align-items:center; padding:6px; border-bottom:1px solid #eee;">
+          <div>
+            <strong>User: ${req.user || 'UNKNOWN USER'}</strong><br>
+            <span style="color:#2b579a; font-size:11px;">Sheet/Type: ${req.mrLabel}</span>
+          </div>
+          <div style="display:flex; gap:4px;">
+            <button class="btn-action" style="background:#27ae60; height:24px; padding:2px 8px; font-size:10px;" onclick="approveEditRequest(${idx})">APPROVE</button>
+            <button class="btn-action" style="background:#c0392b; height:24px; padding:2px 8px; font-size:10px;" onclick="denyEditRequest(${idx})">DENY</button>
+          </div>
+        </div>`;
+      });
+      box.innerHTML = html;
+    }
+
+    function approveEditRequest(index) {
+      if (!isAdmin) {
+        alert("Access Denied! Only Admin can access this feature");
+        return;
+      }
+      let requests = serverApprovals.requests || [];
+      const req = requests[index];
+      requests.splice(index, 1);
+      serverApprovals.requests = requests;
+
+      if (req.mrLabel === "LOGIN APPROVAL") {
+        if (!serverApprovals.approvedUsers.includes(req.user)) {
+          serverApprovals.approvedUsers.push(req.user);
+        }
+        serverApprovals.pendingUsers = (serverApprovals.pendingUsers || []).filter(u => u !== req.user);
+
+        fetch('/api/approvals', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(serverApprovals)
+        }).then(() => {
+          showAlert(`User ${req.user} approved successfully for login!`);
+          renderMsgRequestsList();
+          updateMsgBadgeCount();
+        });
+        return;
+      }
+
+      // Sheet Edit Approval Logic
+      const realIdx = mrSheets.findIndex(m => m.label === req.mrLabel);
+      if (realIdx !== -1) {
+        mrSheets[realIdx].isSubmitted = false;
+        
+        // 💡 SABSE IMPORTANT CHANGE: Jis user ne request bheji (jaise 'KIMA'), 
+        // usko hi is sheet ka assignedUser bana diya gaya hai!
+        mrSheets[realIdx].assignedUser = (req.user || "ADMIN").toUpperCase();
+
+        localStorage.setItem(`CPL_OFFLINE_SHEETS_${activePeriod}`, JSON.stringify({ mrSheets, lastIndex: 0 }));
+        
+        Promise.all([
+          fetch(`/api/mr-sheets`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ mrSheets, lastIndex: 0, period: activePeriod })
+          }),
+          fetch('/api/approvals', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(serverApprovals)
+          })
+        ]).then(() => {
+          showAlert(`Request approved for ${req.mrLabel}! Now assigned to ${req.user}.`);
+          renderCompleteMRTabs();
+          renderMsgRequestsList();
+          updateMsgBadgeCount();
+        }).catch(e => {});
+      } else {
+        showAlert("Sheet not found!", true);
+      }
+    }
+
+    function denyEditRequest(index) {
+      if (!isAdmin) {
+        alert("Access Denied! Only Admin can access this feature");
+        return;
+      }
+      let requests = serverApprovals.requests || [];
+      requests.splice(index, 1);
+      serverApprovals.requests = requests;
+
+      fetch('/api/approvals', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(serverApprovals)
+      }).then(() => {
+        showAlert("Request denied.");
+        renderMsgRequestsList();
+        updateMsgBadgeCount();
+      });
+    }
+
+    function fetchCompletedMRsFromServer() {
+      fetch(`/api/mr-sheets?period=${encodeURIComponent(activePeriod)}`)
+        .then(res => res.json())
+        .then(data => {
+          if (data.mrSheets) mrSheets = data.mrSheets;
+          renderCompleteMRTabs();
+        })
+        .catch(e => { renderCompleteMRTabs(); });
+    }
+
+    function renderHeaders() {
+      let r1 = "", r2 = "";
+      for (let i = 0; i < 24; i++) {
+        r1 += `<th>${String.fromCharCode(65 + i)}</th>`;
+        r2 += `<th>${masterHeaders[i] || ''}</th>`;
+      }
+      document.getElementById("completeLetterHead").innerHTML = r1;
+      document.getElementById("completeNameHead").innerHTML = r2;
+    }
+
+    function renderCompleteMRTabs() {
+      const container = document.getElementById("completeMRTabsContainer");
+      container.innerHTML = "";
+      
+      // 💡 Sabhi submitted sheets ko filter karo (bina user restriction ke)
+      const submittedMRs = mrSheets.filter(m => m.isSubmitted);
+
+      submittedMRs.sort((a, b) => {
+        const numA = parseInt((a.label || "").replace(/\D/g, '')) || 0;
+        const numB = parseInt((b.label || "").replace(/\D/g, '')) || 0;
+        return numA - numB;
+      });
+
+      updateCompletedStatusTable();
+
+      if (submittedMRs.length === 0) {
+        container.innerHTML = `<div style="color:#fff; font-size:11px; padding:10px; text-align:center;">No Completed MRs</div>`;
+        document.getElementById("completeTableBody").innerHTML = `<tr><td colspan="24" style="text-align:center; padding:30px; font-style:italic; color:#666;">No completed MR sheets found.</td></tr>`;
+        document.getElementById("completeMRBanner").innerText = "COMPLETED / SUBMITTED MR VIEW (Khaali hai)";
+        return;
+      }
+
+      submittedMRs.forEach((mr, idx) => {
+        const tab = document.createElement("div");
+        tab.className = `btn-mr-tab submitted ${idx === completeActiveIdx ? 'active' : ''}`;
+        tab.innerText = mr.label + " ✓";
+        tab.onclick = () => { completeActiveIdx = idx; renderCompleteMRTabs(); };
+        container.appendChild(tab);
+      });
+
+      if (completeActiveIdx >= submittedMRs.length) completeActiveIdx = 0;
+      renderCompleteMRTable(submittedMRs[completeActiveIdx]);
+    }
+
+    function renderCompleteMRTable(mr) {
+      if (!mr) return;
+      document.getElementById("completeMRBanner").innerText = mr.title + " [✓ COMPLETED & OPEN]";
+      const tbody = document.getElementById("completeTableBody");
+      tbody.innerHTML = "";
+      (mr.rows || []).forEach((r, idx) => {
+        const tr = document.createElement("tr");
+        if (idx === selectedRowIdx) tr.classList.add("selected-row");
+        tr.onclick = () => { selectedRowIdx = idx; renderCompleteMRTable(mr); };
+
+        let html = "";
+        for (let c = 0; c < 24; c++) {
+          let val = r.rowData[c] || '';
+          // Agar cell value object hai toh uski .v value nikal lo
+          if (typeof val === 'object' && val !== null) {
+            val = val.v !== undefined ? val.v : '';
+          }
+          html += `<td title="${val}">${val}</td>`;
+        }
+        tr.innerHTML = html;
+        tbody.appendChild(tr);
+      });
+    }
+
+    function backToPayment() { window.location.href = "/payment.html"; }
+    function goToHome() {
+      if (confirm("Did you check everything yourself? Are you sure you want to go to Home (Login Screen)?")) {
+        localStorage.removeItem("CPL_IN_PAYMENT_SCREEN");
+        localStorage.removeItem("CPL_ADMIN_LOGGED");
+        localStorage.removeItem("CPL_LOGGED_USER");
+        window.location.href = "/login.html";
+      }
+    }
+
+   // Clean border style with no background fill
+    const borderStyleThin = {
+      top: { style: "thin", color: { rgb: "000000" } },
+      bottom: { style: "thin", color: { rgb: "000000" } },
+      left: { style: "thin", color: { rgb: "000000" } },
+      right: { style: "thin", color: { rgb: "000000" } }
+    };
+
+    function exportSingleFromScreen3Active() {
+      if (!isAdmin) {
+        alert("Access Denied! Only Admin can access this feature");
+        return;
+      }
+      const submittedMRs = mrSheets.filter(m => m.isSubmitted);
+      if (submittedMRs.length === 0) return showAlert("No sheet to export!", true);
+      const target = submittedMRs[completeActiveIdx];
+      
+      const wsData = [[target.title], masterHeaders.slice(0, 24)];
+      
+      let dataRowsCount = 0;
+      target.rows.forEach(r => {
+        if (!r.isGrandTotal) {
+          wsData.push(r.rowData);
+          dataRowsCount++;
+        }
+      });
+
+      const startRow = 3; 
+      const endRow = startRow + dataRowsCount - 1;
+      const gTotalRow = endRow + 1; 
+
+      wsData.push(new Array(24).fill('')); 
+
+      const wb = XLSX.utils.book_new();
+      const ws = XLSX.utils.aoa_to_sheet(wsData);
+
+      for (let i = 0; i < dataRowsCount; i++) {
+        const excelRow = startRow + i;
+
+        ws[XLSX.utils.encode_cell({ r: excelRow - 1, c: 18 })] = {
+          t: 'n',
+          f: `IF(RIGHT(C${excelRow},3)="MAZ",550,IF(RIGHT(C${excelRow},4)="MATE",570,IF(RIGHT(C${excelRow},7)="SKD-III",640,IF(RIGHT(C${excelRow},6)="SKD-II",770,IF(RIGHT(C${excelRow},5)="SKD-I",900,IF(RIGHT(C${excelRow},5)="CPDVR",770,""))))))`,
+          z: '0.00'
+        };
+
+        ws[XLSX.utils.encode_cell({ r: excelRow - 1, c: 19 })] = {
+          t: 'n',
+          f: `R${excelRow}*S${excelRow}`,
+          z: '#,##0.00'
+        };
+      }
+
+      ws[XLSX.utils.encode_cell({ r: gTotalRow - 1, c: 17 })] = { t: 's', v: 'G/TOTAL' };
+      ws[XLSX.utils.encode_cell({ r: gTotalRow - 1, c: 19 })] = {
+        t: 'n',
+        f: `SUM(T${startRow}:T${endRow})`,
+        z: '#,##0.00'
+      };
+      ws[XLSX.utils.encode_cell({ r: gTotalRow - 1, c: 20 })] = {
+        t: 'n',
+        f: `SUM(T${startRow}:T${endRow})`,
+        z: '#,##0.00'
+      };
+
+      if (!ws['!merges']) ws['!merges'] = [];
+      ws['!merges'].push({ s: { r: 0, c: 0 }, e: { r: 0, c: 23 } });
+      ws['!merges'].push({ s: { r: gTotalRow - 1, c: 17 }, e: { r: gTotalRow - 1, c: 18 } });
+
+      for (let R = 0; R <= gTotalRow; R++) {
+        for (let C = 0; C < 24; C++) {
+          const cellRef = XLSX.utils.encode_cell({ r: R, c: C });
+          if (!ws[cellRef]) ws[cellRef] = { t: 's', v: '' };
+
+          // Title row (Row 0): Red Highlight, Left Aligned & Wrap Text
+          if (R === 0) {
+            ws[cellRef].s = {
+              alignment: { vertical: "center", horizontal: "left", wrapText: true },
+              font: { bold: true, sz: 11 },
+              fill: { fgColor: { rgb: "FFC7CE" } } // Light red background fill
+            };
+          } 
+          // Table Headers row (Row 1): Bold, Centered & Wrap Text
+          else if (R === 1) {
+            ws[cellRef].s = {
+              border: borderStyleThin,
+              alignment: { vertical: "center", horizontal: "center", wrapText: true },
+              font: { bold: true }
+            };
+          } 
+          // Data & Total rows
+          else {
+            ws[cellRef].s = {
+              border: borderStyleThin,
+              alignment: { vertical: "center", horizontal: C >= 17 ? "right" : "left" }
+            };
+          }
+        }
+      }
+
+      const sheetTabName = (target.label || "MR_Sheet").replace(/[:\\\/?*\[\]]/g, "_");
+      XLSX.utils.book_append_sheet(wb, ws, sheetTabName);
+      XLSX.writeFile(wb, `${target.label}.xlsx`);
+    }
+
+    function exportAllWorkbookFromScreen3() {
+      if (!isAdmin) {
+        alert("Access Denied! Only Admin can access this feature");
+        return;
+      }
+      
+      const wb = XLSX.utils.book_new();
+      const submittedMRs = mrSheets.filter(m => m.isSubmitted && m.rows.length > 0);
+      
+      if (submittedMRs.length === 0) {
+        return showAlert("No submitted MR sheets available to export!", true);
+      }
+
+      // 1. FORWARDING LETTER SHEET (First Tab)
+      let letterRowsData = [];
+      let grandTotalSum = 0;
+
+      submittedMRs.forEach((m, idx) => {
+        let totalAmt = 0;
+        let gtotalRowIdx = -1;
+
+        if (m.rows && m.rows.length > 0) {
+          m.rows.forEach((r, rIdx) => {
+            const rowName = String(r.name || (r.rowData && r.rowData[3]) || '').trim().toUpperCase();
+            const colType = String((r.rowData && r.rowData[17]) || '').trim().toUpperCase();
+            if (r.isGrandTotal || rowName === "G/TOTAL" || colType === "G/TOTAL") {
+              gtotalRowIdx = rIdx;
+              totalAmt = parseFloat(r.rowData[19]) || 0;
+            }
+          });
+
+          if (gtotalRowIdx === -1) {
+            m.rows.forEach(r => {
+              if (!r.isGrandTotal && String(r.name || '').toUpperCase() !== "G/TOTAL") {
+                totalAmt += parseFloat(r.rowData && r.rowData[19] ? r.rowData[19] : 0) || 0;
+              }
+            });
+          }
+        }
+
+        grandTotalSum += totalAmt;
+        const excelTargetRow = (gtotalRowIdx !== -1) ? (gtotalRowIdx + 3) : (m.rows.length + 3);
+
+        let jobClean = m.title || '';
+        const jobMatch = jobClean.match(/JOB\s*No\.?\s*(.*)/i);
+        if (jobMatch && jobMatch[1]) {
+          jobClean = jobMatch[1].trim();
+        }
+
+        let tabName = m.label || `MR NO. ${idx + 1}`;
+        const numMatch = tabName.match(/\d+/);
+        const mrNum = numMatch ? numMatch[0] : (idx + 1);
+        let mrClean = `74 RCC/${mrNum}/${activePeriod.toUpperCase()}`;
+
+        letterRowsData.push({
+          tabName: tabName,
+          targetCell: `T${excelTargetRow}`,
+          mrNo: mrClean,
+          jobNo: jobClean,
+          amount: totalAmt
+        });
+      });
+
+      const wsLetterData = [
+        ["", "", "", "", "HQ 74 RCC (GREF)"],
+        ["", "", "", "", "Pin - 930 074"],
+        ["", "", "", "", "C/o 99 APO"],
+        [],
+        ["2014-B/CPL/    /E2", "", "", "", activePeriod.toUpperCase()],
+        [],
+        ["AO 24 BRTF (Through E5 Section)"],
+        ["Pin - 930024"],
+        ["C/O 99 APO"],
+        [],
+        [`FORWARDING OF BILLS ON ACCOUNT OF WAGES OF CPL's FOR THE MONTH OF ${activePeriod.toUpperCase()}`],
+        [`(PERIOD FROM 21 AUG 2026 TO 20 SEP 2026)`],
+        [],
+        [`1.   The under mentioned Special Wages Bills on account of wages of ${activePeriod.toUpperCase()} (Period from 21 Aug 2026 to 20 Sep 2026) alongwith Mandate form, DLRs and Part-II orders of CPLs are forwarded herewith for your pre-audit and early payment, please.`],
+        [],
+        ["S/No", "Mr No", "Job No.", "Amount (Rs)", "REMARKS"]
+      ];
+
+      const startRowExcel = 16;
+      letterRowsData.forEach((r, idx) => {
+        wsLetterData.push([idx + 1, r.mrNo, r.jobNo, Number(r.amount || 0), ""]);
+      });
+
+      const totalRowExcel = startRowExcel + letterRowsData.length;
+      wsLetterData.push(["", "", "TOTAL (Rs)", Number(grandTotalSum), ""]);
+      wsLetterData.push([]);
+      wsLetterData.push([`Total Amount in Words`]);
+      wsLetterData.push([]);
+      wsLetterData.push([`(TOTAL CLOSED MR NOS)`]);
+      wsLetterData.push([]);
+      
+      const copyToStartIdx = wsLetterData.length;
+      wsLetterData.push(["Copy to:-", "", "FOR INFO PLEASE", "", "(Sujit Debnath)"]);
+      wsLetterData.push(["HQ 24 BRTF", "", "", "", "EE (Civ)"]);
+      wsLetterData.push(["C/O 99 APO", "", "", "", "Officer Commanding"]);
+      wsLetterData.push(["Pin: 930 024", "", "", "", "74 RCC (GREF)"]);
+
+      const wsLetter = XLSX.utils.aoa_to_sheet(wsLetterData);
+
+      letterRowsData.forEach((r, idx) => {
+        const rowNum = startRowExcel + idx + 1;
+        const cellRef = `D${rowNum}`;
+        const tabSafe = (r.tabName || `MR NO. ${idx + 1}`).replace(/'/g, "''");
+        wsLetter[cellRef] = {
+          t: 'n',
+          f: `'${tabSafe}'!${r.targetCell}`,
+          v: Number(r.amount || 0),
+          z: '#,##0.00'
+        };
+      });
+
+      wsLetter[`D${totalRowExcel + 1}`] = {
+        t: 'n',
+        f: `SUM(D${startRowExcel + 1}:D${totalRowExcel})`,
+        v: Number(grandTotalSum),
+        z: '#,##0.00'
+      };
+
+      if (!wsLetter['!merges']) wsLetter['!merges'] = [];
+      wsLetter['!merges'].push({ s: { r: 4, c: 0 }, e: { r: 4, c: 1 } });
+      wsLetter['!merges'].push({ s: { r: 10, c: 0 }, e: { r: 10, c: 4 } });
+      wsLetter['!merges'].push({ s: { r: 11, c: 0 }, e: { r: 11, c: 4 } });
+      wsLetter['!merges'].push({ s: { r: 13, c: 0 }, e: { r: 13, c: 4 } });
+
+      for (let rOffset = 0; rOffset < 4; rOffset++) {
+        wsLetter['!merges'].push({ s: { r: copyToStartIdx + rOffset, c: 0 }, e: { r: copyToStartIdx + rOffset, c: 1 } });
+      }
+
+      if (!wsLetter['!rows']) wsLetter['!rows'] = [];
+      wsLetter['!rows'][13] = { hpt: 36 };
+
+      for (let R = 15; R <= totalRowExcel; R++) {
+        for (let C = 0; C < 5; C++) {
+          const cellRef = XLSX.utils.encode_cell({ r: R, c: C });
+          if (!wsLetter[cellRef]) wsLetter[cellRef] = { t: 's', v: '' };
+          wsLetter[cellRef].s = {
+            border: borderStyleThin,
+            alignment: { vertical: "center", horizontal: C === 2 ? "left" : (C === 3 ? "right" : "center") },
+            font: { bold: R === 15 || R === totalRowExcel }
+          };
+        }
+      }
+
+      [10, 11].forEach(rIdx => {
+        const cellRef = XLSX.utils.encode_cell({ r: rIdx, c: 0 });
+        if (!wsLetter[cellRef]) wsLetter[cellRef] = { t: 's', v: '' };
+        wsLetter[cellRef].s = {
+          alignment: { vertical: "center", horizontal: "center", wrapText: true },
+          font: { bold: true, underline: true, sz: 10 }
+        };
+      });
+
+      const paraRef = XLSX.utils.encode_cell({ r: 13, c: 0 });
+      if (!wsLetter[paraRef]) wsLetter[paraRef] = { t: 's', v: '' };
+      wsLetter[paraRef].s = {
+        alignment: { vertical: "center", horizontal: "left", wrapText: true },
+        font: { sz: 10 }
+      };
+
+      wsLetter['!cols'] = [{ wch: 6 }, { wch: 24 }, { wch: 45 }, { wch: 18 }, { wch: 18 }];
+      XLSX.utils.book_append_sheet(wb, wsLetter, "FORWARDING_LETTER");
+
+
+      // 2. SUBMITTED MR SHEETS
+      submittedMRs.forEach(m => {
+        const wsData = [[m.title], masterHeaders.slice(0, 24)];
+        let dataRowsCount = 0;
+        m.rows.forEach(r => {
+          if (!r.isGrandTotal) {
+            wsData.push(r.rowData);
+            dataRowsCount++;
+          }
+        });
+
+        const startRow = 3;
+        const endRow = startRow + dataRowsCount - 1;
+        const gTotalRow = endRow + 1;
+
+        wsData.push(new Array(24).fill(''));
+        const ws = XLSX.utils.aoa_to_sheet(wsData);
+
+        for (let i = 0; i < dataRowsCount; i++) {
+          const excelRow = startRow + i;
+          ws[XLSX.utils.encode_cell({ r: excelRow - 1, c: 18 })] = {
+            t: 'n',
+            f: `IF(RIGHT(C${excelRow},3)="MAZ",550,IF(RIGHT(C${excelRow},4)="MATE",570,IF(RIGHT(C${excelRow},7)="SKD-III",640,IF(RIGHT(C${excelRow},6)="SKD-II",770,IF(RIGHT(C${excelRow},5)="SKD-I",900,IF(RIGHT(C${excelRow},5)="CPDVR",770,""))))))`,
+            z: '0.00'
+          };
+          ws[XLSX.utils.encode_cell({ r: excelRow - 1, c: 19 })] = {
+            t: 'n',
+            f: `R${excelRow}*S${excelRow}`,
+            z: '#,##0.00'
+          };
+        }
+
+        ws[XLSX.utils.encode_cell({ r: gTotalRow - 1, c: 17 })] = { t: 's', v: 'G/TOTAL' };
+        ws[XLSX.utils.encode_cell({ r: gTotalRow - 1, c: 19 })] = { t: 'n', f: `SUM(T${startRow}:T${endRow})`, z: '#,##0.00' };
+        ws[XLSX.utils.encode_cell({ r: gTotalRow - 1, c: 20 })] = { t: 'n', f: `SUM(T${startRow}:T${endRow})`, z: '#,##0.00' };
+
+        if (!ws['!merges']) ws['!merges'] = [];
+        ws['!merges'].push({ s: { r: 0, c: 0 }, e: { r: 0, c: 23 } });
+        ws['!merges'].push({ s: { r: gTotalRow - 1, c: 17 }, e: { r: gTotalRow - 1, c: 18 } });
+
+        for (let R = 0; R <= gTotalRow; R++) {
+          for (let C = 0; C < 24; C++) {
+            const cellRef = XLSX.utils.encode_cell({ r: R, c: C });
+            if (!ws[cellRef]) ws[cellRef] = { t: 's', v: '' };
+
+            if (R === 0) {
+              ws[cellRef].s = {
+                alignment: { vertical: "center", horizontal: "left", wrapText: true },
+                font: { bold: true, sz: 11 },
+                fill: { fgColor: { rgb: "FFC7CE" } } // Red highlight for MR & Job title
+              };
+            } else if (R === 1) {
+              ws[cellRef].s = {
+                border: borderStyleThin,
+                alignment: { vertical: "center", horizontal: "center", wrapText: true },
+                font: { bold: true }
+              };
+            } else {
+              ws[cellRef].s = {
+                border: borderStyleThin,
+                alignment: { vertical: "center", horizontal: C >= 17 ? "right" : "left" }
+              };
+            }
+          }
+        }
+
+        const sheetTabName = (m.label || "MR").replace(/[:\\\/?*\[\]]/g, "_");
+        XLSX.utils.book_append_sheet(wb, ws, sheetTabName);
+      });
+
+      XLSX.writeFile(wb, `Completed_MRs_With_Letter_${activePeriod}.xlsx`);
+    }
+  </script>
+</body>
+</html>
