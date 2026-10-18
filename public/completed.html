@@ -351,7 +351,7 @@
     }
 
     function updateMsgBadgeCount() {
-      let requests = serverApprovals.requests || [];
+      let requests = JSON.parse(localStorage.getItem("CPL_EDIT_REQUESTS") || "[]");
       document.getElementById("msgCountBadge").innerText = requests.length;
     }
 
@@ -453,7 +453,7 @@
     function closeModal(id) { document.getElementById(id).style.display = "none"; }
 
     function renderMsgRequestsList() {
-      let requests = serverApprovals.requests || [];
+      let requests = JSON.parse(localStorage.getItem("CPL_EDIT_REQUESTS") || "[]");
       const box = document.getElementById("msgRequestsList");
       if (requests.length === 0) {
         box.innerHTML = `<i style="color:#666;">No pending edit requests.</i>`;
@@ -464,7 +464,7 @@
         html += `<div style="display:flex; justify-content:space-between; align-items:center; padding:6px; border-bottom:1px solid #eee;">
           <div>
             <strong>User: ${req.user || 'UNKNOWN USER'}</strong><br>
-            <span style="color:#2b579a; font-size:11px;">Sheet/Type: ${req.mrLabel}</span>
+            <span style="color:#2b579a; font-size:11px;">Sheet: ${req.mrLabel}</span>
           </div>
           <div style="display:flex; gap:4px;">
             <button class="btn-action" style="background:#27ae60; height:24px; padding:2px 8px; font-size:10px;" onclick="approveEditRequest(${idx})">APPROVE</button>
@@ -480,31 +480,12 @@
         alert("Access Denied! Only Admin can access this feature");
         return;
       }
-      let requests = serverApprovals.requests || [];
+      let requests = JSON.parse(localStorage.getItem("CPL_EDIT_REQUESTS") || "[]");
       const req = requests[index];
       requests.splice(index, 1);
-      serverApprovals.requests = requests;
+      localStorage.setItem("CPL_EDIT_REQUESTS", JSON.stringify(requests));
+      updateMsgBadgeCount();
 
-      if (req.mrLabel === "LOGIN APPROVAL") {
-        if (!serverApprovals.approvedUsers.includes(req.user)) {
-          serverApprovals.approvedUsers.push(req.user);
-        }
-        serverApprovals.pendingUsers = (serverApprovals.pendingUsers || []).filter(u => u !== req.user);
-
-        // Server par save karein
-        fetch('/api/approvals', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(serverApprovals)
-        }).then(() => {
-          showAlert(`User ${req.user} approved successfully for login!`);
-          renderMsgRequestsList();
-          updateMsgBadgeCount();
-        });
-        return;
-      }
-
-      // Sheet Edit Approval Logic
       const realIdx = mrSheets.findIndex(m => m.label === req.mrLabel);
       if (realIdx !== -1) {
         mrSheets[realIdx].isSubmitted = false;
@@ -512,26 +493,18 @@
 
         localStorage.setItem(`CPL_OFFLINE_SHEETS_${activePeriod}`, JSON.stringify({ mrSheets, lastIndex: 0 }));
         
-        Promise.all([
-          fetch(`/api/mr-sheets`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ mrSheets, lastIndex: 0, period: activePeriod })
-          }),
-          fetch('/api/approvals', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(serverApprovals)
-          })
-        ]).then(() => {
-          showAlert(`Request approved for ${req.mrLabel}!`);
-          renderCompleteMRTabs();
-          renderMsgRequestsList();
-          updateMsgBadgeCount();
+        fetch(`/api/mr-sheets`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ mrSheets, lastIndex: 0, period: activePeriod })
         }).catch(e => {});
+
+        showAlert(`Request approved for ${req.mrLabel}!`);
+        renderCompleteMRTabs();
       } else {
         showAlert("Sheet not found!", true);
       }
+      renderMsgRequestsList();
     }
 
     function denyEditRequest(index) {
@@ -539,19 +512,12 @@
         alert("Access Denied! Only Admin can access this feature");
         return;
       }
-      let requests = serverApprovals.requests || [];
+      let requests = JSON.parse(localStorage.getItem("CPL_EDIT_REQUESTS") || "[]");
       requests.splice(index, 1);
-      serverApprovals.requests = requests;
-
-      fetch('/api/approvals', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(serverApprovals)
-      }).then(() => {
-        showAlert("Request denied.");
-        renderMsgRequestsList();
-        updateMsgBadgeCount();
-      });
+      localStorage.setItem("CPL_EDIT_REQUESTS", JSON.stringify(requests));
+      updateMsgBadgeCount();
+      showAlert("Request denied.");
+      renderMsgRequestsList();
     }
 
     function fetchCompletedMRsFromServer() {
