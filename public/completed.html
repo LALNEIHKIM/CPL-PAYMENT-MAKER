@@ -228,6 +228,10 @@
         .then(data => {
           serverApprovals = data;
           updateMsgBadgeCount();
+          // Agar modal khula hai toh list bhi update kar do
+          if (document.getElementById("msgBoxModal").style.display === "flex") {
+            renderMsgRequestsList();
+          }
         }).catch(e => {});
     }
     let masterHeaders = [];
@@ -351,7 +355,8 @@
     }
 
     function updateMsgBadgeCount() {
-      let requests = JSON.parse(localStorage.getItem("CPL_EDIT_REQUESTS") || "[]");
+      // 💡 Badge count bhi ab serverApprovals se aayega taaki mismatch na ho
+      let requests = serverApprovals.requests || [];
       document.getElementById("msgCountBadge").innerText = requests.length;
     }
 
@@ -427,17 +432,47 @@
       
       let username = localStorage.getItem("CPL_LOGGED_USER") || (isAdmin ? "ADMIN" : "UNKNOWN USER");
       if (isAdmin) username = "ADMIN";
+      let reqLabel = target.label;
 
-      let requests = JSON.parse(localStorage.getItem("CPL_EDIT_REQUESTS") || "[]");
-      const exists = requests.some(r => r.user === username && r.mrLabel === target.label);
-      if (exists) {
-        return showAlert("Request already sent to Admin for this sheet!", true);
-      }
+      // 💡 Server se pehle current approvals aur requests fetch karein
+      fetch('/api/approvals')
+        .then(res => res.json())
+        .then(data => {
+          let pendingUsers = data.pendingUsers || [];
+          let approvedUsers = data.approvedUsers || [];
+          let requests = data.requests || [];
 
-      requests.push({ user: username, mrLabel: target.label, title: target.title, time: new Date().toLocaleTimeString() });
-      localStorage.setItem("CPL_EDIT_REQUESTS", JSON.stringify(requests));
-      updateMsgBadgeCount();
-      showAlert("Edit request sent to Admin successfully!");
+          // Check karein ki pehle se request bheji gayi hai ya nahi
+          const exists = requests.some(r => r.user === username && r.mrLabel === reqLabel);
+          if (exists) {
+            return showAlert("Request already sent to Admin for this sheet!", true);
+          }
+
+          // Nayi request add karein
+          requests.push({ 
+            user: username, 
+            mrLabel: reqLabel, 
+            title: target.title, 
+            time: new Date().toLocaleTimeString() 
+          });
+
+          // Server par save karein
+          fetch('/api/approvals', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ pendingUsers: pendingUsers, approvedUsers: approvedUsers, requests: requests })
+          })
+          .then(res => res.json())
+          .then(() => {
+            showAlert("Edit request sent to Admin successfully!");
+          })
+          .catch(err => {
+            showAlert("Request send karne mein error aayi, internet check karein!", true);
+          });
+        })
+        .catch(err => {
+          showAlert("Server connection error!", true);
+        });
     }
 
     function openMsgBoxModal() {
