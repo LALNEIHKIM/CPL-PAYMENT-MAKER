@@ -539,6 +539,7 @@
       }
       let requests = serverApprovals.requests || [];
       const req = requests[index];
+      if (!req) return;
       
       // Request ko list se hata dein
       requests.splice(index, 1);
@@ -562,42 +563,54 @@
         return;
       }
 
-      // 💡 Sheet Edit Approval Logic (Exact matching with active selected tab / label)
-      const realIdx = mrSheets.findIndex(m => m.label.toUpperCase() === req.mrLabel.toUpperCase());
-      if (realIdx !== -1) {
-        // Sheet ko unblock karein
-        mrSheets[realIdx].isSubmitted = false;
-        
-        // 💡 SABSE MAIN FIX: Request bhejne wale ka exact naam (jaise 'KIMA') 
-        // hi is sheet ka assignedUser banega, taaki ye Admin ke bajaye sirf KIMA ke payment screen par khule!
-        const targetUser = req.user ? req.user.trim().toUpperCase() : "ADMIN";
-        mrSheets[realIdx].assignedUser = targetUser;
+      // 💡 SABSE SAFE TARIKA: Pehle server se sabse latest mrSheets data fetch karein
+      fetch(`/api/mr-sheets?period=${encodeURIComponent(activePeriod)}`)
+        .then(res => res.json())
+        .then(serverData => {
+          let latestMrSheets = serverData.mrSheets || mrSheets;
 
-        // Local storage aur Server dono jagah turant save karein
-        localStorage.setItem(`CPL_OFFLINE_SHEETS_${activePeriod}`, JSON.stringify({ mrSheets, lastIndex: 0 }));
-        
-        Promise.all([
-          fetch(`/api/mr-sheets`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ mrSheets, lastIndex: 0, period: activePeriod })
-          }),
-          fetch('/api/approvals', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(serverApprovals)
-          })
-        ]).then(() => {
-          showAlert(`Request approved! Sheet ${req.mrLabel} is now assigned to ${targetUser}.`);
-          renderCompleteMRTabs();
-          renderMsgRequestsList();
-          updateMsgBadgeCount();
-        }).catch(e => {
-          showAlert("Error syncing with server!", true);
+          // Exact sheet dhoondhein
+          const realIdx = latestMrSheets.findIndex(m => m.label.toUpperCase() === req.mrLabel.toUpperCase());
+          
+          if (realIdx !== -1) {
+            // Sheet ko unblock karein
+            latestMrSheets[realIdx].isSubmitted = false;
+            
+            // Request bhejne wale ka exact naam (jaise 'KIMA') set karein
+            const targetUser = req.user ? req.user.trim().toUpperCase() : "ADMIN";
+            latestMrSheets[realIdx].assignedUser = targetUser;
+
+            // Local storage update karein
+            mrSheets = latestMrSheets;
+            localStorage.setItem(`CPL_OFFLINE_SHEETS_${activePeriod}`, JSON.stringify({ mrSheets: latestMrSheets, lastIndex: 0 }));
+            
+            // Server par dono (mrSheets aur approvals) ek sath bhejain
+            Promise.all([
+              fetch(`/api/mr-sheets`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ mrSheets: latestMrSheets, lastIndex: 0, period: activePeriod })
+              }),
+              fetch('/api/approvals', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(serverApprovals)
+              })
+            ]).then(() => {
+              showAlert(`Request approved! Sheet ${req.mrLabel} is now assigned to ${targetUser}.`);
+              renderCompleteMRTabs();
+              renderMsgRequestsList();
+              updateMsgBadgeCount();
+            }).catch(e => {
+              showAlert("Error syncing with server!", true);
+            });
+          } else {
+            showAlert("Sheet not found on server!", true);
+          }
+        })
+        .catch(err => {
+          showAlert("Failed to fetch latest data from server!", true);
         });
-      } else {
-        showAlert("Sheet not found!", true);
-      }
     }
 
     function denyEditRequest(index) {
