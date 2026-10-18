@@ -428,13 +428,27 @@
     function requestEditPermission() {
       const submittedMRs = mrSheets.filter(m => m.isSubmitted);
       if (submittedMRs.length === 0) return showAlert("No completed MR sheet available!", true);
-      const target = submittedMRs[completeActiveIdx];
       
+      // 💡 SABSE BADHI FIX: Ab yeh index par depend nahi rahega, 
+      // balki jo sheet abhi screen par active/selected hai, uska label bilkul exact uthayega!
+      const activeTabElement = document.querySelector('.btn-mr-tab.submitted.active');
+      let reqLabel = "";
+      
+      if (activeTabElement) {
+        // Tab ka text "MR NO. 9 ✓" hota hai, usse "✓" hata kar sirf "MR NO. 9" nikal lo
+        reqLabel = activeTabElement.innerText.replace("✓", "").trim();
+      } else {
+        reqLabel = submittedMRs[completeActiveIdx].label;
+      }
+
+      // Screen par jo active sheet hai uska title dhoondo
+      const target = submittedMRs.find(m => m.label.toUpperCase() === reqLabel.toUpperCase()) || submittedMRs[completeActiveIdx];
+      reqLabel = target.label;
+
       let username = localStorage.getItem("CPL_LOGGED_USER") || (isAdmin ? "ADMIN" : "UNKNOWN USER");
       if (isAdmin) username = "ADMIN";
-      let reqLabel = target.label;
 
-      // 💡 Server se pehle current approvals aur requests fetch karein
+      // Server se current requests fetch karke sahi sheet label bhejo
       fetch('/api/approvals')
         .then(res => res.json())
         .then(data => {
@@ -442,13 +456,11 @@
           let approvedUsers = data.approvedUsers || [];
           let requests = data.requests || [];
 
-          // Check karein ki pehle se request bheji gayi hai ya nahi
-          const exists = requests.some(r => r.user === username && r.mrLabel === reqLabel);
+          const exists = requests.some(r => r.user === username && r.mrLabel.toUpperCase() === reqLabel.toUpperCase());
           if (exists) {
-            return showAlert("Request already sent to Admin for this sheet!", true);
+            return showAlert(`Request already sent to Admin for ${reqLabel}!`, true);
           }
 
-          // Nayi request add karein
           requests.push({ 
             user: username, 
             mrLabel: reqLabel, 
@@ -456,7 +468,6 @@
             time: new Date().toLocaleTimeString() 
           });
 
-          // Server par save karein
           fetch('/api/approvals', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -464,7 +475,8 @@
           })
           .then(res => res.json())
           .then(() => {
-            showAlert("Edit request sent to Admin successfully!");
+            showAlert(`Edit request sent to Admin successfully for ${reqLabel}!`);
+            fetchApprovalDataFromServer();
           })
           .catch(err => {
             showAlert("Request send karne mein error aayi, internet check karein!", true);
@@ -549,13 +561,15 @@
       }
 
       // Sheet Edit Approval Logic
-      const realIdx = mrSheets.findIndex(m => m.label === req.mrLabel);
+      const realIdx = mrSheets.findIndex(m => m.label.toUpperCase() === req.mrLabel.toUpperCase());
       if (realIdx !== -1) {
         mrSheets[realIdx].isSubmitted = false;
         
-        // 💡 Yahan change karna hai: Jis user ne request bheji (e.g. KIMA), wahi assignedUser banega!
-        mrSheets[realIdx].assignedUser = (req.user || "ADMIN").toUpperCase();
+        // 💡 SABSE MAIN FIX: Request bhejne wale ka naam uppercase karke assignedUser bana do!
+        const targetUser = req.user ? req.user.trim().toUpperCase() : "ADMIN";
+        mrSheets[realIdx].assignedUser = targetUser;
 
+        // Local storage aur Server dono jagah turant save karo
         localStorage.setItem(`CPL_OFFLINE_SHEETS_${activePeriod}`, JSON.stringify({ mrSheets, lastIndex: 0 }));
         
         Promise.all([
@@ -570,11 +584,13 @@
             body: JSON.stringify(serverApprovals)
           })
         ]).then(() => {
-          showAlert(`Request approved for ${req.mrLabel} (Assigned to ${req.user})!`);
+          showAlert(`Request approved! Sheet ${req.mrLabel} is now assigned to ${targetUser}.`);
           renderCompleteMRTabs();
           renderMsgRequestsList();
           updateMsgBadgeCount();
-        }).catch(e => {});
+        }).catch(e => {
+          showAlert("Error syncing with server!", true);
+        });
       } else {
         showAlert("Sheet not found!", true);
       }
