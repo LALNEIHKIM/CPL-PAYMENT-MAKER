@@ -91,10 +91,20 @@
 
     .edit-grid { padding: 16px; display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; overflow-y: auto; max-height: 60vh; background: #f8f9fa; }
     .edit-table-container { padding: 10px; overflow: auto; height: 65vh; max-height: 75vh; background: #fff; }
-    .edit-table { width: 100%; border-collapse: collapse; font-size: 11px; }
-    .edit-table th, .edit-table td { border: 1px solid #000; padding: 4px; height: 26px; }
+    .edit-table { width: max-content; min-width: 100%; border-collapse: collapse; font-size: 11px; white-space: nowrap; }
+    .edit-table th, .edit-table td { border: 1px solid #000; padding: 4px 6px; height: 26px; }
     .edit-table th { background: #f0f0f0; text-align: center; }
     .edit-table input { width: 100%; border: none; background: transparent; font-size: 11px; outline: none; }
+
+    /* 💡 Column H (NoK Details) ko fix width dena taaki baaki columns kharab na hon */
+    .edit-table th:nth-child(9), .edit-table td:nth-child(9) { 
+      width: 250px !important; 
+      min-width: 250px !important; 
+      max-width: 300px !important; 
+      white-space: nowrap !important; 
+      overflow: hidden !important; 
+      text-overflow: ellipsis !important; 
+    }
 
     .form-group { display: flex; flex-direction: column; gap: 3px; }
     .form-group label { font-size: 11px; font-weight: bold; }
@@ -168,6 +178,43 @@
       font-size: 11.5px;
       font-weight: bold;
     }
+
+    /* TRANSFER & UP/DOWN GRADE SETTINGS STYLES */
+.lifecycle-fieldset {
+  border: 1.5px solid #b0c4de;
+  padding: 10px 14px;
+  border-radius: 6px;
+  background: #fdfdfd;
+}
+.lifecycle-legend {
+  font-size: 11px;
+  font-weight: bold;
+  color: #2b579a;
+  padding: 0 6px;
+}
+.lifecycle-row {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+}
+.lifecycle-group {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+.lifecycle-group label {
+  font-size: 10.5px;
+  font-weight: bold;
+  color: #333;
+}
+.lifecycle-group input, .lifecycle-group select {
+  height: 30px;
+  padding: 4px 6px;
+  font-size: 11.5px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  background: #fff;
+}
   </style>
 </head>
 <body>
@@ -273,33 +320,48 @@
   </div>
 
   <div class="modal-overlay" id="mrModal">
-    <div class="modal-window" style="width: 400px; padding: 20px; gap: 12px;">
+    <div class="modal-window" style="width: 420px; padding: 20px; gap: 12px;">
       <h3 style="color:#2b579a; text-align:center;">CREATE NEW MR SHEET</h3>
-      <input type="text" id="modalMrNo" value="MR No. 74 RCC/ /SEP 2026" style="width:100%; height:32px; padding:4px;">
-      <select id="modalJobSelect" style="width:100%; height:32px;">
-        <option value="ADG (B)/ BFR Cell/ (A/A & E/S) / 2024/832 FMN">JOB No. ADG (B)/ BFR Cell/ (A/A & E/S) / 2024/832 FMN</option>
-        <option value="ADG (B)/ BFR Cell/ (A/A & E/S) / 2024/831 FMN">JOB No. ADG (B)/ BFR Cell/ (A/A & E/S) / 2024/831 FMN</option>
-        <option value="MAINT CHK ROAD (2026-24) KM 0.00 TO 10.00">JOB No. MAINT CHK ROAD (2026-24) KM 0.00 TO 10.00</option>        
-        <option value="80/515 (PSK)">JOB No. 80/515 (PSK)</option>
-        <option value="MAINT CHK 2026-27 (KM 10.00 TO 75.50)">JOB No. MAINT CHK 2026-27 (KM 10.00 TO 75.50)</option>
-        <option value="710-A/50 REHAB CHK">JOB No. 710-A/50 REHAB CHK</option>
-        <option value="710-A/52">JOB No. 710-A/52</option>
-        <option value="MAINT KVK ROAD 2026-27">JOB No. MAINT KVK ROAD 2026-27</option>
-        <option value="MAINT DVF ROAD 2026-27">JOB No. MAINT DVF ROAD 2026-27</option>
-        <option value="MAINT FT ROAD 2026-27">JOB No. MAINT FT ROAD 2026-27</option>
-        <option value="MAINT NVT ROAD 2026-27">JOB No. MAINT NVT ROAD 2026-27</option>
-        <option value="L-3307/07 PMT TBSPS ROAD">JOB No. L-3307/07 PMT TBSPS ROAD</option>
-        <option value="L-3307/07 SURF TBSPS ROAD">JOB No. L-3307/07 SURF TBSPS ROAD</option>
-        <option value="L-3307/10 FMN TBSPS ROAD">JOB No. L-3307/10 FMN TBSPS ROAD</option>
-        <option value="L-3307/10 PMT TBSPS ROAD">JOB No. L-3307/10 PMT TBSPS ROAD</option>
-        <option value="L-3307/12 (DPR)">JOB No. L-3307/12 (DPR)</option>
-        <option value="MAINT S-T ROAD 2026-27 (KM 82.00 TO 164.53)">JOB No. MAINT S-T ROAD 2026-27 (KM 82.00 TO 164.53)</option>
-        <option value="JOB No. 709/157 FMN ON S-T ROAD">JOB No. 709/157 FMN ON S-T ROAD</option>
-        <option value="JOB No. 709/157 FMN ON S-T ROAD">JOB No. 709/157 PMT ON S-T ROAD</option>
-        <option value="MAINTENANCE KDA ROAD 2026-27">JOB No. MAINTENANCE KDA ROAD 2026-27</option>
-        <option value="MAINT S-T ROAD 2026-27 (KM 31.12 TO 42.00)">JOB No. MAINT S-T ROAD 2026-27 (KM 31.12 TO 42.00)</option>
-      </select>
-      <div style="display:flex; justify-content:flex-end; gap:10px;">
+      
+      <!-- MR No. ka Dropdown -->
+      <div style="display:flex; flex-direction:column; gap:4px; text-align:left;">
+        <label style="font-size:11px; font-weight:bold;">Select MR No:</label>
+        <select id="modalMrDropdown" onchange="onModalMrSelectChange(this.value)" style="width:100%; height:32px;">
+          <option value="MR NO. 374">MR NO. 374</option>
+          <option value="MR NO. 375">MR NO. 375</option>
+          <option value="MR NO. 9">MR NO. 9</option>
+          <option value="MR NO. 380">MR NO. 380</option>
+          <option value="MR NO. 376">MR NO. 376</option>
+          <option value="MR NO. 41">MR NO. 41</option>
+          <option value="MR NO. 377">MR NO. 377</option>
+          <option value="MR NO. 378">MR NO. 378</option>
+          <option value="MR NO. 8">MR NO. 8</option>
+          <option value="MR NO. 379">MR NO. 379</option>
+          <option value="MR NO. 381">MR NO. 381</option>
+          <option value="MR NO. 27">MR NO. 27</option>
+          <option value="MR NO. 28">MR NO. 28</option>
+          <option value="MR NO. 29">MR NO. 29</option>
+          <option value="MR NO. 30">MR NO. 30</option>
+          <option value="MR NO. 31">MR NO. 31</option>
+          <option value="MR NO. 32">MR NO. 32</option>
+          <option value="MR NO. 33">MR NO. 33</option>
+          <option value="MR NO. 34">MR NO. 34</option>
+          <option value="MR NO. 35">MR NO. 35</option>
+          <option value="MR NO. 36">MR NO. 36</option>
+          <option value="MR NO. 37">MR NO. 37</option>
+          <option value="MR NO. 38">MR NO. 38</option>
+          <option value="MR NO. 39">MR NO. 39</option>
+          <option value="MR NO. 40">MR NO. 40</option>
+        </select>
+      </div>
+
+      <!-- Job No Display / Select Field -->
+      <div style="display:flex; flex-direction:column; gap:4px; text-align:left;">
+        <label style="font-size:11px; font-weight:bold;">Job No / Description:</label>
+        <input type="text" id="modalJobInput" style="width:100%; height:32px; padding:4px; font-weight:bold; background:#eef2f7;" readonly>
+      </div>
+
+      <div style="display:flex; justify-content:flex-end; gap:10px; margin-top:6px;">
         <button class="btn-modal" style="background:#666; color:#fff;" onclick="closeModal('mrModal')">CANCEL</button>
         <button class="btn-modal" style="background:#007e33; color:#fff;" onclick="confirmAddMR()">CREATE</button>
       </div>
@@ -376,18 +438,30 @@
   </div>
 
   <div class="modal-overlay" id="pageTotalModal">
-    <div class="modal-window" style="width: 400px; padding: 20px; gap: 12px;">
-      <h3 style="color:#2b579a; text-align:center;">CALCULATE & APPLY PAGE TOTAL</h3>
-      <div style="display:flex; gap:10px;">
-        <div style="flex:1;">
-          <label style="font-size:11px; font-weight:bold;">FROM S/NO:</label>
-          <input type="number" id="pageTotalStart" value="1" style="width:100%; height:30px; padding:4px 8px; border:1px solid #ccc; border-radius:4px;">
-        </div>
-        <div style="flex:1;">
-          <label style="font-size:11px; font-weight:bold;">TO S/NO:</label>
-          <input type="number" id="pageTotalEnd" value="20" style="width:100%; height:30px; padding:4px 8px; border:1px solid #ccc; border-radius:4px;">
-        </div>
+  <div class="modal-window" style="width: 420px; padding: 20px; gap: 12px;">
+    <h3 style="color:#2b579a; text-align:center;">CALCULATE & APPLY PAGE TOTAL</h3>
+    <div style="display:flex; gap:10px;">
+      <div style="flex:1;">
+        <label style="font-size:11px; font-weight:bold;">FROM S/NO:</label>
+        <input type="number" id="pageTotalStart" value="1" oninput="previewPageTotalSum()" style="width:100%; height:30px; padding:4px 8px; border:1px solid #ccc; border-radius:4px;">
       </div>
+      <div style="flex:1;">
+        <label style="font-size:11px; font-weight:bold;">TO S/NO:</label>
+        <input type="number" id="pageTotalEnd" value="20" oninput="previewPageTotalSum()" style="width:100%; height:30px; padding:4px 8px; border:1px solid #ccc; border-radius:4px;">
+      </div>
+    </div>
+    
+    <!-- Live Amount Preview Box -->
+    <div id="pageTotalPreviewBox" style="background:#eef2f7; border:1.5px solid #2b579a; padding:8px; border-radius:4px; font-size:12.5px; font-weight:900; text-align:center; color:#c0392b;">
+      Live Amount: Rs. 0
+    </div>
+
+    <div style="display:flex; justify-content:flex-end; gap:10px; margin-top:6px;">
+      <button class="btn-modal" style="background:#666; color:#fff;" onclick="closeModal('pageTotalModal')">CANCEL</button>
+      <button class="btn-modal" style="background:#2c3e50; color:#fff;" onclick="applyPageTotal()">APPLY PAGE TOTAL</button>
+    </div>
+  </div>
+</div>
       <div style="display:flex; justify-content:flex-end; gap:10px; margin-top:10px;">
         <button class="btn-modal" style="background:#666; color:#fff;" onclick="closeModal('pageTotalModal')">CANCEL</button>
         <button class="btn-modal" style="background:#2c3e50; color:#fff;" onclick="applyPageTotal()">APPLY PAGE TOTAL</button>
@@ -425,13 +499,114 @@
         <span style="cursor:pointer;" onclick="closeModal('editModal')">✖</span>
       </div>
       <div class="edit-tabs">
-        <button class="edit-tab-btn active" id="tabBtnForm" onclick="switchEditTab('form')">📋 Form View</button>
-        <button class="edit-tab-btn" id="tabBtnTable" onclick="switchEditTab('table')">📊 Excel Grid Table View</button>
-        <button class="edit-tab-btn" id="tabBtnCalendar" onclick="switchEditTab('calendar')">📅 Attendance Calendar (Absent Mark)</button>
-      </div>
+  <button class="edit-tab-btn active" id="tabBtnForm" onclick="switchEditTab('form')">📋 Form View</button>
+  <button class="edit-tab-btn" id="tabBtnTable" onclick="switchEditTab('table')">📊 Excel Grid Table View</button>
+  <button class="edit-tab-btn" id="tabBtnCalendar" onclick="switchEditTab('calendar')">DO-II AND REMARKS</button>
+  
+  <!-- 🔒 LOCK / UNLOCK EDIT TOGGLE BUTTON -->
+  <button class="btn-modal" id="btnToggleEditMode" style="background:#d35400; color:#fff; padding: 4px 12px; margin: 6px 10px; font-size:11px;" onclick="toggleEditMode()">🔓 EDIT DATA</button>
+</div>
       <div id="editFormView" class="edit-grid"></div>
       <div id="editTableView" class="edit-table-container" style="display:none;"></div>
-      <div id="editCalendarView" style="display:none; padding:16px; background:#fff; max-height:60vh; overflow-y:auto; text-align:center;"></div>
+      <div id="editCalendarView" style="display:none; padding:12px 16px; background:#fff; max-height:65vh; overflow-y:auto;">
+  
+  <!-- INDIVIDUAL EMPLOYEE QUICK INFO BAR (Changes on Prev/Next) -->
+  <div id="lifecycleEmpInfoBar" style="background: #eef2f7; border: 1px solid #b0c4de; padding: 10px 14px; border-radius: 6px; margin-bottom: 12px; display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; font-size: 11.5px; color: #153465;">
+    <div>S/No: <strong id="lcInfoSNo" style="color:#000;">1</strong></div>
+    <div>Code No: <strong id="lcInfoCode" style="color:#007e33;">-</strong></div>
+    <div style="grid-column: span 2;">Name: <strong id="lcInfoName" style="color:#007e33;">-</strong></div>
+    <div style="grid-column: span 2;">Father's Name: <strong id="lcInfoFather" style="color:#333;">-</strong></div>
+    <div>Bank A/C: <strong id="lcInfoAcc" style="color:#333;">-</strong></div>
+    <div>Working Days: <strong id="lcInfoDays" style="color:#c0392b;">-</strong></div>
+    <div>Rate/Day: <strong id="lcInfoRate" style="color:#333;">-</strong></div>
+    <div style="grid-column: span 2;">Net Amount: <strong id="lcInfoAmt" style="color:#c0392b; font-size:12.5px;">-</strong></div>
+  </div>
+
+  <!-- TRANSFER & UP/DOWN GRADE SETTINGS FIELDSET -->
+  <fieldset class="lifecycle-fieldset">
+    <legend class="lifecycle-legend">TRANSFER & UP/DOWN GRADE SETTINGS</legend>
+    
+    <!-- 1st Line: Recruitment & Discharge -->
+    <div class="lifecycle-row">
+      <div class="lifecycle-group">
+        <label>Date of Recruitment:</label>
+        <div style="display:flex; gap:4px;">
+          <input type="date" id="lifecycleRecDate" style="flex:1;">
+          <select id="lifecycleRecFnAn" style="width:55px;"><option value="F/N">F/N</option><option value="A/N">A/N</option></select>
+        </div>
+      </div>
+
+      <div class="lifecycle-group">
+        <label>Date of Discharge:</label>
+        <div style="display:flex; gap:4px;">
+          <input type="date" id="lifecycleDisDate" style="flex:1;">
+          <select id="lifecycleDisFnAn" style="width:55px;"><option value="F/N">F/N</option><option value="A/N">A/N</option></select>
+        </div>
+      </div>
+    </div>
+
+    <!-- 2nd Line: Down/Up, Current Trade, Changed To -->
+    <div class="lifecycle-row" style="margin-top:10px;">
+      <div class="lifecycle-group">
+        <label>Date of Down/Up:</label>
+        <div style="display:flex; gap:4px;">
+          <input type="date" id="lifecycleGradeDate" style="flex:1;">
+          <select id="lifecycleGradeFnAn" style="width:55px;"><option value="F/N">F/N</option><option value="A/N">A/N</option></select>
+        </div>
+      </div>
+
+      <div class="lifecycle-group">
+        <label>Current Trade:</label>
+        <input type="text" id="lifecycleCurrentTrade" readonly style="background:#e9ecef; font-weight:bold; color:#007e33; text-align:center;">
+      </div>
+
+      <div class="lifecycle-group">
+        <label>Changed To (Trade):</label>
+        <select id="lifecycleChangedTrade">
+          <option value="">-- Select --</option>
+          <option value="MAZ">MAZ</option>
+          <option value="MATE">MATE</option>
+          <option value="SKD-III">SKD-III</option>
+          <option value="SKD-II">SKD-II</option>
+          <option value="SKD-I">SKD-I</option>
+          <option value="CPDVR">CPDVR</option>
+        </select>
+      </div>
+    </div>
+
+    <!-- Dashed Separator Line -->
+    <div style="border-top: 1px dashed #ccc; margin: 12px 0;"></div>
+
+    <!-- 3rd Line: Date of Transfer, MR From, MR To -->
+    <div class="lifecycle-row">
+      <div class="lifecycle-group">
+        <label>Date of Transfer:</label>
+        <div style="display:flex; gap:4px;">
+          <input type="date" id="lifecycleTransferDate" style="flex:1;">
+          <select id="lifecycleTransferFnAn" style="width:55px;"><option value="F/N">F/N</option><option value="A/N">A/N</option></select>
+        </div>
+      </div>
+
+      <div class="lifecycle-group">
+        <label>MR From & Sl.:</label>
+        <div style="display:flex; gap:4px;">
+          <select id="lifecycleMrFrom" style="flex:2;"><option value="">-- Select MR --</option></select>
+          <input type="text" id="lifecycleSlFrom" placeholder="Sl" style="flex:1; text-align:center;">
+        </div>
+      </div>
+
+      <div class="lifecycle-group">
+        <label>MR To & Sl.:</label>
+        <div style="display:flex; gap:4px;">
+          <select id="lifecycleMrTo" style="flex:2;"><option value="">-- Select MR --</option></select>
+          <input type="text" id="lifecycleSlTo" placeholder="Sl" style="flex:1; text-align:center;">
+        </div>
+      </div>
+    </div>
+
+  </fieldset>
+
+</div>
 
       <div style="padding: 10px 16px; background:#fff; display:flex; justify-content:space-between; align-items:center; border-top:1px solid #ccc;">
         <div style="display:flex; gap:6px;">
@@ -449,6 +624,42 @@
   </div>
   
   <script>
+    // Har MR No. ka apna fix lamba Job No. yahan define hai
+const mrJobMapping = {
+  'MR NO. 374': "ADG (B)/BFR Cell/A/A & E/S/2024/832 FMN",
+  'MR NO. 375': "ADG (B)/BFR Cell/A/A & E/S/2024/831 FMN",
+  'MR NO. 9': "Maint CHK Road (2026-27) Km 0.00 to 10.00",
+  'MR NO. 380': "80/515 (PSK)",
+  'MR NO. 376': "Maint CHK Road (2026-27) Km 10.00 to 75.50",
+  'MR NO. 41': "710-A/50 Rehab CHK road (PMT)",
+  'MR NO. 377': "710-A/52 (24 TF)",
+  'MR NO. 378': "Maint K-V-K Road (2026-27)",
+  'MR NO. 8': "Maint DVF (2026-27) KM 0.00 to 35.20",
+  'MR NO. 379': "Maint FT KM 0.00 to 10.775 (2026-27)",
+  'MR NO. 381': "Maint NVT Road (2026-27) KM 0-45.358",
+  'MR NO. 27': "L-3307/07 TBSPS road (Pmt)",
+  'MR NO. 28': "L-3307/07 TBSPS road (Surf)",
+  'MR NO. 29': "L-3307/10 TBSPS road (Fmn)",
+  'MR NO. 30': "L-3307/10 TBSPS road (PMT)",
+  'MR NO. 31': "L-3307/12 (DPR)",
+  'MR NO. 32': "Maint S-T Road (2026-27) KM 82.00-164.53",
+  'MR NO. 33': "709/157 (Fmn)",
+  'MR NO. 34': "709/157 (PMT)",
+  'MR NO. 35': "Maint K-D-A Road (2026-27) KM 31.12-42.00",
+  'MR NO. 36': "Maint S-T Road (2026-27)",
+  'MR NO. 37': "ADG(B)/BFR Cell/A/A & E/S/2024/832 FMN",
+  'MR NO. 38': "ADG(B)/BFR Cell/A/A & E/S/2024/832 SURF",
+  'MR NO. 39': "ADG(B)/BFR Cell/A/A & E/S/2024/831 FMN",
+  'MR NO. 40': "ADG(B)/BFR Cell/A/A & E/S/2024/831 SURF"
+};
+
+// Dropdown change hone par Job No auto-fill karne ka function
+function onModalMrSelectChange(selectedMr) {
+  const jobInput = document.getElementById("modalJobInput");
+  if (jobInput && mrJobMapping[selectedMr]) {
+    jobInput.value = mrJobMapping[selectedMr];
+  }
+}
     let masterData = [];
     let masterHeaders = [];
     let mrSheets = [];
@@ -718,6 +929,9 @@
       const curRows = mrSheets[currentMRIndex].rows;
       if (!curRows || curRows.length === 0) return;
       
+      // 💡 Pehle se jo row selected thi, usko yaad rakho (agar valid hai toh)
+      const prevSelectedRow = curRows[selectedRowIdx];
+
       let sumAmt = 0;
       curRows.forEach(r => {
         if (!r.isGrandTotal && r.rowData) {
@@ -743,7 +957,18 @@
       gData[20] = totalPageSum > 0 ? String(totalPageSum) : "0";
 
       curRows.push({ code: "", name: "G/Total Rs=", isGrandTotal: true, rowData: gData });
-      selectedRowIdx = curRows.length - 1;
+
+      // 💡 Agar pehle koi employee row selected thi, toh wahi index wapas set karo, warna hi Grand Total par jane do
+      if (prevSelectedRow && !prevSelectedRow.isGrandTotal) {
+        const newIdx = curRows.indexOf(prevSelectedRow);
+        if (newIdx !== -1) {
+          selectedRowIdx = newIdx;
+        } else {
+          selectedRowIdx = Math.max(0, curRows.length - 2);
+        }
+      } else {
+        selectedRowIdx = curRows.length - 1;
+      }
     }
 
     function checkExcelImportAccess(e) {
@@ -797,11 +1022,14 @@
       document.getElementById("nameHead").innerHTML = r2;
     }
 
-    function openMRModal() {
-      document.getElementById("modalMrNo").value = `MR No 74 RCC/ / ${activePeriod}`;
-      document.getElementById("mrModal").style.display = "flex";
-    }
-
+   function openMRModal() {
+  const dropdown = document.getElementById("modalMrDropdown");
+  if (dropdown && dropdown.options.length > 0) {
+    dropdown.selectedIndex = 0;
+    onModalMrSelectChange(dropdown.value);
+  }
+  document.getElementById("mrModal").style.display = "flex";
+}
     function closeModal(id) { document.getElementById(id).style.display = "none"; }
 
     function openCodeByModal() {
@@ -1019,33 +1247,32 @@
     }
 
     function confirmAddMR() {
-      const rawInput = document.getElementById("modalMrNo").value.trim();
-      const jobNo = document.getElementById("modalJobSelect").value;
-      const match = rawInput.match(/\/\s*(\d+)\s*\//);
-      const tabLabel = match ? `MR NO. ${match[1]}` : `MR NO. ${mrSheets.length + 1}`;
+  const selectedMr = document.getElementById("modalMrDropdown").value;
+  const jobNo = document.getElementById("modalJobInput").value;
+  const tabLabel = selectedMr;
 
-      if (mrSheets.some(m => m.label.toUpperCase() === tabLabel.toUpperCase())) {
-        return showAlert("This MR number already exists!", true);
-      }
+  if (mrSheets.some(m => m.label.toUpperCase() === tabLabel.toUpperCase())) {
+    return showAlert("This MR number already exists!", true);
+  }
 
-      let loggedUser = (localStorage.getItem("CPL_LOGGED_USER") || "ADMIN").toUpperCase();
+  let loggedUser = (localStorage.getItem("CPL_LOGGED_USER") || "ADMIN").toUpperCase();
 
-      mrSheets.push({ 
-        label: tabLabel, 
-        title: `${rawInput}, JOB No. ${jobNo}`, 
-        isLocked: false, 
-        isSubmitted: false, 
-        assignedUser: loggedUser, 
-        rows: [] 
-      });
+  mrSheets.push({ 
+    label: tabLabel, 
+    title: `${selectedMr}, JOB No. ${jobNo}`, 
+    isLocked: false, 
+    isSubmitted: false, 
+    assignedUser: loggedUser, 
+    rows: [] 
+  });
 
-      currentMRIndex = mrSheets.length - 1;
-      closeModal("mrModal");
-      saveToLocal(true);
-      renderTabs(); 
-      renderBody(); 
-      showAlert("MR created successfully!");
-    }
+  currentMRIndex = mrSheets.length - 1;
+  closeModal("mrModal");
+  saveToLocal(true);
+  renderTabs(); 
+  renderBody(); 
+  showAlert("MR created successfully!");
+}
 
     function renderTabs() {
       const container = document.getElementById("mrTabsContainer"); 
@@ -1382,88 +1609,105 @@
     let lastPageTotalEndIndex = 0;
 
     function openPageTotalModal() {
-      const curRows = mrSheets[currentMRIndex].rows.filter(r => !r.isGrandTotal);
-      const totalRowsCount = curRows.length;
+  const curRows = mrSheets[currentMRIndex].rows.filter(r => !r.isGrandTotal);
+  const totalRowsCount = curRows.length;
 
-      const startInput = document.getElementById("pageTotalStart");
-      const endInput = document.getElementById("pageTotalEnd");
-      
-      let nextStart = lastPageTotalEndIndex > 0 ? lastPageTotalEndIndex + 1 : 1;
-      if (nextStart > totalRowsCount) {
-        nextStart = 1;
+  const startInput = document.getElementById("pageTotalStart");
+  const endInput = document.getElementById("pageTotalEnd");
+  
+  let nextStart = 1;
+  let nextEnd = totalRowsCount > 0 ? totalRowsCount : 20;
+
+  startInput.value = nextStart;
+  endInput.value = nextEnd;
+
+  document.getElementById("pageTotalModal").style.display = "flex";
+  previewPageTotalSum(); // Modal khulte hi live amount calculate ho jayega
+}
+
+function previewPageTotalSum() {
+  const startNo = parseInt(document.getElementById("pageTotalStart").value) || 1;
+  const endNo = parseInt(document.getElementById("pageTotalEnd").value) || 1;
+  const curRows = mrSheets[currentMRIndex].rows;
+
+  let pageSum = 0;
+  let nonGrandTotalCount = 0;
+
+  for (let i = 0; i < curRows.length; i++) {
+    if (!curRows[i].isGrandTotal) {
+      nonGrandTotalCount++;
+      if (nonGrandTotalCount >= startNo && nonGrandTotalCount <= endNo) {
+        let amt = parseFloat(curRows[i].rowData[19]) || 0;
+        pageSum += amt;
       }
-      
-      let nextEnd = nextStart + 19; // 20 rows chunk
-      if (nextEnd > totalRowsCount) {
-        nextEnd = totalRowsCount; // Capped at actual available rows (e.g. 6 rows)
-      }
-
-      startInput.value = nextStart;
-      endInput.value = nextEnd;
-
-      document.getElementById("pageTotalModal").style.display = "flex";
     }
+  }
 
-    function applyPageTotal() {
-      const startNo = parseInt(document.getElementById("pageTotalStart").value) || 1;
-      const endNo = parseInt(document.getElementById("pageTotalEnd").value) || 20;
-      
-      lastPageTotalEndIndex = endNo;
+  const previewBox = document.getElementById("pageTotalPreviewBox");
+  if (previewBox) {
+    previewBox.innerText = `Live Amount (S/No ${startNo} to ${endNo}): Rs. ${pageSum.toLocaleString('en-IN')}`;
+  }
+}
 
-      const curRows = mrSheets[currentMRIndex].rows;
+function applyPageTotal() {
+  const startNo = parseInt(document.getElementById("pageTotalStart").value) || 1;
+  const endNo = parseInt(document.getElementById("pageTotalEnd").value) || 20;
+  
+  lastPageTotalEndIndex = endNo;
+  const curRows = mrSheets[currentMRIndex].rows;
 
-      if (startNo > endNo || startNo < 1) {
-        showAlert("Invalid S/No range!", true);
-        return;
+  if (startNo > endNo || startNo < 1) {
+    showAlert("Invalid S/No range!", true);
+    return;
+  }
+
+  const excelStartRow = 3 + (startNo - 1);
+  const excelEndRow = 3 + (endNo - 1);
+
+  let pageSum = 0;
+  let targetRowIndex = -1;
+  let nonGrandTotalCount = 0;
+
+  for (let i = 0; i < curRows.length; i++) {
+    if (!curRows[i].isGrandTotal) {
+      nonGrandTotalCount++;
+      if (nonGrandTotalCount >= startNo && nonGrandTotalCount <= endNo) {
+        let amt = parseFloat(curRows[i].rowData[19]) || 0;
+        pageSum += amt;
+        targetRowIndex = i;
       }
-
-      const excelStartRow = 3 + (startNo - 1);
-      const excelEndRow = 3 + (endNo - 1);
-
-      let pageSum = 0;
-      let targetRowIndex = -1;
-      let nonGrandTotalCount = 0;
-
-      for (let i = 0; i < curRows.length; i++) {
-        if (!curRows[i].isGrandTotal) {
-          nonGrandTotalCount++;
-          if (nonGrandTotalCount >= startNo && nonGrandTotalCount <= endNo) {
-            let amt = parseFloat(curRows[i].rowData[19]) || 0;
-            pageSum += amt;
-            targetRowIndex = i;
-          }
-        }
-      }
-
-      if (targetRowIndex === -1) {
-        for (let i = curRows.length - 1; i >= 0; i--) {
-          if (!curRows[i].isGrandTotal) {
-            targetRowIndex = i;
-            break;
-          }
-        }
-      }
-
-      if (targetRowIndex === -1) {
-        showAlert("No records found in the specified S/No range!", true);
-        return;
-      }
-
-      pushUndoState();
-
-      // U cell (index 20) mein page total set karna
-      curRows[targetRowIndex].rowData[20] = {
-        f: `SUM(T${excelStartRow}:T${excelEndRow})`,
-        v: pageSum
-      };
-
-      updateGrandTotalInternal();
-
-      closeModal("pageTotalModal"); 
-      renderBody(); 
-      saveToLocal(true); 
-      showAlert(`Page Total applied successfully for S/No ${startNo} to ${endNo}!`);
     }
+  }
+
+  if (targetRowIndex === -1) {
+    for (let i = curRows.length - 1; i >= 0; i--) {
+      if (!curRows[i].isGrandTotal) {
+        targetRowIndex = i;
+        break;
+      }
+    }
+  }
+
+  if (targetRowIndex === -1) {
+    showAlert("No records found in the specified S/No range!", true);
+    return;
+  }
+
+  pushUndoState();
+
+  // Column U (index 20) mein formula aur calculated amount set karna
+  curRows[targetRowIndex].rowData[20] = {
+    f: `SUM(T${excelStartRow}:T${excelEndRow})`,
+    v: pageSum
+  };
+
+  updateGrandTotalInternal();
+
+  closeModal("pageTotalModal"); 
+  renderBody(); 
+  saveToLocal(true); 
+  showAlert(`Page Total (Rs. ${pageSum.toLocaleString('en-IN')}) applied successfully!`);
+}
 
     let activeEditMode = 'form';
 
@@ -1495,98 +1739,106 @@
       }
     }
 
-    function renderAttendanceCalendar() {
-      const container = document.getElementById("editCalendarView");
-      const curRows = mrSheets[currentMRIndex].rows;
+  function renderAttendanceCalendar() {
+      const curRows = mrSheets[currentMRIndex].rows.filter(r => !r.isGrandTotal);
       const row = curRows[selectedRowIdx];
+      if (!row) return;
 
-      if (!row.absentDates) row.absentDates = [];
+      // 1. Fill Individual Employee Quick Info Bar
+      document.getElementById("lcInfoSNo").innerText = selectedRowIdx + 1;
+      document.getElementById("lcInfoCode").innerText = row.rowData[1] || "-";
+      document.getElementById("lcInfoName").innerText = row.rowData[3] || "-";
+      document.getElementById("lcInfoFather").innerText = row.rowData[5] || "-";
+      document.getElementById("lcInfoAcc").innerText = row.rowData[15] || "-";
+      document.getElementById("lcInfoDays").innerText = row.rowData[17] || "0";
+      document.getElementById("lcInfoRate").innerText = row.rowData[18] || "0";
+      document.getElementById("lcInfoAmt").innerText = "Rs " + (row.rowData[19] || "0");
 
-      const parts = activePeriod.trim().toUpperCase().split(/\s+/);
-      let curMonthStr = parts[0] || "SEP";
-      let curYear = parseInt(parts[1]) || 2026;
-      const monthsMap = { "JAN": 0, "FEB": 1, "MAR": 2, "APR": 3, "MAY": 4, "JUN": 5, "JUL": 6, "AUG": 7, "SEP": 8, "OCT": 9, "NOV": 10, "DEC": 11 };
-      
-      let mIdx = monthsMap[curMonthStr] !== undefined ? monthsMap[curMonthStr] : 8;
-      let prevMIdx = mIdx - 1;
-      let prevYear = curYear;
-      if (prevMIdx < 0) { prevMIdx = 11; prevYear -= 1; }
-      const monthNamesShort = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+     // 2. Populate All MR Dropdowns for Transfer section (Fixed List + Dynamic Sheets)
+      const allPossibleMRs = [
+        "MR NO. 374", "MR NO. 375", "MR NO. 9", "MR NO. 380", "MR NO. 376", 
+        "MR NO. 41", "MR NO. 377", "MR NO. 378", "MR NO. 8", "MR NO. 379", 
+        "MR NO. 381", "MR NO. 27", "MR NO. 28", "MR NO. 29", "MR NO. 30", 
+        "MR NO. 31", "MR NO. 32", "MR NO. 33", "MR NO. 34", "MR NO. 35", 
+        "MR NO. 36", "MR NO. 37", "MR NO. 38", "MR NO. 39", "MR NO. 40"
+      ];
 
-      let datesArray = [];
-      let prevMonthLastDay = new Date(curYear, mIdx, 0).getDate();
-      for (let d = 21; d <= prevMonthLastDay; d++) {
-        datesArray.push({ day: d, month: monthNamesShort[prevMIdx], year: prevYear, dateStr: `${d}-${monthNamesShort[prevMIdx]}-${prevYear}` });
-      }
-      for (let d = 1; d <= 20; d++) {
-        datesArray.push({ day: d, month: monthNamesShort[mIdx], year: curYear, dateStr: `${d}-${monthNamesShort[mIdx]}-${curYear}` });
-      }
-
-      let weeks = [];
-      let currentWeek = [];
-      
-      datesArray.forEach(item => {
-        let dObj = new Date(`${item.month} ${item.day}, ${item.year}`);
-        let dayOfWeek = dObj.getDay();
-        
-        currentWeek.push(item);
-        if (dayOfWeek === 0 || item === datesArray[datesArray.length - 1]) {
-          weeks.push([...currentWeek]);
-          currentWeek = [];
+      const mrSelects = ['lifecycleMrFrom', 'lifecycleMrTo'];
+      mrSelects.forEach(selId => {
+        const sel = document.getElementById(selId);
+        if (sel) {
+          let opts = `<option value="">-- Select MR --</option>`;
+          allPossibleMRs.forEach(mrName => {
+            opts += `<option value="${mrName}">${mrName}</option>`;
+          });
+          sel.innerHTML = opts;
         }
       });
 
-      let calculatedWorkingDays = 0;
-      let totalAbsentCount = row.absentDates.length;
+      // 3. Set Current Trade (Column C -> index 2)
+      let rawDesig = row.rowData[2] || 'MAZ';
+      const parts = rawDesig.split('/');
+      document.getElementById("lifecycleCurrentTrade").value = parts[parts.length - 1].trim();
 
-      weeks.forEach(week => {
-        let sundayItem = week.find(i => {
-          let dObj = new Date(`${i.month} ${i.day}, ${i.year}`);
-          return dObj.getDay() === 0;
-        });
+      // 4. Load Saved Lifecycle Data if exists
+      if (row.lifecycleData) {
+        document.getElementById("lifecycleRecDate").value = row.lifecycleData.recDate || "";
+        document.getElementById("lifecycleRecFnAn").value = row.lifecycleData.recFnAn || "F/N";
+        document.getElementById("lifecycleDisDate").value = row.lifecycleData.disDate || "";
+        document.getElementById("lifecycleDisFnAn").value = row.lifecycleData.disFnAn || "F/N";
+        document.getElementById("lifecycleGradeDate").value = row.lifecycleData.gradeDate || "";
+        document.getElementById("lifecycleGradeFnAn").value = row.lifecycleData.gradeFnAn || "F/N";
+        document.getElementById("lifecycleChangedTrade").value = row.lifecycleData.changedTrade || "";
+        document.getElementById("lifecycleTransferDate").value = row.lifecycleData.transferDate || "";
+        document.getElementById("lifecycleTransferFnAn").value = row.lifecycleData.transferFnAn || "F/N";
+        document.getElementById("lifecycleMrFrom").value = row.lifecycleData.mrFrom || "";
+        document.getElementById("lifecycleSlFrom").value = row.lifecycleData.slFrom || "";
+        document.getElementById("lifecycleMrTo").value = row.lifecycleData.mrTo || "";
+        document.getElementById("lifecycleSlTo").value = row.lifecycleData.slTo || "";
+      } else {
+        document.getElementById("lifecycleRecDate").value = "";
+        document.getElementById("lifecycleDisDate").value = "";
+        document.getElementById("lifecycleGradeDate").value = "";
+        document.getElementById("lifecycleChangedTrade").value = "";
+        document.getElementById("lifecycleTransferDate").value = "";
+        document.getElementById("lifecycleMrFrom").value = "";
+        document.getElementById("lifecycleSlFrom").value = "";
+        document.getElementById("lifecycleMrTo").value = "";
+        document.getElementById("lifecycleSlTo").value = "";
+      }
 
-        let nonSundayItems = week.filter(i => i !== sundayItem);
-        let hasAbsentInWeek = nonSundayItems.some(i => row.absentDates.includes(i.dateStr));
+      // 🔒 LOCK OTHER FIELDS EXCEPT TRANSFER & MR DETAILS
+      const disabledFields = [
+        "lifecycleRecDate", "lifecycleRecFnAn",
+        "lifecycleDisDate", "lifecycleDisFnAn",
+        "lifecycleGradeDate", "lifecycleGradeFnAn",
+        "lifecycleChangedTrade"
+      ];
 
-        nonSundayItems.forEach(i => {
-          if (!row.absentDates.includes(i.dateStr)) {
-            calculatedWorkingDays += 1;
-          }
-        });
-
-        if (sundayItem) {
-          if (!hasAbsentInWeek && !row.absentDates.includes(sundayItem.dateStr)) {
-            calculatedWorkingDays += 1; 
-          }
+      disabledFields.forEach(id => {
+        const el = document.getElementById(id);
+        if (el) {
+          el.disabled = true;
+          el.style.background = "#e9ecef";
+          el.style.cursor = "not-allowed";
         }
       });
 
-      const paymentSheetDays = parseInt(row.rowData[17]) || 0;
-      const isMatch = (calculatedWorkingDays === paymentSheetDays);
-
-      let html = `<h4 style="color:#2b579a; margin-bottom:4px;">Period Attendance Calendar (${activePeriod})</h4>`;
-      html += `<p style="font-size:10.5px; color:#555; margin-bottom:8px;">Kisi bhi date par click karke Absent mark/unmark karein:</p>`;
+      // 🔓 KEEP "Date of Transfer" & "MR From / To" ACTIVE & CLICKABLE
+      const activeFields = [
+        "lifecycleTransferDate", "lifecycleTransferFnAn",
+        "lifecycleMrFrom", "lifecycleSlFrom",
+        "lifecycleMrTo", "lifecycleSlTo"
+      ];
       
-      html += `<div class="calendar-footer-stats">
-        <div>1. Payment Sheet Working Days: <span style="color:#2b579a;">${paymentSheetDays}</span></div>
-        <div>2. Attendance Working Days (Sunday Rule): <span style="color:#007e33;">${calculatedWorkingDays}</span> (Absent: ${totalAbsentCount})</div>
-        <div>Status: <span class="${isMatch ? 'match-ok' : 'blink-not-match'}">${isMatch ? 'MATCHED (OK)' : 'NOT MATCH'}</span></div>
-      </div>`;
-
-      html += `<div class="cal-grid">`;
-
-      datesArray.forEach(item => {
-        let dObj = new Date(`${item.month} ${item.day}, ${item.year}`);
-        let isSunday = (dObj.getDay() === 0);
-        const isAbsent = row.absentDates.includes(item.dateStr);
-
-        html += `<div class="cal-day-cell ${isAbsent ? 'absent' : ''}" onclick="toggleAbsentDate('${item.dateStr}')">
-          <div style="${isSunday ? 'color:#c0392b; font-weight:900;' : ''}">${isSunday ? 'SUNDAY' : item.dateStr}</div>
-        </div>`;
+      activeFields.forEach(id => {
+        const el = document.getElementById(id);
+        if (el) {
+          el.disabled = false;
+          el.style.background = "#fff";
+          el.style.cursor = "pointer";
+        }
       });
-
-      html += `</div>`;
-      container.innerHTML = html;
     }
 
     function toggleAbsentDate(dateStr) {
@@ -1606,15 +1858,27 @@
     }
 
     function openEditModal() {
-      const curMR = mrSheets[currentMRIndex];
-      const curRows = curMR?.rows;
-      if (!curRows || curRows.length === 0) return showAlert("Add row first!", true);
-      
-      activeEditMode = 'form';
-      switchEditTab('form');
-      renderEditFormView();
-      document.getElementById("editModal").style.display = "flex";
-    }
+  const curMR = mrSheets[currentMRIndex];
+  const curRows = curMR?.rows;
+  if (!curRows || curRows.length === 0) return showAlert("Add row first!", true);
+  
+  const row = curRows[selectedRowIdx];
+  if (row && row.isGrandTotal) {
+    return showAlert("Grand Total row ko edit nahi kiya ja sakta!", true);
+  }
+  
+  isEditModeEnabled = false; // Default Locked
+  const btn = document.getElementById("btnToggleEditMode");
+  if(btn) {
+    btn.innerText = "🔓 EDIT DATA";
+    btn.style.background = "#d35400";
+  }
+
+  activeEditMode = 'form';
+  switchEditTab('form');
+  renderEditFormView();
+  document.getElementById("editModal").style.display = "flex";
+}
 
     function renderEditFormView() {
       const curRows = mrSheets[currentMRIndex].rows;
@@ -1622,6 +1886,10 @@
       document.getElementById("editModalTitle").innerText = row.isGrandTotal ? `EDIT G/TOTAL` : `EDIT EMPLOYEE (S/No: ${selectedRowIdx + 1})`;
       const grid = document.getElementById("editFormView");
       grid.innerHTML = "";
+
+      // Lock status ke mutabiq readonly attributes tay karein
+      let readonlyAttr = isEditModeEnabled ? '' : 'readonly style="background:#e9ecef; cursor:not-allowed;"';
+      let disabledAttr = isEditModeEnabled ? '' : 'disabled style="background:#e9ecef; cursor:not-allowed;"';
 
       for (let i = 0; i < 24; i++) {
         const colLetter = String.fromCharCode(65 + i);
@@ -1632,21 +1900,33 @@
 
         const div = document.createElement("div");
         div.className = "form-group";
-        if (i === 7 || i === 20) div.style.gridColumn = "span 2"; // Column U (index 20) ko proper space dene ke liye
+        if (i === 7 || i === 20) div.style.gridColumn = "span 2";
 
-        if (i === 2) {
+        // 💡 Column B (CODE) ke liye Dropdown (Blank, Existing Code, aur NEW)
+        if (i === 1) {
+          let codeOpts = `<option value="">-- Select Code --</option>`;
+          
+          if (val && val.trim() !== "" && val.toUpperCase() !== 'NEW') {
+            codeOpts += `<option value="${val}" selected>${val}</option>`;
+          }
+          
+          codeOpts += `<option value="NEW" ${val.toUpperCase() === 'NEW' ? 'selected' : ''}>NEW</option>`;
+
+          div.innerHTML = `<label><strong>${colLetter}:</strong> ${colTitle}</label><select id="editField_${i}" style="height:30px;" ${disabledAttr}>${codeOpts}</select>`;
+        }
+        else if (i === 2) {
           let opts = `<option value="">-- Select Trade --</option>`;
           tradeOptions.forEach(t => { opts += `<option value="${t}" ${val === t ? 'selected' : ''}>${t}</option>`; });
-          div.innerHTML = `<label><strong>${colLetter}:</strong> ${colTitle}</label><select id="editField_${i}" style="height:30px;">${opts}</select>`;
-        } 
+          div.innerHTML = `<label><strong>${colLetter}:</strong> ${colTitle}</label><select id="editField_${i}" style="height:30px;" ${disabledAttr}>${opts}</select>`;
+        }
         else if (i === 4) {
-          div.innerHTML = `<label><strong>${colLetter}:</strong> ${colTitle}</label><input type="date" id="editField_${i}" value="${dateToISO(val)}" style="height:30px;">`;
+          div.innerHTML = `<label><strong>${colLetter}:</strong> ${colTitle}</label><input type="date" id="editField_${i}" value="${dateToISO(val)}" style="height:30px;" ${readonlyAttr}>`;
         }
         else if (i === 21) {
-          div.innerHTML = `<label><strong>${colLetter}:</strong> ${colTitle}</label><input type="text" id="editField_${i}" value="${val}">`;
+          div.innerHTML = `<label><strong>${colLetter}:</strong> ${colTitle}</label><input type="text" id="editField_${i}" value="${val}" ${readonlyAttr}>`;
         }
         else if (i === 22) {
-          div.innerHTML = `<label><strong>${colLetter}:</strong> ${colTitle}</label><input type="date" id="editField_${i}" value="${dateToISO(val)}" style="height:30px;">`;
+          div.innerHTML = `<label><strong>${colLetter}:</strong> ${colTitle}</label><input type="date" id="editField_${i}" value="${dateToISO(val)}" style="height:30px;" ${readonlyAttr}>`;
         } 
         else if (i === 23) {
           let parts = String(val).trim().split(/\s+/);
@@ -1661,17 +1941,16 @@
           div.innerHTML = `
             <label><strong>${colLetter}:</strong> ${colTitle}</label>
             <div style="display:flex; gap:6px;">
-              <input type="date" id="editField_${i}" value="${dateToISO(dateVal)}" style="height:30px; flex:2;">
-              <select id="editDischargeSession" style="height:30px; flex:1; font-weight:bold;">
+              <input type="date" id="editField_${i}" value="${dateToISO(dateVal)}" style="height:30px; flex:2;" ${readonlyAttr}>
+              <select id="editDischargeSession" style="height:30px; flex:1; font-weight:bold;" ${disabledAttr}>
                 <option value="(F/N)" ${sessionVal === '(F/N)' ? 'selected' : ''}>(F/N)</option>
                 <option value="(A/N)" ${sessionVal === '(A/N)' ? 'selected' : ''}>(A/N)</option>
               </select>
             </div>`;
         }
         else {
-          // Column U (index 20) ya baaki fields ke liye text input
           div.innerHTML = `<label><strong>${colLetter}:</strong> ${colTitle} ${i === 20 ? '(Page Total)' : ''}</label>` +
-            (i === 7 ? `<textarea id="editField_${i}" style="height:50px;">${val}</textarea>` : `<input type="text" id="editField_${i}" value="${val}">`);
+            (i === 7 ? `<textarea id="editField_${i}" style="height:50px;" ${readonlyAttr}>${val}</textarea>` : `<input type="text" id="editField_${i}" value="${val}" ${readonlyAttr}>`);
         }
         grid.appendChild(div);
       }
@@ -1693,13 +1972,52 @@
           gridColsList.forEach((cIdx, colArrIdx) => {
             let valObj = r.rowData[cIdx] || '';
             let val = (typeof valObj === 'object' && valObj !== null) ? (valObj.v !== undefined ? valObj.v : '') : valObj;
-            html += `<td><input type="text" value="${val}" data-row="${rIdx}" data-col="${cIdx}" oninput="updateGridCellVal(this)" onkeydown="handleGridKeyNav(event, ${rIdx}, ${colArrIdx})"></td>`;
+            // 💡 onpaste event yahan add kiya gaya hai
+            html += `<td><input type="text" value="${val}" data-row="${rIdx}" data-col="${cIdx}" oninput="updateGridCellVal(this)" onkeydown="handleGridKeyNav(event, ${rIdx}, ${colArrIdx})" onpaste="handleGridPaste(event, ${rIdx}, ${colArrIdx})"></td>`;
           });
           html += `</tr>`;
         }
       });
       html += `</tbody></table>`;
       container.innerHTML = html;
+    }
+    function handleGridPaste(e, startRIdx, startColArrIdx) {
+      e.preventDefault();
+      
+      // Clipboard se pasted text nikalna
+      const clipboardData = e.clipboardData || window.clipboardData;
+      const pastedData = clipboardData.getData('Text');
+      if (!pastedData) return;
+
+      // Rows (newlines) aur Columns (tabs) mein split karna jo Excel copy se aate hain
+      const rows = pastedData.split(/\r\n|\n|\r/).filter(row => row.length > 0);
+      const curRows = mrSheets[currentMRIndex].rows;
+
+      rows.forEach((rowStr, rOffset) => {
+        const targetRowIdx = startRIdx + rOffset;
+        if (targetRowIdx < curRows.length && !curRows[targetRowIdx].isGrandTotal) {
+          const cells = rowStr.split('\t'); // Excel columns tab-separated hote hain
+          
+          cells.forEach((cellVal, cOffset) => {
+            const targetColArrIdx = startColArrIdx + cOffset;
+            if (targetColArrIdx < gridColsList.length) {
+              const targetColIdx = gridColsList[targetColArrIdx];
+              
+              // Data row object mein update karna
+              curRows[targetRowIdx].rowData[targetColIdx] = cellVal.trim();
+
+              // UI input field ko bhi turant update karna
+              const targetInput = document.querySelector(`input[data-row="${targetRowIdx}"][data-col="${targetColIdx}"]`);
+              if (targetInput) {
+                targetInput.value = cellVal.trim();
+              }
+            }
+          });
+        }
+      });
+
+      saveToLocal(true);
+      showAlert("Excel data pasted successfully across cells!");
     }
 
     function updateGridCellVal(input) {
@@ -1725,6 +2043,11 @@
       pushUndoState();
       const curRows = mrSheets[currentMRIndex].rows;
       const row = curRows[selectedRowIdx];
+
+      if (row.isGrandTotal) {
+        showAlert("Grand Total row cannot be edited!", true);
+        return;
+      }
 
       if (activeEditMode === 'form') {
         for (let i = 0; i < 24; i++) {
@@ -1757,41 +2080,48 @@
         row.rowData[19] = String(days * rate);
       }
       
+      // 👉 Save DO-II & Remarks Settings Data
+      const recDateInput = document.getElementById("lifecycleRecDate")?.value || "";
+      const disDateInput = document.getElementById("lifecycleDisDate")?.value || "";
+      const changedTradeVal = document.getElementById("lifecycleChangedTrade")?.value || "";
+
+      row.lifecycleData = {
+        recDate: recDateInput,
+        disDate: disDateInput,
+        gradeDate: document.getElementById("lifecycleGradeDate")?.value || "",
+        changedTrade: changedTradeVal,
+        transferDate: document.getElementById("lifecycleTransferDate")?.value || "",
+        mrFrom: document.getElementById("lifecycleMrFrom")?.value || "",
+        slFrom: document.getElementById("lifecycleSlFrom")?.value || "",
+        mrTo: document.getElementById("lifecycleMrTo")?.value || "",
+        slTo: document.getElementById("lifecycleSlTo")?.value || ""
+      };
+
+      // 💡 Agar "Changed To (Trade)" select kiya hai, toh Current Trade (Column C -> index 2) ko update karein
+      if (changedTradeVal !== "") {
+        row.rowData[2] = changedTradeVal;
+        // Rate aur Net Amount ko naye trade ke hisaab se auto-calculate karein
+        row.rowData[18] = calculateRateByTrade(changedTradeVal);
+        const days = parseFloat(row.rowData[17]) || 0;
+        const rate = parseFloat(row.rowData[18]) || 0;
+        row.rowData[19] = String(days * rate);
+      }
+
+      // 💡 Date of Enrolment (Column W -> index 22) update logic
+      if (recDateInput !== "") {
+        row.rowData[22] = isoToDisplayDate(recDateInput);
+      }
+
+      // 💡 Date of Discharge (Column X -> index 23) update logic
+      if (disDateInput !== "") {
+        row.rowData[23] = isoToDisplayDate(disDateInput);
+      }
+
       updateGrandTotalInternal();
       closeModal("editModal");
       renderBody(); 
       saveToLocal(true); 
       showAlert("Data successfully saved!");
-    }
-
-    function deleteCurrentRow() {
-      const curRows = mrSheets[currentMRIndex].rows;
-      if (!curRows || curRows.length <= 1) return showAlert("Cannot delete the last row!", true);
-      
-      const rowToDelete = curRows[selectedRowIdx];
-      let savedPageTotal = null;
-      if (rowToDelete && rowToDelete.rowData && rowToDelete.rowData[20]) {
-        savedPageTotal = rowToDelete.rowData[20];
-      }
-
-      if (confirm("Are you sure you want to delete this row?")) {
-        pushUndoState();
-        curRows.splice(selectedRowIdx, 1);
-
-        if (savedPageTotal) {
-          const activeRows = curRows.filter(r => !r.isGrandTotal);
-          if (activeRows.length > 0) {
-            activeRows[activeRows.length - 1].rowData[20] = savedPageTotal;
-          }
-        }
-
-        selectedRowIdx = Math.max(0, selectedRowIdx - 1);
-        updateGrandTotalInternal();
-        closeModal("editModal"); 
-        renderBody(); 
-        saveToLocal(true); 
-        showAlert("Row deleted and page total preserved successfully!");
-      }
     }
 
     function insertBlankRowBelow() {
@@ -1837,6 +2167,16 @@
       }
       return isoStr;
     }
+
+    let isEditModeEnabled = false; // Default Locked (false)
+
+function toggleEditMode() {
+  isEditModeEnabled = !isEditModeEnabled;
+  const btn = document.getElementById("btnToggleEditMode");
+  btn.innerText = isEditModeEnabled ? "🔒 LOCK DATA" : "🔓 EDIT DATA";
+  btn.style.background = isEditModeEnabled ? "#c0392b" : "#d35400";
+  renderEditFormView(); // Form ko dobara render karein taaki fields readonly/editable ho jayein
+}
   </script>
 </body>
 </html>

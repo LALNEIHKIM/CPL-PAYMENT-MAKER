@@ -513,6 +513,16 @@
 
       if (str.match(/^\d{2}-[A-Za-z]{3}-\d{4}$/)) return str;
 
+      // 💡 ISO format (YYYY-MM-DD) ko DD-Mon-YYYY mein convert karne ke liye
+      if (/^\d{4}-\d{2}-\d{2}$/.test(str)) {
+        let parts = str.split("-");
+        let y = parts[0];
+        let m = parseInt(parts[1], 10);
+        let d = parts[2];
+        let mName = MONTH_NAMES[m - 1] || 'Aug';
+        return `${d}-${mName}-${y}`;
+      }
+
       const slashParts = str.split("/");
       if (slashParts.length === 3) {
         const d = slashParts[0].padStart(2, '0');
@@ -650,16 +660,30 @@
           const colDischargeDate = String((r.rowData && r.rowData[23]) || r.dischargeDate || '').trim();
 
           const manualMatch = manualOverrides.find(mo => mo.mrLabel.toUpperCase() === mr.label.toUpperCase() && mo.sno === (idx + 1));
+          
+          // 💡 Payment screen se jo lifecycleData save hua hai usme transfer date check karna
+          const lifeData = r.lifecycleData || {};
+          const transferDateFromPayment = lifeData.transferDate ? formatToStandardDate(lifeData.transferDate) : "";
+          const transferFnAn = lifeData.transferFnAn || "(F/N)";
 
           const isNew = (colCode.toUpperCase() === "NEW");
           const hasSlash = colTrade.includes("/");
           const hasDischarge = (colDischargeDate !== "");
+          const hasTransfer = (transferDateFromPayment !== "");
           const hasManual = (manualMatch !== undefined);
 
-          if (isNew || hasSlash || hasDischarge || hasManual) {
+          if (isNew || hasSlash || hasDischarge || hasTransfer || hasManual) {
             let assignedNewCode = "";
             if (isNew) {
               assignedNewCode = String(nextNewCodeCounter++);
+            }
+
+            // Agar payment screen se MR From / To bhara gaya hai toh custom remark bana lo, warna default
+            let autoRemark = "";
+            if (hasTransfer) {
+              let fromMr = lifeData.mrFrom ? ` from ${lifeData.mrFrom}` : "";
+              let toMr = lifeData.mrTo ? ` to ${lifeData.mrTo}` : "";
+              autoRemark = `Transferred${fromMr}${toMr} w.e.f. ${transferDateFromPayment} ${transferFnAn}`;
             }
 
             const rowObj = {
@@ -671,10 +695,10 @@
               father: colFather,
               dateRecruit: isNew ? colEnrolmentDate : "",
               dateDischarge: colDischargeDate,
-              dateTfr: manualMatch ? manualMatch.tfrDate : "",
+              dateTfr: manualMatch ? manualMatch.tfrDate : (transferDateFromPayment ? `${transferDateFromPayment} ${transferFnAn}` : ""),
               dateUpgrade: hasSlash ? "21-Aug-2026" : "",
               time: "(F/N)",
-              customRemark: manualMatch ? manualMatch.remark : ""
+              customRemark: manualMatch ? manualMatch.remark : autoRemark
             };
             rowObj.remark = generateRemarkFormula(rowObj);
             matchingRows.push(rowObj);
