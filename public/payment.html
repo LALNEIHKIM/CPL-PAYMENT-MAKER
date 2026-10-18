@@ -2214,6 +2214,28 @@ function toggleEditMode() {
   btn.style.background = isEditModeEnabled ? "#c0392b" : "#d35400";
   renderEditFormView(); // Form ko dobara render karein taaki fields readonly/editable ho jayein
 }
+
+function deleteCurrentRow() {
+      const curRows = mrSheets[currentMRIndex].rows;
+      if (!curRows || curRows.length === 0) return;
+      
+      const row = curRows[selectedRowIdx];
+      if (row && row.isGrandTotal) {
+        showAlert("Grand Total row ko delete nahi kiya ja sakta!", true);
+        return;
+      }
+
+      if (confirm("Kya aap is employee ko sheet se delete karna chahte hain?")) {
+        pushUndoState();
+        curRows.splice(selectedRowIdx, 1);
+        selectedRowIdx = Math.max(0, selectedRowIdx - 1);
+        updateGrandTotalInternal();
+        closeModal("editModal");
+        renderBody();
+        saveToLocal(true);
+        showAlert("Employee successfully deleted!");
+      }
+    }
   </script>
 </body>
 </html>
