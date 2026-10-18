@@ -1239,33 +1239,39 @@ function onModalMrSelectChange(selectedMr) {
       showAlert("Working days applied successfully!");
     }
 
-    function confirmAddMR() {
-  const selectedMr = document.getElementById("modalMrDropdown").value;
-  const jobNo = document.getElementById("modalJobInput").value;
-  const tabLabel = selectedMr;
+   function confirmAddMR() {
+      const selectedMr = document.getElementById("modalMrDropdown").value; // e.g. "MR NO. 374"
+      const jobNo = document.getElementById("modalJobInput").value;
+      
+      // 💡 Sidebar ke liye chhota label (e.g. "MR NO. 374")
+      const tabLabel = selectedMr; 
 
-  if (mrSheets.some(m => m.label.toUpperCase() === tabLabel.toUpperCase())) {
-    return showAlert("This MR number already exists!", true);
-  }
+      // 💡 Top banner aur Excel ke liye lamba title format
+      const mrNumOnly = selectedMr.replace(/\D/g, ''); // "374" nikal lega
+      const formattedTitle = `MR No. 74RCC/${mrNumOnly}/OCT-2026, JOB No. ${jobNo}`;
 
-  let loggedUser = (localStorage.getItem("CPL_LOGGED_USER") || "ADMIN").toUpperCase();
+      if (mrSheets.some(m => m.label.toUpperCase() === tabLabel.toUpperCase())) {
+        return showAlert("This MR number already exists!", true);
+      }
 
-  mrSheets.push({ 
-    label: tabLabel, 
-    title: `${selectedMr}, JOB No. ${jobNo}`, 
-    isLocked: false, 
-    isSubmitted: false, 
-    assignedUser: loggedUser, 
-    rows: [] 
-  });
+      let loggedUser = (localStorage.getItem("CPL_LOGGED_USER") || "ADMIN").toUpperCase();
 
-  currentMRIndex = mrSheets.length - 1;
-  closeModal("mrModal");
-  saveToLocal(true);
-  renderTabs(); 
-  renderBody(); 
-  showAlert("MR created successfully!");
-}
+      mrSheets.push({ 
+        label: tabLabel,          // Sidebar par sirf "MR NO. 374" dikhega
+        title: formattedTitle,    // Top heading aur Excel mein lamba naam aayega
+        isLocked: false, 
+        isSubmitted: false, 
+        assignedUser: loggedUser, 
+        rows: [] 
+      });
+
+      currentMRIndex = mrSheets.length - 1;
+      closeModal("mrModal");
+      saveToLocal(true);
+      renderTabs(); 
+      renderBody(); 
+      showAlert("MR created successfully!");
+    }
 
     function renderTabs() {
       const container = document.getElementById("mrTabsContainer"); 
