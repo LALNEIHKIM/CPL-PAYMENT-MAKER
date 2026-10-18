@@ -1560,29 +1560,54 @@ function onModalMrSelectChange(selectedMr) {
       }
 
       pendingConfirmAction = () => {
-        mrSheets[currentMRIndex].isSubmitted = true;
+        // Pehle state update karein
+        const targetIndex = currentMRIndex;
+        mrSheets[targetIndex].isSubmitted = true;
         
-        let loggedUser = localStorage.getItem("CPL_LOGGED_USER") || (localStorage.getItem("CPL_ADMIN_LOGGED") === "true" ? "ADMIN" : "UNKNOWN USER");
-        mrSheets[currentMRIndex].submittedBy = loggedUser.toUpperCase();
+        let loggedUser = localStorage.getItem("CPL_LOGGED_USER") || (localStorage.getItem("CPL_ADMIN_LOGGED"] === "true" ? "ADMIN" : "UNKNOWN USER");
+        mrSheets[targetIndex].submittedBy = loggedUser.toUpperCase();
         
+        // Locally turant save karein taaki data safe rahe
         saveToLocal(true);
 
-        fetch(`/api/mr-sheets`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ mrSheets, lastIndex: currentMRIndex, period: activePeriod })
-        })
-        .then(res => res.json())
-        .then(() => {
-          showAlert("MR successfully submitted & uploaded to server!");
-          fetchMRDataFromServer();
-        })
-        .catch(err => {
-          showAlert("Server upload fail ho gaya, kripya internet connection check karein!", true);
-        });
+        // Helper function for automatic retry mechanism (slow internet fix)
+        const sendWithRetry = (payload, retriesLeft = 3) => {
+          fetch(`/api/mr-sheets`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+          })
+          .then(res => {
+            if (!res.ok) throw new Error("Server response not ok");
+            return res.json();
+          })
+          .then(() => {
+            showAlert("MR successfully submitted & uploaded to server!");
+            fetchMRDataFromServer();
+          })
+          .catch(err => {
+            if (retriesLeft > 0) {
+              console.log(`Upload failed, retrying... (${retriesLeft} koshishe baaki hain)`);
+              setTimeout(() => sendWithRetry(payload, retriesLeft - 1), 3000); // 3 second baad dobara try karega
+            } else {
+              // Agar saari koshishe fail ho jayein, toh data locally safe rahega
+              showAlert("Server upload fail ho gaya! Lekin aapka data locally safe hai, kripya baad mein dobara submit karein.", true);
+              console.error("Server upload final error:", err);
+            }
+          });
+        };
+
+        // Server payload bhejain
+        const payload = {
+          mrSheets: mrSheets,
+          lastIndex: targetIndex,
+          period: activePeriod
+        };
+
+        sendWithRetry(payload, 3);
       };
       
-      document.getElementById("customConfirmText").innerText = "Are you sure you want to submit this MR sheet? Once submitted, it will be uploaded to the server and cannot be edited without Admin approval. Please check all details carefully before proceeding..";
+      document.getElementById("customConfirmText").innerText = "Are you sure you want to submit this MR sheet? Once submitted, it will be uploaded to the server and cannot be edited without Admin approval. Please check all details carefully before proceeding.";
       document.getElementById("customConfirmModal").style.display = "flex";
     }
 
