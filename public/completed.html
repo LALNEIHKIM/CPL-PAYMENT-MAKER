@@ -446,8 +446,18 @@
         alert("Access Denied! Only Admin can access this feature");
         return;
       }
-      renderMsgRequestsList();
-      document.getElementById("msgBoxModal").style.display = "flex";
+      // 💡 Click karte hi server se fresh requests fetch karein
+      fetch('/api/approvals')
+        .then(res => res.json())
+        .then(data => {
+          serverApprovals = data;
+          updateMsgBadgeCount();
+          renderMsgRequestsList();
+          document.getElementById("msgBoxModal").style.display = "flex";
+        }).catch(e => {
+          renderMsgRequestsList();
+          document.getElementById("msgBoxModal").style.display = "flex";
+        });
     }
 
     function closeModal(id) { document.getElementById(id).style.display = "none"; }
