@@ -530,14 +530,12 @@
       requests.splice(index, 1);
       serverApprovals.requests = requests;
 
-      // Agar login approval hai
       if (req.mrLabel === "LOGIN APPROVAL") {
         if (!serverApprovals.approvedUsers.includes(req.user)) {
           serverApprovals.approvedUsers.push(req.user);
         }
         serverApprovals.pendingUsers = (serverApprovals.pendingUsers || []).filter(u => u !== req.user);
 
-        // Server par save karein
         fetch('/api/approvals', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -554,6 +552,8 @@
       const realIdx = mrSheets.findIndex(m => m.label === req.mrLabel);
       if (realIdx !== -1) {
         mrSheets[realIdx].isSubmitted = false;
+        
+        // 💡 Yahan change karna hai: Jis user ne request bheji (e.g. KIMA), wahi assignedUser banega!
         mrSheets[realIdx].assignedUser = (req.user || "ADMIN").toUpperCase();
 
         localStorage.setItem(`CPL_OFFLINE_SHEETS_${activePeriod}`, JSON.stringify({ mrSheets, lastIndex: 0 }));
@@ -570,7 +570,7 @@
             body: JSON.stringify(serverApprovals)
           })
         ]).then(() => {
-          showAlert(`Request approved for ${req.mrLabel}!`);
+          showAlert(`Request approved for ${req.mrLabel} (Assigned to ${req.user})!`);
           renderCompleteMRTabs();
           renderMsgRequestsList();
           updateMsgBadgeCount();
