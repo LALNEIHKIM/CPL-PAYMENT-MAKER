@@ -1648,10 +1648,10 @@ function onModalMrSelectChange(selectedMr) {
       showAlert("Grand Total is added successfully!");
     }
 
-    // 1. PAGE TOTAL AUTO-INCREMENT & CAPPING LOGIC (FIXED)
-    let lastPageTotalEndIndex = 0;
+    // 1. PAGE TOTAL AUTO-INCREMENT & CAPPING LOGIC
+let lastPageTotalEndIndex = 0;
 
-    function openPageTotalModal() {
+function openPageTotalModal() {
   const curRows = mrSheets[currentMRIndex].rows.filter(r => !r.isGrandTotal);
   const totalRowsCount = curRows.length;
 
@@ -1659,7 +1659,18 @@ function onModalMrSelectChange(selectedMr) {
   const endInput = document.getElementById("pageTotalEnd");
   
   let nextStart = 1;
-  let nextEnd = totalRowsCount > 0 ? totalRowsCount : 20;
+  let nextEnd = 20;
+
+  // Agar pehle koi page total apply ho chuka hai, toh agli range automatically set hogi
+  if (lastPageTotalEndIndex > 0 && lastPageTotalEndIndex < totalRowsCount) {
+    nextStart = lastPageTotalEndIndex + 1;
+    nextEnd = Math.min(nextStart + 19, totalRowsCount);
+  } else if (lastPageTotalEndIndex >= totalRowsCount) {
+    nextStart = 1;
+    nextEnd = Math.min(20, totalRowsCount);
+  } else {
+    nextEnd = Math.min(20, totalRowsCount);
+  }
 
   startInput.value = nextStart;
   endInput.value = nextEnd;
@@ -1696,7 +1707,9 @@ function applyPageTotal() {
   const startNo = parseInt(document.getElementById("pageTotalStart").value) || 1;
   const endNo = parseInt(document.getElementById("pageTotalEnd").value) || 20;
   
+  // Save current end index so next time it starts from endNo + 1
   lastPageTotalEndIndex = endNo;
+  
   const curRows = mrSheets[currentMRIndex].rows;
 
   if (startNo > endNo || startNo < 1) {
@@ -1749,7 +1762,7 @@ function applyPageTotal() {
   closeModal("pageTotalModal"); 
   renderBody(); 
   saveToLocal(true); 
-  showAlert(`Page Total (Rs. ${pageSum.toLocaleString('en-IN')}) applied successfully!`);
+  showAlert(`Page Total (Rs. ${pageSum.toLocaleString('en-IN')}) applied successfully! (Next will start from S/No ${endNo + 1})`);
 }
 
     let activeEditMode = 'form';
