@@ -1312,12 +1312,13 @@ function onModalMrSelectChange(selectedMr) {
       container.innerHTML = "";
 
       let loggedUser = (localStorage.getItem("CPL_LOGGED_USER") || "ADMIN").toUpperCase();
-      let isAdmin = localStorage.getItem("CPL_ADMIN_LOGGED") === "true";
 
       const activeMRs = mrSheets.filter(m => {
         if (m.isSubmitted) return false;
-        if (isAdmin) return true; 
-        return (m.assignedUser || "ADMIN").toUpperCase() === loggedUser;
+        const assignedUser = (m.assignedUser || "ADMIN").trim().toUpperCase();
+        // An edit-approved MR belongs on the assigned operator's Payment screen.
+        // Admin sees admin-assigned drafts, while each operator sees their own.
+        return assignedUser === loggedUser;
       });
 
       activeMRs.sort((a, b) => {
