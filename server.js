@@ -1,3 +1,5 @@
+require('dotenv').config();
+
 const express = require('express');
 const path = require('path');
 const fs = require('fs');
@@ -417,18 +419,31 @@ app.post('/api/mr-sheets', async (req, res) => {
             throw new Error(`Refusing to remove existing MR: ${label}`);
           }
 
-          // Reducing rows or reopening a submitted MR is allowed only when the
-          // admin explicitly approved editing this exact MR.
+          // Keep edit approval on the server until that MR is submitted again.
+          // The approval request itself unblocks the sheet; later full-list saves
+          // (including the final resubmission) may then replace its row count.
+          const editApproved =
+            oldSheet.editApproved === true ||
+            approvedEditLabels.has(label) ||
+            oldSheet.isSubmitted !== true;
+
+          // Reducing rows or reopening a submitted MR is allowed only for the
+          // exact MR approved for editing by the admin.
           if (
             (oldSheet.rows || []).length > (newSheet.rows || []).length &&
-            !approvedEditLabels.has(label)
+            !editApproved
           ) {
             throw new Error(`Refusing to reduce rows for ${label}`);
           }
 
-          if (oldSheet.isSubmitted && !newSheet.isSubmitted && !approvedEditLabels.has(label)) {
+          if (oldSheet.isSubmitted && !newSheet.isSubmitted && !editApproved) {
             throw new Error(`Refusing to unsubmit ${label}`);
           }
+
+          // Only server state can carry this permission forward. Clear it once
+          // the edited MR is submitted again, so future row reductions require
+          // a fresh approval.
+          newSheet.editApproved = editApproved && !newSheet.isSubmitted;
         }
 
         const payload = {
