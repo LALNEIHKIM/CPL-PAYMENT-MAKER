@@ -739,7 +739,12 @@ function onModalMrSelectChange(selectedMr) {
 
       renderHeaders();
       if (mrSheets.length > 0) {
-        if (currentMRIndex >= mrSheets.length || mrSheets[currentMRIndex].isSubmitted) {
+        if (
+          currentMRIndex < 0 ||
+          currentMRIndex >= mrSheets.length ||
+          !mrSheets[currentMRIndex] ||
+          mrSheets[currentMRIndex].isSubmitted
+        ) {
           const firstActive = mrSheets.findIndex(m => !m.isSubmitted);
           currentMRIndex = firstActive !== -1 ? firstActive : 0;
         }
@@ -810,7 +815,12 @@ function onModalMrSelectChange(selectedMr) {
           if (activeMRs.length === 0 && mrSheets.length === 0) {
             openMRModal();
           } else {
-            if (currentMRIndex >= mrSheets.length || mrSheets[currentMRIndex].isSubmitted) {
+            if (
+              currentMRIndex < 0 ||
+              currentMRIndex >= mrSheets.length ||
+              !mrSheets[currentMRIndex] ||
+              mrSheets[currentMRIndex].isSubmitted
+            ) {
               const firstActive = mrSheets.findIndex(m => !m.isSubmitted);
               currentMRIndex = firstActive !== -1 ? firstActive : 0;
             }
@@ -915,7 +925,11 @@ function onModalMrSelectChange(selectedMr) {
         return;
       }
 
-      if (mrSheets.length === 0 || mrSheets[currentMRIndex].isSubmitted) {
+      if (
+        mrSheets.length === 0 ||
+        !mrSheets[currentMRIndex] ||
+        mrSheets[currentMRIndex].isSubmitted
+      ) {
         showAlert("Pehle koi active MR sheet select ya create karein!", true);
         return;
       }
