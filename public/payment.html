@@ -835,6 +835,64 @@ function onModalMrSelectChange(selectedMr) {
         });
     }
 
+    // Use the server's latest full list for writes so an unrelated stale
+    // local MR cannot make a save or delete fail row-count protection.
+    async function postMRSheetsWithLatestServer({ targetLabel, deleteLabel, lastIndex }) {
+      const readResponse = await fetch(`/api/mr-sheets?period=${encodeURIComponent(activePeriod)}`);
+      const latestData = await readResponse.json();
+      if (!readResponse.ok || !Array.isArray(latestData.mrSheets)) {
+        throw new Error(latestData.error || 'Could not read latest MR sheets from server');
+      }
+
+      let latestSheets = latestData.mrSheets.map(sheet => ({ ...sheet }));
+
+      if (deleteLabel) {
+        const deleteKey = String(deleteLabel).trim().toUpperCase();
+        latestSheets = latestSheets.filter(sheet =>
+          String(sheet.label || '').trim().toUpperCase() !== deleteKey
+        );
+      } else {
+        const targetKey = String(targetLabel || '').trim().toUpperCase();
+        const localTarget = mrSheets.find(sheet =>
+          String(sheet.label || '').trim().toUpperCase() === targetKey
+        );
+        if (!localTarget) throw new Error(`MR not found in this browser: ${targetLabel}`);
+
+        const serverIndex = latestSheets.findIndex(sheet =>
+          String(sheet.label || '').trim().toUpperCase() === targetKey
+        );
+        if (serverIndex === -1) {
+          latestSheets.push({ ...localTarget });
+        } else {
+          const serverTarget = latestSheets[serverIndex];
+          latestSheets[serverIndex] = {
+            ...serverTarget,
+            ...localTarget,
+            assignedUser: serverTarget.assignedUser || localTarget.assignedUser,
+            editApproved: serverTarget.editApproved
+          };
+        }
+      }
+
+      const payload = {
+        mrSheets: latestSheets,
+        lastIndex,
+        period: activePeriod
+      };
+      if (deleteLabel) payload.deleteLabels = [deleteLabel];
+
+      const writeResponse = await fetch('/api/mr-sheets', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+      const result = await writeResponse.json().catch(() => ({}));
+      if (!writeResponse.ok || result.success === false) {
+        throw new Error(result.error || `Server response ${writeResponse.status}`);
+      }
+      return result;
+    }
+
     function populateDatalists() {
       const nameDl = document.getElementById("nameOptions");
       nameDl.innerHTML = "";
@@ -1552,18 +1610,10 @@ function onModalMrSelectChange(selectedMr) {
       renderTabs(); renderBody();
 
       try {
-        const response = await fetch('/api/mr-sheets', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            mrSheets,
-            lastIndex: currentMRIndex,
-            period: activePeriod,
-            deleteLabels: [targetLabel]
-          })
+        await postMRSheetsWithLatestServer({
+          deleteLabel: targetLabel,
+          lastIndex: currentMRIndex
         });
-        const result = await response.json();
-        if (!response.ok || !result.success) throw new Error(result.error || 'Server delete failed');
         saveToLocal(true);
         showAlert(`${targetLabel} deleted from Payment and server.`);
       } catch (error) {
@@ -1675,19 +1725,14 @@ function onModalMrSelectChange(selectedMr) {
         // Locally turant save karein taaki data safe rahe
         saveToLocal(true);
 
-        // Helper function for automatic retry mechanism (slow internet fix)
-        const sendWithRetry = (payload, retriesLeft = 3) => {
-          fetch(`/api/mr-sheets`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(payload)
-          })
-          .then(async res => {
-            const result = await res.json().catch(() => ({}));
-            if (!res.ok || result.success === false) {
-              throw new Error(result.error || `Server response ${res.status}`);
-            }
-            return result;
+        const targetLabel = mrSheets[targetIndex].label;
+
+        // Refresh the full list before each retry, then replace only the MR
+        // being submitted. This prevents unrelated stale sheets blocking it.
+        const sendWithRetry = (retriesLeft = 3) => {
+          postMRSheetsWithLatestServer({
+            targetLabel,
+            lastIndex: targetIndex
           })
           .then(() => {
             showAlert("MR successfully submitted & uploaded to server!");
@@ -1696,7 +1741,7 @@ function onModalMrSelectChange(selectedMr) {
           .catch(err => {
             if (retriesLeft > 0) {
               console.log(`Upload failed, retrying... (${retriesLeft} koshishe baaki hain)`);
-              setTimeout(() => sendWithRetry(payload, retriesLeft - 1), 3000); // 3 second baad dobara try karega
+              setTimeout(() => sendWithRetry(retriesLeft - 1), 3000); // 3 second baad dobara try karega
             } else {
               // Agar saari koshishe fail ho jayein, toh data locally safe rahega
               showAlert(`Server upload fail: ${err.message}. Data locally saved hai; fix ke baad dobara submit karein.`, true);
@@ -1705,14 +1750,7 @@ function onModalMrSelectChange(selectedMr) {
           });
         };
 
-        // Server payload bhejain
-        const payload = {
-          mrSheets: mrSheets,
-          lastIndex: targetIndex,
-          period: activePeriod
-        };
-
-        sendWithRetry(payload, 3);
+        sendWithRetry(3);
       };
       
       document.getElementById("customConfirmText").innerText = "Are you sure you want to submit this MR sheet? Once submitted, it will be uploaded to the server and cannot be edited without Admin approval. Please check all details carefully before proceeding.";
