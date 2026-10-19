@@ -10,6 +10,7 @@ const { Pool } = require('pg');
 const app = express();
 const PORT = Number(process.env.PORT || 4000);
 
+
 if (!process.env.DATABASE_URL) {
   console.error('ERROR: DATABASE_URL environment variable is missing.');
   process.exit(1);
