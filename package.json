@@ -1,3 +1,4 @@
+
 {
   "name": "cpl-payment-maker",
   "version": "1.0.0",
@@ -8,6 +9,7 @@
   "dependencies": {
     "cors": "^2.8.5",
     "express": "^4.19.2",
-    "xlsx": "^0.18.5"
+    "xlsx": "^0.18.5",
+    "pg": "^8.16.3"
   }
 }
