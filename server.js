@@ -384,7 +384,14 @@ app.post('/api/mr-sheets', async (req, res) => {
         const nextSheets =
           incoming === undefined ? oldSheets : incoming;
 
-        // Protect existing records from accidental deletion.
+        // Explicitly-authorized workflow actions. Normal saves cannot silently
+        // delete submitted MRs or reopen them; the frontend must name the MR.
+        const normalizeLabels = value => Array.isArray(value)
+          ? new Set(value.map(v => String(v || '').trim().toUpperCase()).filter(Boolean))
+          : new Set();
+        const deleteLabels = normalizeLabels(req.body.deleteLabels);
+        const approvedEditLabels = normalizeLabels(req.body.approvedEditLabels);
+
         const nextByLabel = new Map(
           nextSheets.map(sheet => [
             String(sheet.label || '').trim().toUpperCase(),
@@ -392,45 +399,35 @@ app.post('/api/mr-sheets', async (req, res) => {
           ])
         );
 
-        if (
-          oldSheets.length &&
-          incoming !== undefined &&
-          !nextSheets.length
-        ) {
-          throw new Error(
-            'Refusing to replace existing MR records with an empty array'
+        if (oldSheets.length && incoming !== undefined && !nextSheets.length) {
+          const allOldLabelsExplicitlyDeleted = oldSheets.every(sheet =>
+            deleteLabels.has(String(sheet.label || '').trim().toUpperCase())
           );
+          if (!allOldLabelsExplicitlyDeleted) {
+            throw new Error('Refusing to replace existing MR records with an empty array');
+          }
         }
 
         for (const oldSheet of oldSheets) {
-          const label = String(oldSheet.label || '')
-            .trim()
-            .toUpperCase();
-
+          const label = String(oldSheet.label || '').trim().toUpperCase();
           const newSheet = nextByLabel.get(label);
 
           if (!newSheet) {
-            throw new Error(
-              `Refusing to remove existing MR: ${label}`
-            );
+            if (deleteLabels.has(label)) continue;
+            throw new Error(`Refusing to remove existing MR: ${label}`);
           }
 
+          // Reducing rows or reopening a submitted MR is allowed only when the
+          // admin explicitly approved editing this exact MR.
           if (
-            (oldSheet.rows || []).length >
-            (newSheet.rows || []).length
+            (oldSheet.rows || []).length > (newSheet.rows || []).length &&
+            !approvedEditLabels.has(label)
           ) {
-            throw new Error(
-              `Refusing to reduce rows for ${label}`
-            );
+            throw new Error(`Refusing to reduce rows for ${label}`);
           }
 
-          if (
-            oldSheet.isSubmitted &&
-            !newSheet.isSubmitted
-          ) {
-            throw new Error(
-              `Refusing to unsubmit ${label}`
-            );
+          if (oldSheet.isSubmitted && !newSheet.isSubmitted && !approvedEditLabels.has(label)) {
+            throw new Error(`Refusing to unsubmit ${label}`);
           }
         }
 
