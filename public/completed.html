@@ -748,8 +748,16 @@
         return;
       }
       const submittedMRs = mrSheets.filter(m => m.isSubmitted);
-      if (submittedMRs.length === 0) return showAlert("No sheet to export!", true);
-      const target = submittedMRs[completeActiveIdx];
+if (submittedMRs.length === 0) return showAlert("No sheet to export!", true);
+
+const activeTab = document.querySelector(".btn-mr-tab.submitted.active");
+const activeLabel = activeTab?.innerText.replace("✓", "").trim();
+
+const target =
+  submittedMRs.find(m => m.label.toUpperCase() === activeLabel?.toUpperCase()) ||
+  submittedMRs[completeActiveIdx];
+
+if (!target) return showAlert("Selected MR sheet not found!", true);
       
       const wsData = [[target.title], masterHeaders.slice(0, 24)];
       
