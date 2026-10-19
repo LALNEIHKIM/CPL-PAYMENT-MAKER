@@ -589,20 +589,33 @@
               fetch(`/api/mr-sheets`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ mrSheets: latestMrSheets, lastIndex: 0, period: activePeriod })
+                body: JSON.stringify({
+                  mrSheets: latestMrSheets,
+                  lastIndex: 0,
+                  period: activePeriod,
+                  approvedEditLabels: [req.mrLabel]
+                })
               }),
               fetch('/api/approvals', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(serverApprovals)
               })
-            ]).then(() => {
-              showAlert(`Request approved! Sheet ${req.mrLabel} is now assigned to ${targetUser}.`);
+            ]).then(async responses => {
+              const mrResponse = responses[0];
+              const approvalResponse = responses[1];
+              if (!mrResponse.ok) {
+                const errorData = await mrResponse.json().catch(() => ({}));
+                throw new Error(errorData.error || 'MR update rejected by server');
+              }
+              if (!approvalResponse.ok) throw new Error('Approval request list failed to save');
+              showAlert(`Request approved! Sheet ${req.mrLabel} moved to Payment for editing.`);
               renderCompleteMRTabs();
               renderMsgRequestsList();
               updateMsgBadgeCount();
             }).catch(e => {
-              showAlert("Error syncing with server!", true);
+              showAlert(`Approval sync failed: ${e.message}`, true);
+              fetchCompletedMRsFromServer();
             });
           } else {
             showAlert("Sheet not found on server!", true);
