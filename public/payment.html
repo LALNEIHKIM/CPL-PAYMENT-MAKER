@@ -763,13 +763,46 @@ function onModalMrSelectChange(selectedMr) {
       fetch(`/api/mr-sheets?period=${encodeURIComponent(activePeriod)}`)
         .then(res => res.json())
         .then(data => {
-          if (data.mrSheets && data.mrSheets.length > 0) {
+          if (Array.isArray(data.mrSheets)) {
             const localData = localStorage.getItem(`CPL_OFFLINE_SHEETS_${activePeriod}`);
             if (!localData) {
               mrSheets = data.mrSheets;
               currentMRIndex = data.lastIndex || 0;
-              saveToLocal(true);
+            } else {
+              // Server owns the submitted/edit-approved status. Preserve cached
+              // row edits, but sync status/assignment from the shared server so
+              // other PCs also stop showing an approved MR as completed.
+              const serverByLabel = new Map(data.mrSheets.map(m => [String(m.label || '').trim().toUpperCase(), m]));
+              const previousServerLabels = new Set(JSON.parse(
+                localStorage.getItem(`CPL_SERVER_MR_LABELS_${activePeriod}`) || '[]'
+              ).map(label => String(label).trim().toUpperCase()));
+              // Drop from local cache only those records that were previously
+              // known to exist on the server and have now been explicitly deleted.
+              mrSheets = mrSheets.filter(localMR => {
+                const label = String(localMR.label || '').trim().toUpperCase();
+                return !previousServerLabels.has(label) || serverByLabel.has(label);
+              }).map(localMR => {
+                const serverMR = serverByLabel.get(String(localMR.label || '').trim().toUpperCase());
+                if (!serverMR) return localMR; // keep genuinely local/offline-only sheets
+                return {
+                  ...localMR,
+                  isSubmitted: !!serverMR.isSubmitted,
+                  submittedBy: serverMR.submittedBy || localMR.submittedBy,
+                  assignedUser: serverMR.assignedUser || localMR.assignedUser
+                };
+              });
+              const localLabels = new Set(mrSheets.map(m => String(m.label || '').trim().toUpperCase()));
+              data.mrSheets.forEach(serverMR => {
+                const label = String(serverMR.label || '').trim().toUpperCase();
+                if (!localLabels.has(label)) mrSheets.push(serverMR);
+              });
+              localStorage.setItem(
+                `CPL_SERVER_MR_LABELS_${activePeriod}`,
+                JSON.stringify(data.mrSheets.map(m => String(m.label || '').trim().toUpperCase()))
+              );
             }
+            currentMRIndex = Math.min(currentMRIndex, Math.max(0, mrSheets.length - 1));
+            saveToLocal(true);
           }
           renderHeaders();
           const activeMRs = mrSheets.filter(m => !m.isSubmitted);
@@ -1477,13 +1510,43 @@ function onModalMrSelectChange(selectedMr) {
       renderBody(); saveToLocal(true);
     }
 
-    function deleteActiveMR() {
-      if (mrSheets.length === 0) return;
-      if (confirm("Are you sure you want to delete this MR sheet permanently?")) {
-        pushUndoState();
-        mrSheets.splice(currentMRIndex, 1);
-        currentMRIndex = Math.max(0, currentMRIndex - 1);
-        saveToLocal(true); renderTabs(); renderBody(); showAlert("MR deleted!");
+    async function deleteActiveMR() {
+      if (mrSheets.length === 0 || !mrSheets[currentMRIndex]) return;
+      const target = mrSheets[currentMRIndex];
+      const targetLabel = String(target.label || '').trim();
+      if (!confirm(`Delete ${targetLabel} from Payment and server permanently? A previous Google Drive backup may still contain an older copy.`)) return;
+      if (!navigator.onLine) {
+        showAlert("Internet required: MR was not deleted from server.", true);
+        return;
+      }
+
+      const previousSheets = JSON.parse(JSON.stringify(mrSheets));
+      const previousIndex = currentMRIndex;
+      pushUndoState();
+      mrSheets.splice(currentMRIndex, 1);
+      currentMRIndex = Math.max(0, currentMRIndex - 1);
+      renderTabs(); renderBody();
+
+      try {
+        const response = await fetch('/api/mr-sheets', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            mrSheets,
+            lastIndex: currentMRIndex,
+            period: activePeriod,
+            deleteLabels: [targetLabel]
+          })
+        });
+        const result = await response.json();
+        if (!response.ok || !result.success) throw new Error(result.error || 'Server delete failed');
+        saveToLocal(true);
+        showAlert(`${targetLabel} deleted from Payment and server.`);
+      } catch (error) {
+        mrSheets = previousSheets;
+        currentMRIndex = previousIndex;
+        saveToLocal(true); renderTabs(); renderBody();
+        showAlert(`Delete failed; MR restored. ${error.message}`, true);
       }
     }
 
