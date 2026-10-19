@@ -1658,9 +1658,12 @@ function onModalMrSelectChange(selectedMr) {
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(payload)
           })
-          .then(res => {
-            if (!res.ok) throw new Error("Server response not ok");
-            return res.json();
+          .then(async res => {
+            const result = await res.json().catch(() => ({}));
+            if (!res.ok || result.success === false) {
+              throw new Error(result.error || `Server response ${res.status}`);
+            }
+            return result;
           })
           .then(() => {
             showAlert("MR successfully submitted & uploaded to server!");
@@ -1672,7 +1675,7 @@ function onModalMrSelectChange(selectedMr) {
               setTimeout(() => sendWithRetry(payload, retriesLeft - 1), 3000); // 3 second baad dobara try karega
             } else {
               // Agar saari koshishe fail ho jayein, toh data locally safe rahega
-              showAlert("Server upload fail ho gaya! Lekin aapka data locally safe hai, kripya baad mein dobara submit karein.", true);
+              showAlert(`Server upload fail: ${err.message}. Data locally saved hai; fix ke baad dobara submit karein.`, true);
               console.error("Server upload final error:", err);
             }
           });
