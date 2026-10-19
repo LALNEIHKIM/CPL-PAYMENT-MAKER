@@ -1,4 +1,3 @@
-
 const express = require('express');
 const path = require('path');
 const fs = require('fs');
@@ -65,7 +64,6 @@ const EMPTY_APPROVALS = {
   requests: []
 };
 
-// Create/verify the database table and connection.
 async function initializeDatabase() {
   await pool.query(`
     CREATE TABLE IF NOT EXISTS public.cpl_app_data (
@@ -92,7 +90,9 @@ async function readData(key, fallback) {
     [key]
   );
 
-  return result.rows.length ? result.rows[0].data_value : fallback;
+  return result.rows.length
+    ? result.rows[0].data_value
+    : fallback;
 }
 
 async function saveData(key, value) {
@@ -108,8 +108,60 @@ async function saveData(key, value) {
   );
 }
 
+// Google Drive JSON backup.
+// Backup failure will not undo a successful database save.
+async function backupToGoogleDrive(period, data) {
+  const url = process.env.GOOGLE_BACKUP_URL;
+  const secret = process.env.GOOGLE_BACKUP_SECRET;
+
+  if (!url || !secret) {
+    console.error('Google Drive backup is not configured.');
+    return false;
+  }
+
+  try {
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        secret,
+        period,
+        data
+      }),
+      signal: AbortSignal.timeout(30000)
+    });
+
+    const result = await response.json();
+
+    if (!response.ok || !result.success) {
+      console.error(
+        'Google Drive backup failed:',
+        result.error || response.status
+      );
+      return false;
+    }
+
+    console.log(
+      'Google Drive backup successful:',
+      result.filename
+    );
+
+    return true;
+  } catch (error) {
+    console.error(
+      'Google Drive backup error:',
+      error.message
+    );
+    return false;
+  }
+}
+
 function parseAnyDateToDDMonYYYY(value) {
-  if (value === null || value === undefined || value === '') return '';
+  if (value === null || value === undefined || value === '') {
+    return '';
+  }
 
   const months = [
     'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
@@ -128,13 +180,16 @@ function parseAnyDateToDDMonYYYY(value) {
       textValue.includes('Time') ||
       (isNaN(textValue) && !isNaN(Date.parse(textValue)))
     ) {
-      dateValue = new Date(new Date(textValue).getTime() + 43200000);
+      dateValue = new Date(
+        new Date(textValue).getTime() + 43200000
+      );
     } else {
       const serial = parseFloat(textValue);
 
       if (!isNaN(serial) && serial > 10000 && serial < 80000) {
         dateValue = new Date(
-          (Math.floor(serial - 25569) * 86400 * 1000) + 43200000
+          (Math.floor(serial - 25569) * 86400 * 1000) +
+          43200000
         );
       }
     }
@@ -147,13 +202,21 @@ function parseAnyDateToDDMonYYYY(value) {
   return `${String(dateValue.getUTCDate()).padStart(2, '0')}-${months[dateValue.getUTCMonth()]}-${dateValue.getUTCFullYear()}`;
 }
 
-// Test endpoint: verifies the server can read/write the database.
+// Database health check.
 app.get('/api/db-health', async (req, res) => {
   try {
     await pool.query('SELECT 1');
-    res.json({ success: true, database: 'connected' });
+
+    res.json({
+      success: true,
+      database: 'connected'
+    });
   } catch (error) {
-    console.error('Database health check failed:', error.message);
+    console.error(
+      'Database health check failed:',
+      error.message
+    );
+
     res.status(500).json({
       success: false,
       database: 'error'
@@ -165,7 +228,9 @@ app.get('/api/db-health', async (req, res) => {
 app.get('/api/master-data', (req, res) => {
   try {
     const files = fs.readdirSync(__dirname).filter(
-      file => file.toLowerCase().endsWith('.xlsx') && !file.startsWith('~$')
+      file =>
+        file.toLowerCase().endsWith('.xlsx') &&
+        !file.startsWith('~$')
     );
 
     if (!files.length) {
@@ -175,9 +240,11 @@ app.get('/api/master-data', (req, res) => {
     }
 
     const fileName = files[0];
-    const workbook = XLSX.readFile(path.join(__dirname, fileName), {
-      cellDates: true
-    });
+
+    const workbook = XLSX.readFile(
+      path.join(__dirname, fileName),
+      { cellDates: true }
+    );
 
     const sheet = workbook.Sheets.MASTERLIST;
 
@@ -193,7 +260,10 @@ app.get('/api/master-data', (req, res) => {
     });
 
     if (rows.length < 2) {
-      return res.json({ headers: [], data: [] });
+      return res.json({
+        headers: [],
+        data: []
+      });
     }
 
     const headers = rows[1].slice(0, 24).map(
@@ -219,13 +289,23 @@ app.get('/api/master-data', (req, res) => {
         ).trim();
       });
 
-      data.push({ code, name, rowData });
+      data.push({
+        code,
+        name,
+        rowData
+      });
     }
 
-    res.json({ headers, data });
+    res.json({
+      headers,
+      data
+    });
   } catch (error) {
     console.error('Master data error:', error);
-    res.status(500).json({ error: 'Master data read failed' });
+
+    res.status(500).json({
+      error: 'Master data read failed'
+    });
   }
 });
 
@@ -234,18 +314,24 @@ app.get('/api/mr-sheets', async (req, res) => {
   try {
     const key = mrKey(req.query.period);
     const data = await readData(key, EMPTY_MR_DATA);
+
     res.json(data);
   } catch (error) {
     console.error('MR read failed:', error.message);
-    res.status(500).json({ error: 'MR data read failed' });
+
+    res.status(500).json({
+      error: 'MR data read failed'
+    });
   }
 });
 
-// Serialize writes for each period in this server process.
+// Serialize writes for each period.
 const writeQueues = new Map();
 
 function queuePeriodWrite(period, callback) {
-  const previous = writeQueues.get(period) || Promise.resolve();
+  const previous =
+    writeQueues.get(period) || Promise.resolve();
+
   const current = previous.catch(() => {}).then(callback);
 
   writeQueues.set(period, current);
@@ -259,94 +345,141 @@ function queuePeriodWrite(period, callback) {
   return current;
 }
 
-// Save period-wise MR sheets and DO-II data.
+// Save MR sheets and DO-II data.
 app.post('/api/mr-sheets', async (req, res) => {
   let period;
 
   try {
     period = getPeriod(req.body.period);
   } catch (error) {
-    return res.status(400).json({ error: error.message });
+    return res.status(400).json({
+      error: error.message
+    });
   }
 
   try {
-    const result = await queuePeriodWrite(period, async () => {
-      const key = mrKey(period);
-      const existing = await readData(key, EMPTY_MR_DATA);
-      const incoming = req.body.mrSheets;
+    const result = await queuePeriodWrite(
+      period,
+      async () => {
+        const key = mrKey(period);
 
-      if (incoming !== undefined && !Array.isArray(incoming)) {
-        throw new Error('mrSheets must be an array');
-      }
+        const existing = await readData(
+          key,
+          EMPTY_MR_DATA
+        );
 
-      const oldSheets = Array.isArray(existing.mrSheets)
-        ? existing.mrSheets
-        : [];
+        const incoming = req.body.mrSheets;
 
-      const nextSheets = incoming === undefined ? oldSheets : incoming;
-
-      // Protect existing records from accidental deletion.
-      const nextByLabel = new Map(
-        nextSheets.map(sheet => [
-          String(sheet.label || '').trim().toUpperCase(),
-          sheet
-        ])
-      );
-
-      if (oldSheets.length && incoming !== undefined && !nextSheets.length) {
-        throw new Error('Refusing to replace existing MR records with an empty array');
-      }
-
-      for (const oldSheet of oldSheets) {
-        const label = String(oldSheet.label || '').trim().toUpperCase();
-        const newSheet = nextByLabel.get(label);
-
-        if (!newSheet) {
-          throw new Error(`Refusing to remove existing MR: ${label}`);
+        if (
+          incoming !== undefined &&
+          !Array.isArray(incoming)
+        ) {
+          throw new Error('mrSheets must be an array');
         }
 
-        if ((oldSheet.rows || []).length > (newSheet.rows || []).length) {
-          throw new Error(`Refusing to reduce rows for ${label}`);
+        const oldSheets = Array.isArray(existing.mrSheets)
+          ? existing.mrSheets
+          : [];
+
+        const nextSheets =
+          incoming === undefined ? oldSheets : incoming;
+
+        // Protect existing records from accidental deletion.
+        const nextByLabel = new Map(
+          nextSheets.map(sheet => [
+            String(sheet.label || '').trim().toUpperCase(),
+            sheet
+          ])
+        );
+
+        if (
+          oldSheets.length &&
+          incoming !== undefined &&
+          !nextSheets.length
+        ) {
+          throw new Error(
+            'Refusing to replace existing MR records with an empty array'
+          );
         }
 
-        if (oldSheet.isSubmitted && !newSheet.isSubmitted) {
-          throw new Error(`Refusing to unsubmit ${label}`);
+        for (const oldSheet of oldSheets) {
+          const label = String(oldSheet.label || '')
+            .trim()
+            .toUpperCase();
+
+          const newSheet = nextByLabel.get(label);
+
+          if (!newSheet) {
+            throw new Error(
+              `Refusing to remove existing MR: ${label}`
+            );
+          }
+
+          if (
+            (oldSheet.rows || []).length >
+            (newSheet.rows || []).length
+          ) {
+            throw new Error(
+              `Refusing to reduce rows for ${label}`
+            );
+          }
+
+          if (
+            oldSheet.isSubmitted &&
+            !newSheet.isSubmitted
+          ) {
+            throw new Error(
+              `Refusing to unsubmit ${label}`
+            );
+          }
         }
+
+        const payload = {
+          mrSheets: nextSheets,
+          lastIndex: req.body.lastIndex !== undefined
+            ? req.body.lastIndex
+            : (existing.lastIndex || 0),
+          do2Groups: req.body.do2Groups !== undefined
+            ? req.body.do2Groups
+            : (existing.do2Groups || [])
+        };
+
+        if (!Array.isArray(payload.do2Groups)) {
+          throw new Error('do2Groups must be an array');
+        }
+
+        await saveData(key, payload);
+
+        // Verify the database save before making a backup.
+        const saved = await readData(key, null);
+
+        if (
+          !saved ||
+          !Array.isArray(saved.mrSheets)
+        ) {
+          throw new Error(
+            'Database save verification failed'
+          );
+        }
+
+        // Back up the verified database snapshot.
+        // Failure here does not undo the database save.
+        const backupSuccess =
+          await backupToGoogleDrive(period, saved);
+
+        return {
+          success: true,
+          period,
+          mrCount: saved.mrSheets.length,
+          backupSuccess
+        };
       }
-
-      const payload = {
-        mrSheets: nextSheets,
-        lastIndex: req.body.lastIndex !== undefined
-          ? req.body.lastIndex
-          : (existing.lastIndex || 0),
-        do2Groups: req.body.do2Groups !== undefined
-          ? req.body.do2Groups
-          : (existing.do2Groups || [])
-      };
-
-      if (!Array.isArray(payload.do2Groups)) {
-        throw new Error('do2Groups must be an array');
-      }
-
-      await saveData(key, payload);
-
-      // Verify the data after saving.
-      const saved = await readData(key, null);
-
-      if (!saved || !Array.isArray(saved.mrSheets)) {
-        throw new Error('Database save verification failed');
-      }
-
-      return {
-        success: true,
-        period,
-        mrCount: saved.mrSheets.length
-      };
-    });
+    );
 
     res.json(result);
   } catch (error) {
     console.error('MR save failed:', error.message);
+
     res.status(409).json({
       success: false,
       error: error.message
@@ -357,18 +490,29 @@ app.post('/api/mr-sheets', async (req, res) => {
 // Read approval data.
 app.get('/api/approvals', async (req, res) => {
   try {
-    const data = await readData('approvals', EMPTY_APPROVALS);
+    const data = await readData(
+      'approvals',
+      EMPTY_APPROVALS
+    );
+
     res.json(data);
   } catch (error) {
     console.error('Approval read failed:', error.message);
-    res.status(500).json({ error: 'Approval read failed' });
+
+    res.status(500).json({
+      error: 'Approval read failed'
+    });
   }
 });
 
 // Save approval data.
 app.post('/api/approvals', async (req, res) => {
   try {
-    const { pendingUsers, approvedUsers, requests } = req.body;
+    const {
+      pendingUsers,
+      approvedUsers,
+      requests
+    } = req.body;
 
     if (
       !Array.isArray(pendingUsers) ||
@@ -386,23 +530,37 @@ app.post('/api/approvals', async (req, res) => {
       requests
     });
 
-    res.json({ success: true });
+    res.json({
+      success: true
+    });
   } catch (error) {
     console.error('Approval save failed:', error.message);
-    res.status(500).json({ error: 'Approval save failed' });
+
+    res.status(500).json({
+      error: 'Approval save failed'
+    });
   }
 });
 
-// Start only after confirming the database is available.
+// Start only after confirming database availability.
 initializeDatabase()
   .then(() => {
     app.listen(PORT, '0.0.0.0', () => {
-      console.log(`CPL server listening on port ${PORT}`);
-      console.log('MR sheets, DO-II and approvals use Supabase PostgreSQL.');
+      console.log(
+        `CPL server listening on port ${PORT}`
+      );
+
+      console.log(
+        'MR sheets, DO-II and approvals use Supabase PostgreSQL.'
+      );
     });
   })
   .catch(error => {
-    console.error('Supabase initialization failed:', error.message);
+    console.error(
+      'Supabase initialization failed:',
+      error.message
+    );
+
     process.exit(1);
   });
 
