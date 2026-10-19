@@ -1129,7 +1129,10 @@ function onModalMrSelectChange(selectedMr) {
   }
   document.getElementById("mrModal").style.display = "flex";
 }
-    function closeModal(id) { document.getElementById(id).style.display = "none"; }
+    function closeModal(id) {
+      document.getElementById(id).style.display = "none";
+      if (id === "editModal") pendingEmployeeEdits.clear();
+    }
 
     function openCodeByModal() {
       if (mrSheets.length === 0) { showAlert("Please create an MR sheet first!", true); return; }
@@ -1894,8 +1897,115 @@ function applyPageTotal() {
 }
 
     let activeEditMode = 'form';
+    // Employee changes made while navigating in Edit Employee stay staged
+    // until the user presses Update & Apply.
+    let pendingEmployeeEdits = new Map();
+    let lifecycleEditRowIndex = null;
+    let editFormDirty = false;
+
+    function getEditableEmployeeRow(rowIndex) {
+      const rows = mrSheets[currentMRIndex]?.rows || [];
+      return pendingEmployeeEdits.get(rowIndex) || rows[rowIndex];
+    }
+
+    function captureCurrentEmployeeEdit() {
+      const rows = mrSheets[currentMRIndex]?.rows || [];
+      const baseRow = getEditableEmployeeRow(selectedRowIdx);
+      if (!baseRow || baseRow.isGrandTotal) return null;
+
+      const draft = {
+        ...baseRow,
+        rowData: [...(baseRow.rowData || [])],
+        lifecycleData: { ...(baseRow.lifecycleData || {}) }
+      };
+      while (draft.rowData.length < 24) draft.rowData.push("");
+
+      if (activeEditMode === 'form' && editFormDirty) {
+        for (let i = 0; i < 24; i++) {
+          const input = document.getElementById(`editField_${i}`);
+          if (!input) continue;
+          const val = input.value.trim();
+          if (i === 20) {
+            draft.rowData[i] = val;
+          } else if (val !== "") {
+            if (i === 4 || i === 22) {
+              draft.rowData[i] = isoToDisplayDate(val);
+            } else if (i === 23) {
+              const session = document.getElementById("editDischargeSession")?.value || "(F/N)";
+              draft.rowData[i] = `${isoToDisplayDate(val)} ${session}`;
+            } else {
+              draft.rowData[i] = val;
+            }
+          }
+        }
+      }
+
+      draft.code = draft.rowData[1];
+      draft.name = draft.rowData[3];
+      const formDataChanged = JSON.stringify(draft.rowData) !== JSON.stringify(baseRow.rowData || []);
+      const days = parseFloat(draft.rowData[17]) || 0;
+      if (formDataChanged) {
+        draft.rowData[18] = calculateRateByTrade(draft.rowData[2]);
+        draft.rowData[19] = String(days * (parseFloat(draft.rowData[18]) || 0));
+      }
+
+      let recDate = "";
+      let disDate = "";
+      let changedTrade = "";
+      if (activeEditMode === 'calendar' || lifecycleEditRowIndex === selectedRowIdx) {
+        recDate = document.getElementById("lifecycleRecDate")?.value || "";
+        disDate = document.getElementById("lifecycleDisDate")?.value || "";
+        changedTrade = document.getElementById("lifecycleChangedTrade")?.value || "";
+        const lifecycleValues = {
+          recDate,
+          disDate,
+          gradeDate: document.getElementById("lifecycleGradeDate")?.value || "",
+          changedTrade,
+          transferDate: document.getElementById("lifecycleTransferDate")?.value || "",
+          mrFrom: document.getElementById("lifecycleMrFrom")?.value || "",
+          slFrom: document.getElementById("lifecycleSlFrom")?.value || "",
+          mrTo: document.getElementById("lifecycleMrTo")?.value || "",
+          slTo: document.getElementById("lifecycleSlTo")?.value || ""
+        };
+        for (const [key, value] of Object.entries(lifecycleValues)) {
+          if (value !== "" || Object.prototype.hasOwnProperty.call(draft.lifecycleData, key)) {
+            draft.lifecycleData[key] = value;
+          }
+        }
+      }
+
+      if (changedTrade !== "") {
+        draft.rowData[2] = changedTrade;
+        draft.rowData[18] = calculateRateByTrade(changedTrade);
+        draft.rowData[19] = String(days * (parseFloat(draft.rowData[18]) || 0));
+        draft.code = draft.rowData[1];
+        draft.name = draft.rowData[3];
+      }
+      if (recDate !== "") draft.rowData[22] = isoToDisplayDate(recDate);
+      if (disDate !== "") draft.rowData[23] = isoToDisplayDate(disDate);
+
+      return draft;
+    }
+
+    function stageCurrentEmployeeEdit() {
+      if (activeEditMode === 'form' && !editFormDirty &&
+          lifecycleEditRowIndex !== selectedRowIdx &&
+          !pendingEmployeeEdits.has(selectedRowIdx)) return false;
+      const draft = captureCurrentEmployeeEdit();
+      if (!draft) return false;
+      const original = mrSheets[currentMRIndex]?.rows?.[selectedRowIdx];
+      if (original &&
+          JSON.stringify([draft.rowData, draft.lifecycleData]) ===
+          JSON.stringify([original.rowData, original.lifecycleData || {}])) {
+        pendingEmployeeEdits.delete(selectedRowIdx);
+        return false;
+      }
+      pendingEmployeeEdits.set(selectedRowIdx, draft);
+      return true;
+    }
 
     function switchEditTab(mode) {
+      if (activeEditMode !== mode) stageCurrentEmployeeEdit();
       activeEditMode = mode;
       document.getElementById("tabBtnForm").className = `edit-tab-btn ${mode === 'form' ? 'active' : ''}`;
       document.getElementById("tabBtnTable").className = `edit-tab-btn ${mode === 'table' ? 'active' : ''}`;
@@ -1905,6 +2015,7 @@ function applyPageTotal() {
       document.getElementById("editTableView").style.display = mode === 'table' ? 'block' : 'none';
       document.getElementById("editCalendarView").style.display = mode === 'calendar' ? 'block' : 'none';
 
+      if (mode === 'form') renderEditFormView();
       if (mode === 'table') renderEditGridTable();
       if (mode === 'calendar') renderAttendanceCalendar();
     }
@@ -1913,11 +2024,14 @@ function applyPageTotal() {
       const curRows = mrSheets[currentMRIndex].rows.filter(r => !r.isGrandTotal);
       let newIdx = selectedRowIdx + direction;
       if (newIdx >= 0 && newIdx < curRows.length) {
+        const previousIdx = selectedRowIdx;
+        const staged = stageCurrentEmployeeEdit();
         selectedRowIdx = newIdx;
         renderEditFormView();
         if (activeEditMode === 'table') renderEditGridTable();
         if (activeEditMode === 'calendar') renderAttendanceCalendar();
         document.getElementById("editModalTitle").innerText = `EDIT EMPLOYEE (S/No: ${selectedRowIdx + 1})`;
+        if (staged) showAlert(`S/No ${previousIdx + 1} ka edit pending hai. Aakhir mein Update & Apply dabayein.`);
       } else {
         showAlert(direction > 0 ? "Yeh aakhri employee hai!" : "Yeh pehla employee hai!", true);
       }
@@ -1925,8 +2039,9 @@ function applyPageTotal() {
 
   function renderAttendanceCalendar() {
       const curRows = mrSheets[currentMRIndex].rows.filter(r => !r.isGrandTotal);
-      const row = curRows[selectedRowIdx];
+      const row = getEditableEmployeeRow(selectedRowIdx) || curRows[selectedRowIdx];
       if (!row) return;
+      lifecycleEditRowIndex = selectedRowIdx;
 
       // 1. Fill Individual Employee Quick Info Bar
       document.getElementById("lcInfoSNo").innerText = selectedRowIdx + 1;
@@ -2026,8 +2141,8 @@ function applyPageTotal() {
     }
 
     function toggleAbsentDate(dateStr) {
-      const curRows = mrSheets[currentMRIndex].rows;
-      const row = curRows[selectedRowIdx];
+      const row = getEditableEmployeeRow(selectedRowIdx);
+      if (!row) return;
       if (!row.absentDates) row.absentDates = [];
 
       const idx = row.absentDates.indexOf(dateStr);
@@ -2037,7 +2152,7 @@ function applyPageTotal() {
         row.absentDates.push(dateStr);
       }
 
-      saveToLocal(true);
+      if (!pendingEmployeeEdits.has(selectedRowIdx)) saveToLocal(true);
       renderAttendanceCalendar();
     }
 
@@ -2045,6 +2160,8 @@ function applyPageTotal() {
   const curMR = mrSheets[currentMRIndex];
   const curRows = curMR?.rows;
   if (!curRows || curRows.length === 0) return showAlert("Add row first!", true);
+  pendingEmployeeEdits.clear();
+  lifecycleEditRowIndex = null;
   
   const row = curRows[selectedRowIdx];
   if (row && row.isGrandTotal) {
@@ -2066,7 +2183,7 @@ function applyPageTotal() {
 
     function renderEditFormView() {
       const curRows = mrSheets[currentMRIndex].rows;
-      const row = curRows[selectedRowIdx];
+      const row = getEditableEmployeeRow(selectedRowIdx) || curRows[selectedRowIdx];
       document.getElementById("editModalTitle").innerText = row.isGrandTotal ? `EDIT G/TOTAL` : `EDIT EMPLOYEE (S/No: ${selectedRowIdx + 1})`;
       const grid = document.getElementById("editFormView");
       grid.innerHTML = "";
@@ -2138,6 +2255,11 @@ function applyPageTotal() {
         }
         grid.appendChild(div);
       }
+      editFormDirty = false;
+      grid.querySelectorAll("input, select, textarea").forEach(input => {
+        input.addEventListener("input", () => { editFormDirty = true; });
+        input.addEventListener("change", () => { editFormDirty = true; });
+      });
     }
 
     function renderEditGridTable() {
@@ -2224,88 +2346,34 @@ function applyPageTotal() {
     }
 
     function saveEditedData() {
-      pushUndoState();
-      const curRows = mrSheets[currentMRIndex].rows;
-      const row = curRows[selectedRowIdx];
-
-      if (row.isGrandTotal) {
+      const curRows = mrSheets[currentMRIndex]?.rows || [];
+      const currentRow = curRows[selectedRowIdx];
+      if (!currentRow) return showAlert("Employee row not found!", true);
+      if (currentRow.isGrandTotal) {
         showAlert("Grand Total row cannot be edited!", true);
         return;
       }
 
-      if (activeEditMode === 'form') {
-        for (let i = 0; i < 24; i++) {
-          const input = document.getElementById(`editField_${i}`);
-          if (input) {
-            let val = input.value.trim();
-            
-            if (i === 20) {
-              row.rowData[i] = val;
-            } 
-            else if (val !== "") {
-              if (i === 4 || i === 22) {
-                row.rowData[i] = isoToDisplayDate(val);
-              } 
-              else if (i === 23) {
-                const sVal = document.getElementById("editDischargeSession")?.value || "(F/N)";
-                row.rowData[i] = `${isoToDisplayDate(val)} ${sVal}`;
-              } 
-              else {
-                row.rowData[i] = val;
-              }
-            }
-          }
-        }
-        
-        row.code = row.rowData[1];
-        row.name = row.rowData[3];
-        row.rowData[18] = calculateRateByTrade(row.rowData[2]);
-        const days = parseFloat(row.rowData[17]) || 0, rate = parseFloat(row.rowData[18]) || 0;
-        row.rowData[19] = String(days * rate);
-      }
-      
-      // 👉 Save DO-II & Remarks Settings Data
-      const recDateInput = document.getElementById("lifecycleRecDate")?.value || "";
-      const disDateInput = document.getElementById("lifecycleDisDate")?.value || "";
-      const changedTradeVal = document.getElementById("lifecycleChangedTrade")?.value || "";
-
-      row.lifecycleData = {
-        recDate: recDateInput,
-        disDate: disDateInput,
-        gradeDate: document.getElementById("lifecycleGradeDate")?.value || "",
-        changedTrade: changedTradeVal,
-        transferDate: document.getElementById("lifecycleTransferDate")?.value || "",
-        mrFrom: document.getElementById("lifecycleMrFrom")?.value || "",
-        slFrom: document.getElementById("lifecycleSlFrom")?.value || "",
-        mrTo: document.getElementById("lifecycleMrTo")?.value || "",
-        slTo: document.getElementById("lifecycleSlTo")?.value || ""
-      };
-
-      // 💡 Agar "Changed To (Trade)" select kiya hai, toh Current Trade (Column C -> index 2) ko update karein
-      if (changedTradeVal !== "") {
-        row.rowData[2] = changedTradeVal;
-        // Rate aur Net Amount ko naye trade ke hisaab se auto-calculate karein
-        row.rowData[18] = calculateRateByTrade(changedTradeVal);
-        const days = parseFloat(row.rowData[17]) || 0;
-        const rate = parseFloat(row.rowData[18]) || 0;
-        row.rowData[19] = String(days * rate);
-      }
-
-      // 💡 Date of Enrolment (Column W -> index 22) update logic
-      if (recDateInput !== "") {
-        row.rowData[22] = isoToDisplayDate(recDateInput);
-      }
-
-      // 💡 Date of Discharge (Column X -> index 23) update logic
-      if (disDateInput !== "") {
-        row.rowData[23] = isoToDisplayDate(disDateInput);
-      }
+      stageCurrentEmployeeEdit();
+      if (pendingEmployeeEdits.size > 0) pushUndoState();
+      pendingEmployeeEdits.forEach((draft, rowIndex) => {
+        const target = curRows[rowIndex];
+        if (!target) return;
+        Object.assign(target, draft, {
+          rowData: [...draft.rowData],
+          lifecycleData: { ...(draft.lifecycleData || {}) }
+        });
+      });
+      const updatedCount = pendingEmployeeEdits.size;
+      pendingEmployeeEdits.clear();
 
       updateGrandTotalInternal();
       closeModal("editModal");
       renderBody(); 
       saveToLocal(true); 
-      showAlert("Data successfully saved!");
+      showAlert(updatedCount > 1
+        ? `${updatedCount} employees updated successfully!`
+        : "Data successfully saved!");
     }
 
     function insertBlankRowBelow() {
