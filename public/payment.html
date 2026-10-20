@@ -908,67 +908,92 @@ function onModalMrSelectChange(selectedMr) {
     let selectedSearchedEmp = null;
 
     function onNameSearchInput(val) {
-      const query = val.trim().toLowerCase();
-      if (!query) return;
+  const query = val.trim().toLowerCase();
+  if (!query) return;
 
-      const matchedEmp = masterData.find(d => (d.name || '').toLowerCase() === query);
-      if (matchedEmp) {
-        document.getElementById("nameSearch").value = "";
-        selectedSearchedEmp = matchedEmp;
+  const matchedEmp = masterData.find(d => (d.name || '').toLowerCase() === query);
+  if (matchedEmp) {
+    document.getElementById("nameSearch").value = "";
+    selectedSearchedEmp = matchedEmp;
 
-        const name = matchedEmp.name || matchedEmp.rowData[3] || '';
-        const father = matchedEmp.rowData[5] || '';
-        const account = matchedEmp.rowData[15] || '';
-        const recruitmentDate = matchedEmp.rowData[22] || '';
-        const dischargeVal = String(matchedEmp.rowData[23] || '').trim();
+    const name = matchedEmp.name || matchedEmp.rowData[3] || '';
+    const code = matchedEmp.code || matchedEmp.rowData[1] || '';
+    const father = matchedEmp.rowData[5] || '';
+    const account = matchedEmp.rowData[15] || '';
+    const recruitmentDate = matchedEmp.rowData[22] || '';
+    const dischargeVal = String(matchedEmp.rowData[23] || '').trim();
 
-        let duplicateFound = false;
-        let duplicateInfoText = "No (Not in any MR)";
-        
-        mrSheets.forEach(mr => {
-          if (mr.rows) {
-            mr.rows.forEach((r, rIdx) => {
-              if (!r.isGrandTotal) {
-                const rCode = String(r.code || r.rowData[1] || '').trim().toLowerCase();
-                const rName = String(r.name || r.rowData[3] || '').trim().toLowerCase();
-                if ((matchedEmp.code && rCode === matchedEmp.code.toLowerCase()) || (name && rName === name.toLowerCase())) {
-                  duplicateFound = true;
-                  duplicateInfoText = `Yes! Found in Sheet: <strong>${mr.label}</strong> at S/No: <strong>${rIdx + 1}</strong>`;
-                }
-              }
-            });
+    let duplicateFound = false;
+    let duplicateInfoText = "No (Not in any MR)";
+
+    mrSheets.forEach(mr => {
+      if (mr.rows) {
+        mr.rows.forEach((r, rIdx) => {
+          if (!r.isGrandTotal) {
+            const rCode = String(r.code || r.rowData[1] || '').trim().toLowerCase();
+            const rName = String(r.name || r.rowData[3] || '').trim().toLowerCase();
+
+            if (
+              (code && rCode === String(code).trim().toLowerCase()) ||
+              (name && rName === name.toLowerCase())
+            ) {
+              duplicateFound = true;
+              duplicateInfoText =
+                `Yes! Found in Sheet: <strong>${mr.label}</strong> at S/No: <strong>${rIdx + 1}</strong>`;
+            }
           }
         });
-
-        const contentBox = document.getElementById("searchEmpContent");
-        const addBtn = document.getElementById("btnAddSearchedData");
-
-        if (dischargeVal !== "") {
-          contentBox.innerHTML = `
-            <div style="color: #c0392b; font-weight: 900; font-size: 13px; margin-bottom: 6px;">⚠️ WARNING: THIS EMPLOYEE IS DISCHARGED!</div>
-            <div><strong>Code:</strong> [Redacted]</div>
-            <div><strong>Name:</strong> ${name}</div>
-            <div><strong>Discharge Date/Status:</strong> <span style="color: #c0392b;">${dischargeVal}</span></div>
-            <div style="margin-top: 6px; color: #555; font-size: 11px;">Discharged employee cannot be added to active MR sheet.</div>
-          `;
-          if (addBtn) addBtn.style.display = "none";
-        } else {
-          let duplicateHtmlColor = duplicateFound ? "#c0392b" : "#007e33";
-          contentBox.innerHTML = `
-            <div><strong>Code:</strong> <span style="color: #007e33; font-weight: 900; font-size: 13px;">[Redacted]</span></div>
-            <div><strong>Name:</strong> <span style="color: #007e33; font-weight: 900;">${name}</span></div>
-            <div><strong>Father's Name:</strong> <span style="color: #007e33; font-weight: 900;">${father}</span></div>
-            <div><strong>Account No:</strong> <span style="color: #007e33; font-weight: 900;">${account}</span></div>
-            <div><strong>Date of Recruitment:</strong> <span style="color: #007e33; font-weight: 900;">${recruitmentDate}</span></div>
-            <hr style="margin: 8px 0; border: 0; border-top: 1px solid #ccc;">
-            <div><strong>Duplicate Status:</strong> <span style="color: ${duplicateHtmlColor}; font-weight: 900;">${duplicateInfoText}</span></div>
-          `;
-          if (addBtn) addBtn.style.display = "block";
-        }
-
-        document.getElementById("searchEmpModal").style.display = "flex";
       }
+    });
+
+    const contentBox = document.getElementById("searchEmpContent");
+    const addBtn = document.getElementById("btnAddSearchedData");
+
+    if (dischargeVal !== "") {
+      contentBox.innerHTML = `
+        <div style="color: #c0392b; font-weight: 900; font-size: 13px; margin-bottom: 6px;">
+          ⚠️ WARNING: THIS EMPLOYEE IS DISCHARGED!
+        </div>
+        <div><strong>Code:</strong> ${code}</div>
+        <div><strong>Name:</strong> ${name}</div>
+        <div><strong>Discharge Date/Status:</strong>
+          <span style="color: #c0392b;">${dischargeVal}</span>
+        </div>
+        <div style="margin-top: 6px; color: #555; font-size: 11px;">
+          Discharged employee cannot be added to active MR sheet.
+        </div>
+      `;
+      if (addBtn) addBtn.style.display = "none";
+    } else {
+      const duplicateHtmlColor = duplicateFound ? "#c0392b" : "#007e33";
+
+      contentBox.innerHTML = `
+        <div><strong>Code:</strong>
+          <span style="color: #007e33; font-weight: 900; font-size: 13px;">${code}</span>
+        </div>
+        <div><strong>Name:</strong>
+          <span style="color: #007e33; font-weight: 900;">${name}</span>
+        </div>
+        <div><strong>Father's Name:</strong>
+          <span style="color: #007e33; font-weight: 900;">${father}</span>
+        </div>
+        <div><strong>Account No:</strong>
+          <span style="color: #007e33; font-weight: 900;">${account}</span>
+        </div>
+        <div><strong>Date of Recruitment:</strong>
+          <span style="color: #007e33; font-weight: 900;">${recruitmentDate}</span>
+        </div>
+        <hr style="margin: 8px 0; border: 0; border-top: 1px solid #ccc;">
+        <div><strong>Duplicate Status:</strong>
+          <span style="color: ${duplicateHtmlColor}; font-weight: 900;">${duplicateInfoText}</span>
+        </div>
+      `;
+      if (addBtn) addBtn.style.display = "block";
     }
+
+    document.getElementById("searchEmpModal").style.display = "flex";
+  }
+}
 
     function addSearchedEmployeeToSheet() {
       if (!selectedSearchedEmp) {
