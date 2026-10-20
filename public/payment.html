@@ -1169,75 +1169,111 @@ function onModalMrSelectChange(selectedMr) {
     }
 
     function previewBulkCodes() {
-      const textarea = document.getElementById("bulkCodeInput");
-      if (!textarea) return;
-      const rawText = textarea.value;
-      const codes = rawText.split(/[\n,]+/).map(c => c.trim()).filter(c => c.length > 0);
-      const previewBox = document.getElementById("bulkNamePreview");
-      const warningBox = document.getElementById("bulkDuplicateWarning");
-      if (!previewBox) return;
+  const textarea = document.getElementById("bulkCodeInput");
+  if (!textarea) return;
 
-      if (codes.length === 0) {
-        previewBox.innerHTML = "<i>Names & Father's names will appear here as you paste codes...</i>";
-        if (warningBox) warningBox.innerText = "";
-        return;
-      }
+  const rawText = textarea.value;
+  const codes = rawText.split(/[\n,]+/).map(c => c.trim()).filter(c => c.length > 0);
+  const previewBox = document.getElementById("bulkNamePreview");
+  const warningBox = document.getElementById("bulkDuplicateWarning");
+  if (!previewBox) return;
 
-      const curRows = (mrSheets[currentMRIndex] && mrSheets[currentMRIndex].rows) ? mrSheets[currentMRIndex].rows.filter(r => !r.isGrandTotal) : [];
-      let baseStartNo = curRows.length + 1;
-      const startNoInput = document.getElementById("codeStartNo");
-      if (startNoInput && startNoInput.value.trim() !== "") {
-        const parsed = parseInt(startNoInput.value.trim());
-        if (!isNaN(parsed) && parsed > 0) baseStartNo = parsed;
-      }
+  if (codes.length === 0) {
+    previewBox.innerHTML = "<i>Names & Father's names will appear here as you paste codes...</i>";
+    if (warningBox) warningBox.innerText = "";
+    return;
+  }
 
-      let html = "";
-      let duplicateMessages = [];
+  const normalize = value =>
+    String(value ?? "").replace(/[\s-]/g, "").toUpperCase();
 
-      codes.forEach((code, idx) => {
-        const currentSNo = baseStartNo + idx;
-        const found = masterData.find(d => d.code.toLowerCase() === code.toLowerCase());
-        
-        if (found) {
-          const workerName = found.name || '';
-          const dischargeVal = String(found.rowData[23] || '').trim();
+  const curRows =
+    mrSheets[currentMRIndex]?.rows?.filter(r => !r.isGrandTotal) || [];
 
-          if (dischargeVal !== "") {
-            html += `<div style="height: 19.5px; line-height: 19.5px; color:#c0392b; font-weight:bold; font-size: 11px;"><span style="color:#666; display:inline-block; width:22px; text-align:right;">${currentSNo}.</span> &nbsp;[DISCHARGED: ${workerName}]</div>`;
-          } else {
-            let foundInMR = null;
-            mrSheets.forEach((mr) => {
-              (mr.rows || []).forEach((r) => {
-                if (!r.isGrandTotal) {
-                  const rName = String(r.rowData[3] || r.name || '').trim().toLowerCase();
-                  const rCode = String(r.rowData[1] || r.code || '').trim().toLowerCase();
-                  if (rName === workerName.trim().toLowerCase() || (found.code && rCode === found.code.toLowerCase())) {
-                    foundInMR = mr.label;
-                  }
-                }
-              });
-            });
+  let baseStartNo = curRows.length + 1;
+  const startNoInput = document.getElementById("codeStartNo");
 
-            if (foundInMR) {
-              duplicateMessages.push(`${workerName} already in ${foundInMR}`);
-              html += `<div style="height: 19.5px; line-height: 19.5px; color:#c0392b; font-weight:bold; font-size: 11px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;"><span style="color:#666; display:inline-block; width:22px; text-align:right;">${currentSNo}.</span> &nbsp;[DUPLICATE: ${workerName} in ${foundInMR}]</div>`;
-            } else {
-              const fatherName = found.rowData[5] || '';
-              html += `<div style="height: 19.5px; line-height: 19.5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-size: 11px;"><span style="color:#666; font-weight:bold; display:inline-block; width:22px; text-align:right;">${currentSNo}.</span> &nbsp;<span style="color:#007e33; font-weight:bold; text-transform:uppercase;">${workerName}</span> &nbsp;&nbsp; <span style="color:#444;">${fatherName}</span></div>`;
-            }
-          }
-        } else {
-          html += `<div style="height: 19.5px; line-height: 19.5px; color:#dc3545; font-weight:bold; font-size: 11px;"><span style="color:#666; display:inline-block; width:22px; text-align:right;">${currentSNo}.</span> &nbsp;[NOT FOUND: ${code}]</div>`;
+  if (startNoInput && startNoInput.value.trim() !== "") {
+    const parsed = parseInt(startNoInput.value.trim(), 10);
+    if (!isNaN(parsed) && parsed > 0) baseStartNo = parsed;
+  }
+
+  let html = "";
+  const duplicateMessages = [];
+
+  codes.forEach((code, idx) => {
+    const currentSNo = baseStartNo + idx;
+    const found = masterData.find(
+      d => normalize(d.code) === normalize(code)
+    );
+
+    if (!found) {
+      html += `<div style="height:19.5px; line-height:19.5px; color:#dc3545; font-weight:bold; font-size:11px;">
+        <span style="color:#666; display:inline-block; width:22px; text-align:right;">${currentSNo}.</span>
+        &nbsp;[NOT FOUND: ${code}]
+      </div>`;
+      return;
+    }
+
+    const workerName = found.name || found.rowData?.[3] || "";
+    const fatherName = found.rowData?.[5] || "";
+    const dischargeVal = String(found.rowData?.[23] || "").trim();
+
+    if (dischargeVal !== "") {
+      html += `<div style="height:19.5px; line-height:19.5px; color:#c0392b; font-weight:bold; font-size:11px;">
+        <span style="color:#666; display:inline-block; width:22px; text-align:right;">${currentSNo}.</span>
+        &nbsp;[DISCHARGED: ${workerName}]
+      </div>`;
+      return;
+    }
+
+    const importedCode = normalize(found.code || found.rowData?.[1]);
+    const importedAccount = normalize(found.rowData?.[15]);
+
+    let foundInMR = null;
+    let duplicateReason = "";
+
+    mrSheets.forEach(mr => {
+      (mr.rows || []).forEach(row => {
+        if (row.isGrandTotal) return;
+
+        const rowCode = normalize(row.rowData?.[1] || row.code);
+        const rowAccount = normalize(row.rowData?.[15]);
+
+        if (importedCode && rowCode === importedCode) {
+          foundInMR = mr.label;
+          duplicateReason = "CODE";
+        } else if (importedAccount && rowAccount === importedAccount) {
+          foundInMR = mr.label;
+          duplicateReason = "ACCOUNT NO";
         }
       });
+    });
 
-      previewBox.innerHTML = html;
-      if (warningBox && duplicateMessages.length > 0) {
-        warningBox.innerText = `⚠️ Warning: Some codes/employees already exist in other MR sheets!`;
-      } else if (warningBox) {
-        warningBox.innerText = "";
-      }
+    if (foundInMR) {
+      duplicateMessages.push(`${workerName} (${duplicateReason}) already in ${foundInMR}`);
+
+      html += `<div style="height:19.5px; line-height:19.5px; color:#c0392b; font-weight:bold; font-size:11px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">
+        <span style="color:#666; display:inline-block; width:22px; text-align:right;">${currentSNo}.</span>
+        &nbsp;[DUPLICATE ${duplicateReason}: ${workerName} in ${foundInMR}]
+      </div>`;
+    } else {
+      html += `<div style="height:19.5px; line-height:19.5px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; font-size:11px;">
+        <span style="color:#666; font-weight:bold; display:inline-block; width:22px; text-align:right;">${currentSNo}.</span>
+        &nbsp;<span style="color:#007e33; font-weight:bold; text-transform:uppercase;">${workerName}</span>
+        &nbsp;&nbsp;<span style="color:#444;">${fatherName}</span>
+      </div>`;
     }
+  });
+
+  previewBox.innerHTML = html;
+
+  if (warningBox) {
+    warningBox.innerText = duplicateMessages.length > 0
+      ? "⚠️ Warning: Matching employee code or account number already exists in an MR sheet."
+      : "";
+  }
+}
 
     function applyBulkCodes() {
       const rawText = document.getElementById("bulkCodeInput").value;
