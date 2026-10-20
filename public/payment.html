@@ -584,7 +584,7 @@
       <div class="lifecycle-group">
         <label>MR From & Sl.:</label>
         <div style="display:flex; gap:4px;">
-          <select id="lifecycleMrFrom" style="flex:2;"><option value="">-- Select MR --</option></select>
+          <input type="text" id="lifecycleMrFrom" list="lifecycleMrOptions" placeholder="Select or type MR" style="flex:2; min-width:0;">
           <input type="text" id="lifecycleSlFrom" placeholder="Sl" style="flex:1; text-align:center;">
         </div>
       </div>
@@ -592,11 +592,12 @@
       <div class="lifecycle-group">
         <label>MR To & Sl.:</label>
         <div style="display:flex; gap:4px;">
-          <select id="lifecycleMrTo" style="flex:2;"><option value="">-- Select MR --</option></select>
+          <input type="text" id="lifecycleMrTo" list="lifecycleMrOptions" placeholder="Select or type MR" style="flex:2; min-width:0;">
           <input type="text" id="lifecycleSlTo" placeholder="Sl" style="flex:1; text-align:center;">
         </div>
       </div>
     </div>
+    <datalist id="lifecycleMrOptions"></datalist>
 
   </fieldset>
 
@@ -1921,7 +1922,7 @@ function onModalMrSelectChange(selectedMr) {
               lastError = error;
               if (attempt < 4) {
                 console.warn(`MR upload attempt ${attempt} failed; retrying shortly.`, error);
-                await new Promise(resolve => setTimeout(resolve, 7000));
+                await new Promise(resolve => setTimeout(resolve, 3000));
               }
             }
           }
@@ -2251,17 +2252,12 @@ function applyPageTotal() {
         "MR NO. 36", "MR NO. 37", "MR NO. 38", "MR NO. 39", "MR NO. 40"
       ];
 
-      const mrSelects = ['lifecycleMrFrom', 'lifecycleMrTo'];
-      mrSelects.forEach(selId => {
-        const sel = document.getElementById(selId);
-        if (sel) {
-          let opts = `<option value="">-- Select MR --</option>`;
-          allPossibleMRs.forEach(mrName => {
-            opts += `<option value="${mrName}">${mrName}</option>`;
-          });
-          sel.innerHTML = opts;
-        }
-      });
+      const mrOptions = document.getElementById("lifecycleMrOptions");
+      if (mrOptions) {
+        mrOptions.innerHTML = allPossibleMRs
+          .map(mrName => `<option value="${mrName}"></option>`)
+          .join("");
+      }
 
       // 3. Set Current Trade (Column C -> index 2)
       let rawDesig = row.rowData[2] || 'MAZ';
