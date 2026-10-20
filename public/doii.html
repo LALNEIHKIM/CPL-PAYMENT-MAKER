@@ -710,6 +710,19 @@
         }
       });
 
+      // Keep DO-II groups in numeric MR order (e.g. 38 before 376),
+      // and each group's entries in their original MR S/No order.
+      const getMRNumberForSort = group => {
+        const title = String(group.mrHeading || "");
+        const titleMatch = title.match(/\/(\d+)\//);
+        if (titleMatch) return Number(titleMatch[1]);
+        const labelMatch = title.match(/MR\s*(?:NO\.?)?\s*(\d+)/i);
+        return labelMatch ? Number(labelMatch[1]) : Number.MAX_SAFE_INTEGER;
+      };
+      do2Groups.forEach(group => {
+        group.rows.sort((a, b) => (Number(a.mrSno) || 0) - (Number(b.mrSno) || 0));
+      });
+      do2Groups.sort((a, b) => getMRNumberForSort(a) - getMRNumberForSort(b));
       localStorage.setItem(`CPL_SAVED_DO2_GROUPS_${activePeriod}`, JSON.stringify(do2Groups));
 
       if (navigator.onLine) {
