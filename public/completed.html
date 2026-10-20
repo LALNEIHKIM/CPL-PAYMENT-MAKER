@@ -717,6 +717,9 @@
           if (typeof val === 'object' && val !== null) {
             val = val.v !== undefined ? val.v : '';
           }
+          if (c === 23) {
+            val = String(val).replace(/\s*\((?:F\/N|A\/N)\)\s*$/i, '').trim();
+          }
           html += `<td title="${val}">${val}</td>`;
         }
         tr.innerHTML = html;
@@ -764,7 +767,9 @@ if (!target) return showAlert("Selected MR sheet not found!", true);
       let dataRowsCount = 0;
       target.rows.forEach(r => {
         if (!r.isGrandTotal) {
-          wsData.push(r.rowData);
+          const exportRow = [...r.rowData];
+          exportRow[23] = String(exportRow[23] || '').replace(/\s*\((?:F\/N|A\/N)\)\s*$/i, '').trim();
+          wsData.push(exportRow);
           dataRowsCount++;
         }
       });
@@ -1019,7 +1024,9 @@ if (!target) return showAlert("Selected MR sheet not found!", true);
         let dataRowsCount = 0;
         m.rows.forEach(r => {
           if (!r.isGrandTotal) {
-            wsData.push(r.rowData);
+            const exportRow = [...r.rowData];
+            exportRow[23] = String(exportRow[23] || '').replace(/\s*\((?:F\/N|A\/N)\)\s*$/i, '').trim();
+            wsData.push(exportRow);
             dataRowsCount++;
           }
         });
