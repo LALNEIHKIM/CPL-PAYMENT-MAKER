@@ -1770,56 +1770,156 @@ function onModalMrSelectChange(selectedMr) {
     function openCompleteMRWindow() { window.location.href = "/completed.html"; }
 
     function submitToSever() {
-      if (mrSheets.length === 0 || !mrSheets[currentMRIndex]) return;
+      const selectedSheet = mrSheets[currentMRIndex];
+      if (!selectedSheet) return;
+      if (selectedSheet.isSubmitted) {
+        showAlert("Ye MR pehle se submitted hai.", true);
+        return;
+      }
 
       if (!navigator.onLine) {
-        showAlert("Internet connected nahi hai! Server par upload karne ke liye internet connection zaroori hai.", true);
+        showAlert("Internet connected nahi hai. MR Payment screen par pending rahega; internet aane par dobara Submit karein.", true);
         return;
       }
 
       pendingConfirmAction = () => {
-        // Pehle state update karein
         const targetIndex = currentMRIndex;
-        mrSheets[targetIndex].isSubmitted = true;
-        
-        // 💡 Corrected brackets here
-        let loggedUser = localStorage.getItem("CPL_LOGGED_USER") || (localStorage.getItem("CPL_ADMIN_LOGGED") === "true" ? "ADMIN" : "UNKNOWN USER");
-        mrSheets[targetIndex].submittedBy = loggedUser.toUpperCase();
-        
-        // Locally turant save karein taaki data safe rahe
+        const localSheet = mrSheets[targetIndex];
+        if (!localSheet || localSheet.isSubmitted) return;
+
+        const targetLabel = localSheet.label;
+        const inFlightLabels = submitToSever._inFlightLabels ||
+          (submitToSever._inFlightLabels = new Set());
+        const normalizedLabel = String(targetLabel || "").trim().toUpperCase();
+
+        if (inFlightLabels.has(normalizedLabel)) {
+          showAlert("Is MR ka upload pehle se chal raha hai. Thoda wait karein.", true);
+          return;
+        }
+        inFlightLabels.add(normalizedLabel);
+
+        const loggedUser = String(
+          localStorage.getItem("CPL_LOGGED_USER") ||
+          (localStorage.getItem("CPL_ADMIN_LOGGED") === "true" ? "ADMIN" : "UNKNOWN USER")
+        ).toUpperCase();
+
+        // Data locally safe rahe, lekin server confirmation tak submitted=false hi rahe.
+        localSheet.isSubmitted = false;
         saveToLocal(true);
+        showAlert("MR upload ho raha hai. Confirmation tak yeh Payment screen par rahega.");
 
-        const targetLabel = mrSheets[targetIndex].label;
-
-        // Refresh the full list before each retry, then replace only the MR
-        // being submitted. This prevents unrelated stale sheets blocking it.
-        const sendWithRetry = (retriesLeft = 3) => {
-          postMRSheetsWithLatestServer({
-            targetLabel,
-            lastIndex: targetIndex
-          })
-          .then(() => {
-            showAlert("MR successfully submitted & uploaded to server!");
-            fetchMRDataFromServer();
-          })
-          .catch(err => {
-            if (retriesLeft > 0) {
-              console.log(`Upload failed, retrying... (${retriesLeft} koshishe baaki hain)`);
-              setTimeout(() => sendWithRetry(retriesLeft - 1), 3000); // 3 second baad dobara try karega
-            } else {
-              // Agar saari koshishe fail ho jayein, toh data locally safe rahega
-              showAlert(`Server upload fail: ${err.message}. Data locally saved hai; fix ke baad dobara submit karein.`, true);
-              console.error("Server upload final error:", err);
-            }
-          });
+        const fetchWithTimeout = async (url, options = {}) => {
+          const controller = new AbortController();
+          const timeoutId = setTimeout(() => controller.abort(), 20000);
+          try {
+            return await fetch(url, { ...options, signal: controller.signal });
+          } finally {
+            clearTimeout(timeoutId);
+          }
         };
 
-        sendWithRetry(3);
+        const uploadOnce = async () => {
+          const readResponse = await fetchWithTimeout(
+            `/api/mr-sheets?period=${encodeURIComponent(activePeriod)}`
+          );
+          const latestData = await readResponse.json();
+          if (!readResponse.ok || !Array.isArray(latestData.mrSheets)) {
+            throw new Error(latestData.error || `Server read failed (${readResponse.status})`);
+          }
+
+          const latestSheets = latestData.mrSheets.map(sheet => ({ ...sheet }));
+          const currentLocalSheet = mrSheets.find(sheet =>
+            String(sheet.label || "").trim().toUpperCase() === normalizedLabel
+          );
+          if (!currentLocalSheet) throw new Error(`MR not found locally: ${targetLabel}`);
+
+          const submittedSheet = {
+            ...currentLocalSheet,
+            isSubmitted: true,
+            submittedBy: loggedUser
+          };
+          const serverIndex = latestSheets.findIndex(sheet =>
+            String(sheet.label || "").trim().toUpperCase() === normalizedLabel
+          );
+
+          if (serverIndex === -1) {
+            latestSheets.push(submittedSheet);
+          } else {
+            const serverSheet = latestSheets[serverIndex];
+            latestSheets[serverIndex] = {
+              ...serverSheet,
+              ...submittedSheet,
+              assignedUser: serverSheet.assignedUser || currentLocalSheet.assignedUser,
+              editApproved: serverSheet.editApproved
+            };
+          }
+
+          const payload = {
+            mrSheets: latestSheets,
+            lastIndex: targetIndex,
+            period: activePeriod
+          };
+          const writeResponse = await fetchWithTimeout("/api/mr-sheets", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(payload)
+          });
+          const result = await writeResponse.json().catch(() => ({}));
+          if (!writeResponse.ok || result.success === false) {
+            throw new Error(result.error || `Server response ${writeResponse.status}`);
+          }
+        };
+
+        const sendWithRetry = async () => {
+          let lastError = null;
+          for (let attempt = 1; attempt <= 4; attempt++) {
+            try {
+              await uploadOnce();
+
+              const submittedLocalSheet = mrSheets.find(sheet =>
+                String(sheet.label || "").trim().toUpperCase() === normalizedLabel
+              );
+              if (submittedLocalSheet) {
+                submittedLocalSheet.isSubmitted = true;
+                submittedLocalSheet.submittedBy = loggedUser;
+              }
+              saveToLocal(true);
+              renderTabs();
+              renderBody();
+              showAlert("MR successfully submitted & uploaded to server!");
+              fetchMRDataFromServer();
+              return;
+            } catch (error) {
+              lastError = error;
+              if (attempt < 4) {
+                console.warn(`MR upload attempt ${attempt} failed; retrying shortly.`, error);
+                await new Promise(resolve => setTimeout(resolve, 3000));
+              }
+            }
+          }
+
+          // Upload confirm nahi hua: MR pending/unsubmitted hi rahe aur Payment par dikhe.
+          const pendingLocalSheet = mrSheets.find(sheet =>
+            String(sheet.label || "").trim().toUpperCase() === normalizedLabel
+          );
+          if (pendingLocalSheet) pendingLocalSheet.isSubmitted = false;
+          saveToLocal(true);
+          renderTabs();
+          renderBody();
+          showAlert(
+            `Server upload confirm nahi hua. MR Payment screen par pending hai; internet stable hone par dobara Submit karein. ${lastError?.message || ""}`,
+            true
+          );
+          console.error("MR upload failed; local MR remains pending:", lastError);
+        };
+
+        sendWithRetry().finally(() => inFlightLabels.delete(normalizedLabel));
       };
-      
-      document.getElementById("customConfirmText").innerText = "Are you sure you want to submit this MR sheet? Once submitted, it will be uploaded to the server and cannot be edited without Admin approval. Please check all details carefully before proceeding.";
+
+      document.getElementById("customConfirmText").innerText = "Are you sure you want to submit this MR sheet? Once the server confirms the upload, it will move from Payment to Completed MR and cannot be edited without Admin approval. If the connection fails, it will remain on the Payment screen. Please check all details carefully before proceeding.";
       document.getElementById("customConfirmModal").style.display = "flex";
     }
+
 
     function saveToLocal(silent = false) {
       localStorage.setItem(`CPL_OFFLINE_SHEETS_${activePeriod}`, JSON.stringify({ mrSheets: mrSheets, lastIndex: currentMRIndex }));
