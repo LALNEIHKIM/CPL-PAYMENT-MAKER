@@ -723,6 +723,14 @@
           html += `<td title="${val}">${val}</td>`;
         }
         tr.innerHTML = html;
+        const rowFontColor = String(r.rowFontColor || '').trim();
+        const rowHighlightColor = String(r.rowHighlightColor || '').trim();
+        if (rowFontColor) tr.style.color = rowFontColor;
+        if (rowHighlightColor) tr.style.backgroundColor = rowHighlightColor;
+        tr.querySelectorAll('td').forEach(td => {
+          if (rowFontColor) td.style.color = rowFontColor;
+          if (rowHighlightColor) td.style.backgroundColor = rowHighlightColor;
+        });
         tbody.appendChild(tr);
       });
     }
@@ -745,6 +753,30 @@
       right: { style: "thin", color: { rgb: "000000" } }
     };
 
+    function cssColorToExcelRgb(color) {
+      const value = String(color || '').trim();
+      const hex = value.match(/^#([0-9a-f]{6})$/i);
+      if (hex) return hex[1].toUpperCase();
+      const rgb = value.match(/^rgba?\(\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)/i);
+      if (rgb) return rgb.slice(1, 4).map(part => Number(part).toString(16).padStart(2, '0')).join('').toUpperCase();
+      return '';
+    }
+
+    function applyMRRowFormattingToExcel(ws, sourceRows, startRow) {
+      (sourceRows || []).forEach((row, index) => {
+        const fontRgb = cssColorToExcelRgb(row.rowFontColor);
+        const fillRgb = cssColorToExcelRgb(row.rowHighlightColor);
+        if (!fontRgb && !fillRgb) return;
+        const excelRowIndex = startRow - 1 + index;
+        for (let col = 0; col < 24; col++) {
+          const ref = XLSX.utils.encode_cell({ r: excelRowIndex, c: col });
+          if (!ws[ref]) ws[ref] = { t: 's', v: '' };
+          ws[ref].s = { ...(ws[ref].s || {}) };
+          if (fontRgb) ws[ref].s.font = { ...(ws[ref].s.font || {}), color: { rgb: fontRgb } };
+          if (fillRgb) ws[ref].s.fill = { fgColor: { rgb: fillRgb } };
+        }
+      });
+    }
     function exportSingleFromScreen3Active() {
       if (!isAdmin) {
         alert("Access Denied! Only Admin can access this feature");
@@ -765,10 +797,12 @@ if (!target) return showAlert("Selected MR sheet not found!", true);
       const wsData = [[target.title], masterHeaders.slice(0, 24)];
       
       let dataRowsCount = 0;
+      const exportRows = [];
       target.rows.forEach(r => {
         if (!r.isGrandTotal) {
           const exportRow = [...r.rowData];
           exportRow[23] = String(exportRow[23] || '').replace(/\s*\((?:F\/N|A\/N)\)\s*$/i, '').trim();
+          exportRows.push(r);
           wsData.push(exportRow);
           dataRowsCount++;
         }
@@ -845,6 +879,8 @@ if (!target) return showAlert("Selected MR sheet not found!", true);
           }
         }
       }
+
+      applyMRRowFormattingToExcel(ws, exportRows, startRow);
 
       const sheetTabName = (target.label || "MR_Sheet").replace(/[:\\\/?*\[\]]/g, "_");
       XLSX.utils.book_append_sheet(wb, ws, sheetTabName);
@@ -1022,11 +1058,13 @@ if (!target) return showAlert("Selected MR sheet not found!", true);
       submittedMRs.forEach(m => {
         const wsData = [[m.title], masterHeaders.slice(0, 24)];
         let dataRowsCount = 0;
+      const exportRows = [];
         m.rows.forEach(r => {
           if (!r.isGrandTotal) {
             const exportRow = [...r.rowData];
             exportRow[23] = String(exportRow[23] || '').replace(/\s*\((?:F\/N|A\/N)\)\s*$/i, '').trim();
-            wsData.push(exportRow);
+            exportRows.push(r);
+          wsData.push(exportRow);
             dataRowsCount++;
           }
         });
@@ -1085,6 +1123,8 @@ if (!target) return showAlert("Selected MR sheet not found!", true);
             }
           }
         }
+
+        applyMRRowFormattingToExcel(ws, exportRows, startRow);
 
         const sheetTabName = (m.label || "MR").replace(/[:\\\/?*\[\]]/g, "_");
         XLSX.utils.book_append_sheet(wb, ws, sheetTabName);
