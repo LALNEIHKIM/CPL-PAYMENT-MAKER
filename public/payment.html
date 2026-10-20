@@ -1767,7 +1767,35 @@ function onModalMrSelectChange(selectedMr) {
       reader.readAsArrayBuffer(file);
     }
 
-    function openCompleteMRWindow() { window.location.href = "/completed.html"; }
+    async function openCompleteMRWindow() {
+      if (openCompleteMRWindow._checkingConnection) return;
+
+      if (!navigator.onLine) {
+        showAlert("Internet connected nahi hai! Completed MR open karne ke liye internet connection zaroori hai.", true);
+        return;
+      }
+
+      openCompleteMRWindow._checkingConnection = true;
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 8000);
+
+      try {
+        const response = await fetch(
+          `/api/mr-sheets?period=${encodeURIComponent(activePeriod)}`,
+          { cache: "no-store", signal: controller.signal }
+        );
+        if (!response.ok) {
+          throw new Error(`Server response ${response.status}`);
+        }
+        window.location.href = "/completed.html";
+      } catch (error) {
+        showAlert("Server se connection nahi ho raha. Internet check karke Completed MR dobara kholen.", true);
+        console.error("Completed MR connection check failed:", error);
+      } finally {
+        clearTimeout(timeoutId);
+        openCompleteMRWindow._checkingConnection = false;
+      }
+    }
 
     function submitToSever() {
       const selectedSheet = mrSheets[currentMRIndex];
