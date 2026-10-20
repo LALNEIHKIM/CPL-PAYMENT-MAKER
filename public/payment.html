@@ -2474,41 +2474,96 @@ function applyPageTotal() {
     }
     function handleGridPaste(e, startRIdx, startColArrIdx) {
       e.preventDefault();
-      
-      // Clipboard se pasted text nikalna
+      e.stopPropagation();
+
       const clipboardData = e.clipboardData || window.clipboardData;
-      const pastedData = clipboardData.getData('Text');
-      if (!pastedData) return;
+      if (!clipboardData) {
+        showAlert("Clipboard data read nahi hua. Cell par dobara click karke paste karein.", true);
+        return;
+      }
 
-      // Rows (newlines) aur Columns (tabs) mein split karna jo Excel copy se aate hain
-      const rows = pastedData.split(/\r\n|\n|\r/).filter(row => row.length > 0);
-      const curRows = mrSheets[currentMRIndex].rows;
+      // Modern browsers provide text/plain; keep Text as a legacy fallback.
+      let pastedData = clipboardData.getData("text/plain");
+      if (!pastedData) pastedData = clipboardData.getData("Text");
+      if (!pastedData) {
+        showAlert("Clipboard mein paste karne layak text nahi mila.", true);
+        return;
+      }
 
-      rows.forEach((rowStr, rOffset) => {
-        const targetRowIdx = startRIdx + rOffset;
-        if (targetRowIdx < curRows.length && !curRows[targetRowIdx].isGrandTotal) {
-          const cells = rowStr.split('\t'); // Excel columns tab-separated hote hain
-          
-          cells.forEach((cellVal, cOffset) => {
-            const targetColArrIdx = startColArrIdx + cOffset;
-            if (targetColArrIdx < gridColsList.length) {
-              const targetColIdx = gridColsList[targetColArrIdx];
-              
-              // Data row object mein update karna
-              curRows[targetRowIdx].rowData[targetColIdx] = cellVal.trim();
-
-              // UI input field ko bhi turant update karna
-              const targetInput = document.querySelector(`input[data-row="${targetRowIdx}"][data-col="${targetColIdx}"]`);
-              if (targetInput) {
-                targetInput.value = cellVal.trim();
-              }
-            }
-          });
+      // Parse Excel/Sheets TSV while respecting quoted cells that contain
+      // tabs or line breaks (for example, a multi-line NOK/address field).
+      const rows = [];
+      let parsedRow = [];
+      let parsedCell = "";
+      let insideQuotedCell = false;
+      for (let i = 0; i < pastedData.length; i++) {
+        const ch = pastedData[i];
+        if (ch === '"') {
+          if (insideQuotedCell && pastedData[i + 1] === '"') {
+            parsedCell += '"';
+            i++;
+          } else if (insideQuotedCell) {
+            insideQuotedCell = false;
+          } else if (parsedCell.length === 0) {
+            insideQuotedCell = true;
+          } else {
+            parsedCell += ch;
+          }
+        } else if (ch === "\t" && !insideQuotedCell) {
+          parsedRow.push(parsedCell);
+          parsedCell = "";
+        } else if ((ch === "\n" || ch === "\r") && !insideQuotedCell) {
+          parsedRow.push(parsedCell);
+          rows.push(parsedRow);
+          parsedRow = [];
+          parsedCell = "";
+          if (ch === "\r" && pastedData[i + 1] === "\n") i++;
+        } else {
+          parsedCell += ch;
         }
+      }
+      if (parsedCell.length > 0 || parsedRow.length > 0) {
+        parsedRow.push(parsedCell);
+        rows.push(parsedRow);
+      }
+      if (!rows.length) return;
+
+      const sheet = mrSheets[currentMRIndex];
+      const curRows = sheet && Array.isArray(sheet.rows) ? sheet.rows : [];
+      if (!curRows.length) {
+        showAlert("MR sheet mein paste karne ke liye rows nahi hain.", true);
+        return;
+      }
+
+      pushUndoState();
+      let pastedCellCount = 0;
+      rows.forEach((rowCells, rOffset) => {
+        const targetRowIdx = startRIdx + rOffset;
+        if (targetRowIdx >= curRows.length) return;
+        const targetRow = curRows[targetRowIdx];
+        if (!targetRow || targetRow.isGrandTotal) return;
+
+        rowCells.forEach((cellVal, cOffset) => {
+          const targetColArrIdx = startColArrIdx + cOffset;
+          if (targetColArrIdx >= gridColsList.length) return;
+          const targetColIdx = gridColsList[targetColArrIdx];
+          if (!Array.isArray(targetRow.rowData)) targetRow.rowData = [];
+          targetRow.rowData[targetColIdx] = cellVal.trim();
+          pastedCellCount++;
+
+          const targetInput = document.querySelector(
+            `input[data-row="${targetRowIdx}"][data-col="${targetColIdx}"]`
+          );
+          if (targetInput) targetInput.value = cellVal.trim();
+        });
       });
 
+      if (pastedCellCount === 0) {
+        showAlert("Selected grid position par paste karne ke liye cells nahi mile.", true);
+        return;
+      }
       saveToLocal(true);
-      showAlert("Excel data pasted successfully across cells!");
+      showAlert(`${pastedCellCount} cell(s) paste ho gaye.`);
     }
 
     function updateGridCellVal(input) {
