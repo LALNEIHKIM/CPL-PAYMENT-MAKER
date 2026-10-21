@@ -753,6 +753,9 @@ function onModalMrSelectChange(selectedMr) {
         renderBody();
       }
 
+      // Master data and MR sheets are independent; fetch them in parallel so
+      // a slow workbook read does not delay the user's MR list.
+      fetchMRDataFromServer();
       fetch(`/api/master-data`)
         .then(res => res.json())
         .then(res => {
@@ -761,9 +764,8 @@ function onModalMrSelectChange(selectedMr) {
             localStorage.setItem('CPL_OFFLINE_MASTER_DATA', JSON.stringify({ headers: masterHeaders, data: masterData }));
             populateDatalists();
           }
-          fetchMRDataFromServer();
         })
-        .catch(e => fetchMRDataFromServer());
+        .catch(e => {});
     });
 
     function fetchMRDataFromServer() {

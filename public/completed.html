@@ -262,6 +262,19 @@
         } catch(e){}
       }
 
+      // Show the last locally cached completed list immediately while the
+      // server refresh runs in the background.
+      const savedSheets = localStorage.getItem(`CPL_OFFLINE_SHEETS_${activePeriod}`);
+      if (savedSheets) {
+        try {
+          const cached = JSON.parse(savedSheets);
+          if (Array.isArray(cached.mrSheets)) {
+            mrSheets = cached.mrSheets;
+            renderCompleteMRTabs();
+          }
+        } catch(e){}
+      }
+
       fetchApprovalDataFromServer(); // 💡 Yeh line yahan add karni hai
       renderHeaders();
       fetchCompletedMRsFromServer();
@@ -537,15 +550,13 @@
         alert("Access Denied! Only Admin can access this feature");
         return;
       }
-      let requests = serverApprovals.requests || [];
+      const requests = serverApprovals.requests || [];
       const req = requests[index];
       if (!req) return;
-      
-      // Request ko list se hata dein
-      requests.splice(index, 1);
-      serverApprovals.requests = requests;
 
       if (req.mrLabel === "LOGIN APPROVAL") {
+        requests.splice(index, 1);
+        serverApprovals.requests = requests;
         if (!serverApprovals.approvedUsers.includes(req.user)) {
           serverApprovals.approvedUsers.push(req.user);
         }
@@ -563,66 +574,48 @@
         return;
       }
 
-      // 💡 SABSE SAFE TARIKA: Pehle server se sabse latest mrSheets data fetch karein
-      fetch(`/api/mr-sheets?period=${encodeURIComponent(activePeriod)}`)
-        .then(res => res.json())
-        .then(serverData => {
-          let latestMrSheets = serverData.mrSheets || mrSheets;
+      const approveButton = document.querySelector(
+        `#msgRequestsList button[onclick="approveEditRequest(${index})"]`
+      );
+      if (approveButton) {
+        approveButton.disabled = true;
+        approveButton.textContent = "WAIT...";
+      }
 
-          // Exact sheet dhoondhein
-          const realIdx = latestMrSheets.findIndex(m => m.label.toUpperCase() === req.mrLabel.toUpperCase());
-          
-          if (realIdx !== -1) {
-            // Sheet ko unblock karein
-            latestMrSheets[realIdx].isSubmitted = false;
-            
-            // Request bhejne wale ka exact naam (jaise 'KIMA') set karein
-            const targetUser = req.user ? req.user.trim().toUpperCase() : "ADMIN";
-            latestMrSheets[realIdx].assignedUser = targetUser;
-
-            // Local storage update karein
-            mrSheets = latestMrSheets;
-            localStorage.setItem(`CPL_OFFLINE_SHEETS_${activePeriod}`, JSON.stringify({ mrSheets: latestMrSheets, lastIndex: 0 }));
-            
-            // Server par dono (mrSheets aur approvals) ek sath bhejain
-            Promise.all([
-              fetch(`/api/mr-sheets`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                  mrSheets: latestMrSheets,
-                  lastIndex: 0,
-                  period: activePeriod,
-                  approvedEditLabels: [req.mrLabel]
-                })
-              }),
-              fetch('/api/approvals', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(serverApprovals)
-              })
-            ]).then(async responses => {
-              const mrResponse = responses[0];
-              const approvalResponse = responses[1];
-              if (!mrResponse.ok) {
-                const errorData = await mrResponse.json().catch(() => ({}));
-                throw new Error(errorData.error || 'MR update rejected by server');
-              }
-              if (!approvalResponse.ok) throw new Error('Approval request list failed to save');
-              showAlert(`Request approved! Sheet ${req.mrLabel} moved to Payment for editing.`);
-              renderCompleteMRTabs();
-              renderMsgRequestsList();
-              updateMsgBadgeCount();
-            }).catch(e => {
-              showAlert(`Approval sync failed: ${e.message}`, true);
-              fetchCompletedMRsFromServer();
-            });
-          } else {
-            showAlert("Sheet not found on server!", true);
-          }
+      fetch('/api/approvals/approve-edit', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          period: activePeriod,
+          mrLabel: req.mrLabel,
+          user: req.user || "ADMIN"
         })
-        .catch(err => {
-          showAlert("Failed to fetch latest data from server!", true);
+      })
+        .then(async response => {
+          const result = await response.json().catch(() => ({}));
+          if (!response.ok || result.success !== true) {
+            throw new Error(result.error || `Server response ${response.status}`);
+          }
+
+          const realIdx = mrSheets.findIndex(sheet =>
+            String(sheet.label || '').trim().toUpperCase() === String(req.mrLabel || '').trim().toUpperCase()
+          );
+          if (realIdx !== -1) mrSheets[realIdx] = { ...mrSheets[realIdx], ...result.sheet };
+          serverApprovals.requests = result.requests || [];
+          localStorage.setItem(
+            `CPL_OFFLINE_SHEETS_${activePeriod}`,
+            JSON.stringify({ mrSheets, lastIndex: 0 })
+          );
+
+          showAlert(`Request approved! Sheet ${req.mrLabel} moved to Payment for editing.`);
+          renderCompleteMRTabs();
+          renderMsgRequestsList();
+          updateMsgBadgeCount();
+        })
+        .catch(error => {
+          showAlert(`Approval sync failed: ${error.message}`, true);
+          fetchApprovalDataFromServer();
+          fetchCompletedMRsFromServer();
         });
     }
 
