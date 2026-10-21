@@ -475,16 +475,18 @@ app.post('/api/mr-sheets', async (req, res) => {
           );
         }
 
-        // Back up the verified database snapshot.
-        // Failure here does not undo the database save.
-        const backupSuccess =
-          await backupToGoogleDrive(period, saved);
+        // Start Drive backup after the verified database save, but do not keep
+        // the user's submit request waiting for the external backup service.
+        // Backup failures are logged by backupToGoogleDrive and do not undo DB.
+        backupToGoogleDrive(period, saved).catch(error => {
+          console.error('Google Drive backup scheduling error:', error.message);
+        });
 
         return {
           success: true,
           period,
           mrCount: saved.mrSheets.length,
-          backupSuccess
+          backupQueued: true
         };
       }
     );
@@ -515,6 +517,121 @@ app.get('/api/approvals', async (req, res) => {
     res.status(500).json({
       error: 'Approval read failed'
     });
+  }
+});
+
+// Approve an MR edit request in one database transaction so the sheet is
+// reopened and its request is removed together, without multiple browser trips.
+app.post('/api/approvals/approve-edit', async (req, res) => {
+  let period;
+
+  try {
+    period = getPeriod(req.body.period);
+  } catch (error) {
+    return res.status(400).json({ error: error.message });
+  }
+
+  const label = String(req.body.mrLabel || '').trim();
+  const user = String(req.body.user || '').trim().toUpperCase();
+  if (!label || !user || label.toUpperCase() === 'LOGIN APPROVAL') {
+    return res.status(400).json({ error: 'MR label and requesting user are required' });
+  }
+
+  let client;
+  let transactionOpen = false;
+
+  try {
+    client = await pool.connect();
+    await client.query('BEGIN');
+    transactionOpen = true;
+
+    const mrDataKey = mrKey(period);
+    const records = await client.query(
+      `SELECT data_key, data_value
+         FROM public.cpl_app_data
+        WHERE data_key = ANY($1::text[])
+        FOR UPDATE`,
+      [[mrDataKey, 'approvals']]
+    );
+    const recordByKey = new Map(records.rows.map(row => [row.data_key, row.data_value]));
+    const mrData = recordByKey.get(mrDataKey) || EMPTY_MR_DATA;
+    const approvals = recordByKey.get('approvals') || EMPTY_APPROVALS;
+    const mrSheets = Array.isArray(mrData.mrSheets) ? mrData.mrSheets : [];
+    const requests = Array.isArray(approvals.requests) ? approvals.requests : [];
+
+    const requestIndex = requests.findIndex(request =>
+      String(request.mrLabel || '').trim().toUpperCase() === label.toUpperCase() &&
+      String(request.user || '').trim().toUpperCase() === user
+    );
+    if (requestIndex === -1) {
+      await client.query('ROLLBACK');
+      transactionOpen = false;
+      return res.status(409).json({ error: 'Edit request is no longer pending; refresh the request list.' });
+    }
+
+    const sheetIndex = mrSheets.findIndex(sheet =>
+      String(sheet.label || '').trim().toUpperCase() === label.toUpperCase()
+    );
+    if (sheetIndex === -1) {
+      await client.query('ROLLBACK');
+      transactionOpen = false;
+      return res.status(404).json({ error: `Sheet not found: ${label}` });
+    }
+
+    const updatedSheets = mrSheets.map(sheet => ({ ...sheet }));
+    updatedSheets[sheetIndex] = {
+      ...updatedSheets[sheetIndex],
+      isSubmitted: false,
+      assignedUser: user,
+      editApproved: true
+    };
+    const updatedMrData = { ...mrData, mrSheets: updatedSheets };
+    const updatedApprovals = {
+      pendingUsers: Array.isArray(approvals.pendingUsers) ? approvals.pendingUsers : [],
+      approvedUsers: Array.isArray(approvals.approvedUsers) ? approvals.approvedUsers : [],
+      requests: requests.filter((_, index) => index !== requestIndex)
+    };
+
+    await client.query(
+      `INSERT INTO public.cpl_app_data (data_key, data_value, updated_at)
+       VALUES ($1, $2::jsonb, NOW())
+       ON CONFLICT (data_key) DO UPDATE SET
+         data_value = EXCLUDED.data_value,
+         updated_at = EXCLUDED.updated_at`,
+      [mrDataKey, JSON.stringify(updatedMrData)]
+    );
+    await client.query(
+      `INSERT INTO public.cpl_app_data (data_key, data_value, updated_at)
+       VALUES ('approvals', $1::jsonb, NOW())
+       ON CONFLICT (data_key) DO UPDATE SET
+         data_value = EXCLUDED.data_value,
+         updated_at = EXCLUDED.updated_at`,
+      [JSON.stringify(updatedApprovals)]
+    );
+
+    await client.query('COMMIT');
+    transactionOpen = false;
+
+    // The database change is committed; Drive backup runs in the background.
+    backupToGoogleDrive(period, updatedMrData).catch(error => {
+      console.error('Google Drive backup scheduling error:', error.message);
+    });
+
+    res.json({
+      success: true,
+      mrLabel: updatedSheets[sheetIndex].label,
+      assignedUser: user,
+      sheet: updatedSheets[sheetIndex],
+      requests: updatedApprovals.requests
+    });
+  } catch (error) {
+    if (transactionOpen) {
+      await client.query('ROLLBACK').catch(() => {});
+    }
+    console.error('Edit request approval failed:', error.message);
+    res.status(500).json({ error: 'Edit request approval failed; no partial update was kept.' });
+  } finally {
+    if (client) client.release();
   }
 });
 
