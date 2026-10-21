@@ -565,11 +565,11 @@
         }
       }
 
-      if (trade.includes("/") && tradeChangeDate) {
-        const parts = trade.split("/");
-        const oldTrade = parts[0].trim();
-        const newTrade = parts[parts.length - 1].trim();
-        remarksArr.push(`Trade changed ${oldTrade} to ${newTrade} w.e.f. ${tradeChangeDate} ${time}`);
+      if (tradeChangeDate && row.tradeChangeTo) {
+        const changeText = row.tradeChangeFrom
+          ? `Trade changed ${row.tradeChangeFrom} to ${row.tradeChangeTo}`
+          : `Trade changed to ${row.tradeChangeTo}`;
+        remarksArr.push(`${changeText} w.e.f. ${tradeChangeDate} ${time}`);
       } else if (trade.includes("/") && upgradeDate) {
         const parts = trade.split("/");
         const oldTrade = parts[0].trim();
@@ -674,15 +674,23 @@
           const tradeChangeDateFromPayment = lifeData.tradeChangeDate
             ? formatToStandardDate(lifeData.tradeChangeDate)
             : "";
+          const savedChangedTrade = String(lifeData.changedTrade || "").trim();
+          const changedTradeParts = savedChangedTrade.split("/").map(part => part.trim()).filter(Boolean);
+          const tradeChangeFrom = String(lifeData.tradeFrom || "").trim() ||
+            (changedTradeParts.length > 1 ? changedTradeParts[0] : "");
+          const tradeChangeTo = changedTradeParts.length > 1
+            ? changedTradeParts[changedTradeParts.length - 1]
+            : savedChangedTrade;
 
           const isNew = (colCode.toUpperCase() === "NEW");
           const hasSlash = colTrade.includes("/");
           const hasTradeChangeDate = hasSlash && tradeChangeDateFromPayment !== "";
+          const hasLifecycleTradeChange = tradeChangeDateFromPayment !== "" && tradeChangeTo !== "";
           const hasDischarge = (colDischargeDate !== "");
           const hasTransfer = (transferDateFromPayment !== "");
           const hasManual = (manualMatch !== undefined);
 
-          if (isNew || hasSlash || hasDischarge || hasTransfer || hasManual || hasTradeChangeDate) {
+          if (isNew || hasSlash || hasDischarge || hasTransfer || hasManual || hasTradeChangeDate || hasLifecycleTradeChange) {
             let assignedNewCode = "";
             if (isNew) {
               assignedNewCode = String(nextNewCodeCounter++);
@@ -706,8 +714,10 @@
               dateRecruit: isNew ? colEnrolmentDate : "",
               dateDischarge: colDischargeDate,
               dateTfr: manualMatch ? manualMatch.tfrDate : (transferDateFromPayment ? `${transferDateFromPayment} ${transferFnAn}` : ""),
-              dateUpgrade: hasTradeChangeDate ? tradeChangeDateFromPayment : (hasSlash ? "21-Aug-2026" : ""),
-              tradeChangeDate: hasTradeChangeDate ? tradeChangeDateFromPayment : "",
+              dateUpgrade: hasLifecycleTradeChange ? tradeChangeDateFromPayment : (hasSlash ? "21-Aug-2026" : ""),
+              tradeChangeDate: hasLifecycleTradeChange ? tradeChangeDateFromPayment : "",
+              tradeChangeFrom: hasLifecycleTradeChange ? tradeChangeFrom : "",
+              tradeChangeTo: hasLifecycleTradeChange ? tradeChangeTo : "",
               time: "(F/N)",
               customRemark: manualMatch ? manualMatch.remark : autoRemark
             };

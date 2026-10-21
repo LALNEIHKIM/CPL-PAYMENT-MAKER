@@ -556,7 +556,7 @@
 
       <div class="lifecycle-group">
         <label>Changed To (Trade):</label>
-        <select id="lifecycleChangedTrade">
+        <select id="lifecycleChangedTrade" onchange="updateTradeChangePreview()">
           <option value="">-- Select --</option>
           <option value="MAZ">MAZ</option>
           <option value="MATE">MATE</option>
@@ -565,6 +565,8 @@
           <option value="SKD-I">SKD-I</option>
           <option value="CPDVR">CPDVR</option>
         </select>
+        <label style="margin-top:4px;">Trade effective from (blank = period start):</label>
+        <input type="date" id="lifecycleTradeChangeDate" onchange="updateTradeChangePreview()">
       </div>
     </div>
 
@@ -699,6 +701,67 @@ function onModalMrSelectChange(selectedMr) {
       if (t.endsWith("SKD-I")) return "900";
       if (t.endsWith("CPDVR")) return "770";
       return "550";
+    }
+
+    function getPayrollPeriodBounds() {
+      const period = String(activePeriod || "").trim().replace(/[_-]+/g, " ").toUpperCase();
+      const match = period.match(/\b(JAN|FEB|MAR|APR|MAY|JUN|JUL|AUG|SEP|OCT|NOV|DEC)\s+(\d{4})\b/);
+      if (!match) return null;
+      const monthIndex = ["JAN", "FEB", "MAR", "APR", "MAY", "JUN", "JUL", "AUG", "SEP", "OCT", "NOV", "DEC"].indexOf(match[1]);
+      const year = Number(match[2]);
+      const start = Date.UTC(year, monthIndex - 1, 21);
+      const end = Date.UTC(year, monthIndex, 20);
+      return {
+        start,
+        end,
+        startISO: new Date(start).toISOString().slice(0, 10),
+        endISO: new Date(end).toISOString().slice(0, 10),
+        totalDays: Math.round((end - start) / 86400000) + 1
+      };
+    }
+
+    function calculateTradeChangePayment(currentTrade, changedTrade, effectiveDate, workingDays) {
+      const selectedTrade = String(changedTrade || "").trim();
+      const tradeParts = selectedTrade.split("/").map(part => part.trim()).filter(Boolean);
+      const currentParts = String(currentTrade || "").split("/").map(part => part.trim()).filter(Boolean);
+      const oldTrade = tradeParts.length > 1 ? tradeParts[0] : (currentParts[currentParts.length - 1] || selectedTrade);
+      const newTrade = tradeParts.length > 1 ? tradeParts[tradeParts.length - 1] : selectedTrade;
+      const bounds = getPayrollPeriodBounds();
+      const periodStart = bounds ? bounds.start : 0;
+      const periodDays = bounds ? bounds.totalDays : 1;
+
+      let changeStart = effectiveDate ? Date.parse(`${effectiveDate}T00:00:00Z`) : periodStart;
+      if (!Number.isFinite(changeStart)) changeStart = periodStart;
+      const newCalendarDays = Math.max(0, Math.min(periodDays, periodDays - Math.floor((changeStart - periodStart) / 86400000)));
+      const totalPaidDays = Math.max(0, parseFloat(workingDays) || 0);
+      const newPaidDays = Math.round((totalPaidDays * newCalendarDays / periodDays) * 100) / 100;
+      const oldPaidDays = totalPaidDays - newPaidDays;
+      const oldRate = parseFloat(calculateRateByTrade(oldTrade)) || 0;
+      const newRate = parseFloat(calculateRateByTrade(newTrade)) || 0;
+      const amount = Math.round((oldPaidDays * oldRate + newPaidDays * newRate) * 100) / 100;
+
+      return { oldTrade, newTrade, oldPaidDays, newPaidDays, oldRate, newRate, amount };
+    }
+
+    function updateTradeChangePreview() {
+      const row = getEditableEmployeeRow(selectedRowIdx);
+      if (!row) return;
+      const selectedTrade = document.getElementById("lifecycleChangedTrade")?.value || "";
+      const dateInput = document.getElementById("lifecycleTradeChangeDate");
+      if (!selectedTrade) {
+        document.getElementById("lcInfoRate").innerText = row.rowData[18] || "0";
+        const amountInfo = document.getElementById("lcInfoAmt");
+        amountInfo.innerText = "Rs " + (row.rowData[19] || "0");
+        amountInfo.title = "";
+        return;
+      }
+      const calculation = calculateTradeChangePayment(
+        row.rowData[2], selectedTrade, dateInput?.value || "", row.rowData[17]
+      );
+      document.getElementById("lcInfoRate").innerText = calculation.newRate;
+      const amountInfo = document.getElementById("lcInfoAmt");
+      amountInfo.innerText = "Rs " + calculation.amount.toLocaleString("en-IN");
+      amountInfo.title = `${calculation.oldTrade}: ${calculation.oldPaidDays} days × Rs ${calculation.oldRate} + ${calculation.newTrade}: ${calculation.newPaidDays} days × Rs ${calculation.newRate}`;
     }
 
     // NOK Details Cleaner: Removes extra spaces and blank newlines
@@ -1398,6 +1461,15 @@ function onModalMrSelectChange(selectedMr) {
           const rateVal = parseFloat(curRowsData[i].rowData[18]) || 0;
           if (daysVal === "" || daysVal === null) {
             curRowsData[i].rowData[19] = "0";
+          } else if (curRowsData[i].lifecycleData?.changedTrade) {
+            const tradePayment = calculateTradeChangePayment(
+              curRowsData[i].rowData[2],
+              curRowsData[i].lifecycleData.changedTrade,
+              curRowsData[i].lifecycleData.tradeChangeDate || getPayrollPeriodBounds()?.startISO || "",
+              daysVal
+            );
+            curRowsData[i].rowData[18] = String(tradePayment.newRate);
+            curRowsData[i].rowData[19] = String(tradePayment.amount);
           } else {
             const daysNum = parseFloat(daysVal) || 0;
             curRowsData[i].rowData[19] = String(daysNum * rateVal);
@@ -2152,15 +2224,41 @@ function applyPageTotal() {
             }
           }
         }
+
+        const formTrade = document.getElementById("editField_2")?.value.trim() || "";
+        const formTradeDate = document.getElementById("editTradeChangeDate")?.value || "";
+        const originalTrade = String(baseRow.rowData?.[2] || "").trim();
+        const originalTradeDate = baseRow.lifecycleData?.tradeChangeDate || getPayrollPeriodBounds()?.startISO || "";
+        const tradeSelectionChanged = formTrade !== originalTrade;
+        const tradeDateChanged = formTradeDate !== originalTradeDate;
+        if ((tradeSelectionChanged || tradeDateChanged) && formTrade) {
+          draft.lifecycleData.changedTrade = formTrade;
+          draft.lifecycleData.tradeChangeDate = formTradeDate || getPayrollPeriodBounds()?.startISO || "";
+          draft.lifecycleData.tradeFrom = originalTrade;
+        }
       }
 
       draft.code = draft.rowData[1];
       draft.name = draft.rowData[3];
       const formDataChanged = JSON.stringify(draft.rowData) !== JSON.stringify(baseRow.rowData || []);
       const days = parseFloat(draft.rowData[17]) || 0;
-      if (formDataChanged) {
-        draft.rowData[18] = calculateRateByTrade(draft.rowData[2]);
-        draft.rowData[19] = String(days * (parseFloat(draft.rowData[18]) || 0));
+      const tradeLifecycleChanged = draft.lifecycleData.changedTrade &&
+        (draft.lifecycleData.changedTrade !== baseRow.lifecycleData?.changedTrade ||
+         draft.lifecycleData.tradeChangeDate !== baseRow.lifecycleData?.tradeChangeDate);
+      if (formDataChanged || tradeLifecycleChanged) {
+        if (draft.lifecycleData.changedTrade) {
+          const tradePayment = calculateTradeChangePayment(
+            baseRow.rowData[2],
+            draft.lifecycleData.changedTrade,
+            draft.lifecycleData.tradeChangeDate || getPayrollPeriodBounds()?.startISO || "",
+            days
+          );
+          draft.rowData[18] = String(tradePayment.newRate);
+          draft.rowData[19] = String(tradePayment.amount);
+        } else {
+          draft.rowData[18] = calculateRateByTrade(draft.rowData[2]);
+          draft.rowData[19] = String(days * (parseFloat(draft.rowData[18]) || 0));
+        }
       }
 
       let recDate = "";
@@ -2170,11 +2268,17 @@ function applyPageTotal() {
         recDate = document.getElementById("lifecycleRecDate")?.value || "";
         disDate = document.getElementById("lifecycleDisDate")?.value || "";
         changedTrade = document.getElementById("lifecycleChangedTrade")?.value || "";
+        const savedChangedTrade = draft.lifecycleData.changedTrade || "";
+        const tradeChangeDateInput = document.getElementById("lifecycleTradeChangeDate")?.value || "";
+        const tradeChangeDate = (changedTrade || savedChangedTrade)
+          ? (tradeChangeDateInput || getPayrollPeriodBounds()?.startISO || "")
+          : (Object.prototype.hasOwnProperty.call(draft.lifecycleData, "tradeChangeDate") ? tradeChangeDateInput : "");
         const lifecycleValues = {
           recDate,
           disDate,
           gradeDate: document.getElementById("lifecycleGradeDate")?.value || "",
           changedTrade,
+          tradeChangeDate,
           transferDate: document.getElementById("lifecycleTransferDate")?.value || "",
           mrFrom: document.getElementById("lifecycleMrFrom")?.value || "",
           slFrom: document.getElementById("lifecycleSlFrom")?.value || "",
@@ -2190,8 +2294,14 @@ function applyPageTotal() {
 
       if (changedTrade !== "") {
         draft.rowData[2] = changedTrade;
-        draft.rowData[18] = calculateRateByTrade(changedTrade);
-        draft.rowData[19] = String(days * (parseFloat(draft.rowData[18]) || 0));
+        const tradePayment = calculateTradeChangePayment(
+          baseRow.rowData[2],
+          changedTrade,
+          draft.lifecycleData.tradeChangeDate || getPayrollPeriodBounds()?.startISO || "",
+          days
+        );
+        draft.rowData[18] = String(tradePayment.newRate);
+        draft.rowData[19] = String(tradePayment.amount);
         draft.code = draft.rowData[1];
         draft.name = draft.rowData[3];
       }
@@ -2297,6 +2407,7 @@ function applyPageTotal() {
         document.getElementById("lifecycleGradeDate").value = row.lifecycleData.gradeDate || "";
         document.getElementById("lifecycleGradeFnAn").value = row.lifecycleData.gradeFnAn || "F/N";
         document.getElementById("lifecycleChangedTrade").value = row.lifecycleData.changedTrade || "";
+        document.getElementById("lifecycleTradeChangeDate").value = row.lifecycleData.tradeChangeDate || getPayrollPeriodBounds()?.startISO || "";
         document.getElementById("lifecycleTransferDate").value = row.lifecycleData.transferDate || "";
         document.getElementById("lifecycleTransferFnAn").value = row.lifecycleData.transferFnAn || "F/N";
         document.getElementById("lifecycleMrFrom").value = row.lifecycleData.mrFrom || "";
@@ -2308,6 +2419,7 @@ function applyPageTotal() {
         document.getElementById("lifecycleDisDate").value = "";
         document.getElementById("lifecycleGradeDate").value = "";
         document.getElementById("lifecycleChangedTrade").value = "";
+        document.getElementById("lifecycleTradeChangeDate").value = getPayrollPeriodBounds()?.startISO || "";
         document.getElementById("lifecycleTransferDate").value = "";
         document.getElementById("lifecycleMrFrom").value = "";
         document.getElementById("lifecycleSlFrom").value = "";
@@ -2319,8 +2431,7 @@ function applyPageTotal() {
       const disabledFields = [
         "lifecycleRecDate", "lifecycleRecFnAn",
         "lifecycleDisDate", "lifecycleDisFnAn",
-        "lifecycleGradeDate", "lifecycleGradeFnAn",
-        "lifecycleChangedTrade"
+        "lifecycleGradeDate", "lifecycleGradeFnAn"
       ];
 
       disabledFields.forEach(id => {
@@ -2334,6 +2445,7 @@ function applyPageTotal() {
 
       // 🔓 KEEP "Date of Transfer" & "MR From / To" ACTIVE & CLICKABLE
       const activeFields = [
+        "lifecycleChangedTrade", "lifecycleTradeChangeDate",
         "lifecycleTransferDate", "lifecycleTransferFnAn",
         "lifecycleMrFrom", "lifecycleSlFrom",
         "lifecycleMrTo", "lifecycleSlTo"
@@ -2347,6 +2459,14 @@ function applyPageTotal() {
           el.style.cursor = "pointer";
         }
       });
+
+      const periodBounds = getPayrollPeriodBounds();
+      const tradeDateInput = document.getElementById("lifecycleTradeChangeDate");
+      if (tradeDateInput && periodBounds) {
+        tradeDateInput.min = periodBounds.startISO;
+        tradeDateInput.max = periodBounds.endISO;
+      }
+      updateTradeChangePreview();
     }
 
     function toggleAbsentDate(dateStr) {
@@ -2427,7 +2547,12 @@ function applyPageTotal() {
         else if (i === 2) {
           let opts = `<option value="">-- Select Trade --</option>`;
           tradeOptions.forEach(t => { opts += `<option value="${t}" ${val === t ? 'selected' : ''}>${t}</option>`; });
-          div.innerHTML = `<label><strong>${colLetter}:</strong> ${colTitle}</label><select id="editField_${i}" style="height:30px;" ${disabledAttr}>${opts}</select>`;
+          const tradeChangeDate = row.lifecycleData?.tradeChangeDate || getPayrollPeriodBounds()?.startISO || "";
+          const periodBounds = getPayrollPeriodBounds();
+          div.innerHTML = `<label><strong>${colLetter}:</strong> ${colTitle}</label>
+            <select id="editField_${i}" style="height:30px;" ${disabledAttr}>${opts}</select>
+            <label for="editTradeChangeDate" style="display:block; margin-top:6px; font-size:11px;">Trade effective from (blank = period start):</label>
+            <input type="date" id="editTradeChangeDate" value="${tradeChangeDate}" style="height:30px; width:100%; ${isEditModeEnabled ? '' : 'background:#e9ecef; cursor:not-allowed;'}" min="${periodBounds?.startISO || ''}" max="${periodBounds?.endISO || ''}" ${isEditModeEnabled ? '' : 'disabled'}>`;
         }
         else if (i === 4) {
           div.innerHTML = `<label><strong>${colLetter}:</strong> ${colTitle}</label><input type="date" id="editField_${i}" value="${dateToISO(val)}" style="height:30px;" ${readonlyAttr}>`;
