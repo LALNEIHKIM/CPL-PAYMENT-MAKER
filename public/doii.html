@@ -565,11 +565,20 @@
         }
       }
 
-      if (tradeChangeDate && row.tradeChangeTo) {
-        const changeText = row.tradeChangeFrom
-          ? `Trade changed ${row.tradeChangeFrom} to ${row.tradeChangeTo}`
-          : `Trade changed to ${row.tradeChangeTo}`;
-        remarksArr.push(`${changeText} w.e.f. ${tradeChangeDate} ${time}`);
+      const tradeChangeFromParts = String(row.tradeChangeFrom || "").split("/").map(part => part.trim()).filter(Boolean);
+      const oldTradeForChange = tradeChangeFromParts[0] || trade.split("/")[0].trim();
+      const newTradeForChange = String(row.tradeChangeTo || "").trim() || trade.split("/").pop().trim();
+      const isSkdIiCpdvrPair =
+        (oldTradeForChange.toUpperCase() === "SKD-II" && newTradeForChange.toUpperCase() === "CPDVR") ||
+        (oldTradeForChange.toUpperCase() === "CPDVR" && newTradeForChange.toUpperCase() === "SKD-II");
+
+      if (tradeChangeDate && row.tradeChangeTo && isSkdIiCpdvrPair) {
+        remarksArr.push(`Trade changed ${oldTradeForChange} to ${newTradeForChange} w.e.f. ${tradeChangeDate} ${time}`);
+      } else if (tradeChangeDate && row.tradeChangeTo) {
+        const oldRank = TRADE_RANKS.indexOf(oldTradeForChange.toUpperCase());
+        const newRank = TRADE_RANKS.indexOf(newTradeForChange.toUpperCase());
+        const actionWord = oldRank < newRank ? "Upgraded" : "Downgraded";
+        remarksArr.push(`${actionWord} ${oldTradeForChange} to ${newTradeForChange} w.e.f. ${tradeChangeDate} ${time}`);
       } else if (trade.includes("/") && upgradeDate) {
         const parts = trade.split("/");
         const oldTrade = parts[0].trim();
