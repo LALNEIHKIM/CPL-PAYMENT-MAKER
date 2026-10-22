@@ -300,7 +300,7 @@
       <h4>RESTRICTED</h4>
       <h3 id="doHeaderTitle">DO PART - II ORDER OF CPLs FOR THE MONTH OF SEP 2026</h3>
       <p>BY<br><span id="displayOCName">SHRI SUJIT DEBNATH, EE (CIV), OFFICER COMMANDING, 74 RCC (GREF)</span></p>
-      <div class="last-code-badge">(LAST CODE No.<span id="lastCodeNum">8578</span>)</div>
+      <div class="last-code-badge">(LAST CODE No.<span id="lastCodeNum">8541</span>)</div>
     </div>
 
     <div class="order-ref-row">
@@ -396,7 +396,7 @@
 
         <div>
           <label>Last Code Number:</label>
-          <input type="text" id="cfgLastCode" value="8578">
+          <input type="text" id="cfgLastCode" value="8541">
         </div>
         <div>
           <label>Previous Order No & Date:</label>
@@ -450,7 +450,7 @@
     let isAdmin = localStorage.getItem("CPL_ADMIN_LOGGED") === "true";
 
     let do2Config = {
-      lastCode: "8578",
+      lastCode: "8541",
       prevOrder: "PREVIOUS PART-II ORDER No : 01/62/CPL/2026 DATED 22 Aug 2026.",
       presentOrder: `PRESENT PART-II ORDER No : 01/63/CPL/2026 DATED ____ ${activePeriod}.`,
       ocName: "SHRI SUJIT DEBNATH, EE (CIV), OFFICER COMMANDING, 74 RCC (GREF)",
@@ -511,7 +511,11 @@
       let str = String(inputDate).trim();
       str = str.replace(/\s*\(F\/N\)|\s*\(A\/N\)/gi, "").trim();
 
-      if (str.match(/^\d{2}-[A-Za-z]{3}-\d{4}$/)) return str;
+      const textDateMatch = str.match(/^(\d{1,2})-([A-Za-z]{3})-(\d{4})$/);
+      if (textDateMatch) {
+        const monthIndex = MONTH_NAMES.findIndex(month => month.toLowerCase() === textDateMatch[2].toLowerCase());
+        if (monthIndex >= 0) return `${textDateMatch[1].padStart(2, '0')}-${MONTH_NAMES[monthIndex]}-${textDateMatch[3]}`;
+      }
 
       // 💡 ISO format (YYYY-MM-DD) ko DD-Mon-YYYY mein convert karne ke liye
       if (/^\d{4}-\d{2}-\d{2}$/.test(str)) {
@@ -523,15 +527,30 @@
         return `${d}-${mName}-${y}`;
       }
 
-      const slashParts = str.split("/");
-      if (slashParts.length === 3) {
-        const d = slashParts[0].padStart(2, '0');
-        const m = parseInt(slashParts[1], 10);
-        const y = slashParts[2];
-        const mName = MONTH_NAMES[m - 1] || 'Aug';
-        return `${d}-${mName}-${y}`;
+      const numericDateMatch = str.match(/^(\d{1,2})[-/](\d{1,2})[-/](\d{4})$/);
+      if (numericDateMatch) {
+        const d = numericDateMatch[1].padStart(2, '0');
+        const m = parseInt(numericDateMatch[2], 10);
+        const y = numericDateMatch[3];
+        const mName = MONTH_NAMES[m - 1];
+        if (mName) return `${d}-${mName}-${y}`;
       }
       return str;
+    }
+
+    function getDO2PayrollPeriodStartDate() {
+      const parts = String(activePeriod || "").trim().toUpperCase().replace(/_/g, " ").split(/\s+/);
+      const monthKeys = ["JAN", "FEB", "MAR", "APR", "MAY", "JUN", "JUL", "AUG", "SEP", "OCT", "NOV", "DEC"];
+      const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+      const periodMonthIndex = monthKeys.indexOf(parts[0]);
+      let year = parseInt(parts[1], 10);
+      if (periodMonthIndex < 0 || !Number.isFinite(year)) return "";
+      let startMonthIndex = periodMonthIndex - 1;
+      if (startMonthIndex < 0) {
+        startMonthIndex = 11;
+        year -= 1;
+      }
+      return `21-${monthNames[startMonthIndex]}-${year}`;
     }
 
     function generateRemarkFormula(row) {
@@ -659,7 +678,7 @@
       }
 
       do2Groups = [];
-      let baseCode = parseInt(do2Config.lastCode, 10) || 8578;
+      let baseCode = parseInt(do2Config.lastCode, 10) || 8541;
 
       completedSheets.forEach(mr => {
         const matchingRows = [];
@@ -719,8 +738,12 @@
               dateRecruit: isNew ? colEnrolmentDate : "",
               dateDischarge: colDischargeDate,
               dateTfr: manualMatch ? manualMatch.tfrDate : (transferDateFromPayment ? `${transferDateFromPayment} ${transferFnAn}` : ""),
-              dateUpgrade: hasLifecycleTradeChange ? tradeChangeDateFromPayment : (hasSlash ? "21-Aug-2026" : ""),
-              tradeChangeDate: hasLifecycleTradeChange ? tradeChangeDateFromPayment : "",
+              dateUpgrade: (hasLifecycleTradeChange || hasTradeChangeDate)
+                ? tradeChangeDateFromPayment
+                : (hasSlash ? getDO2PayrollPeriodStartDate() : ""),
+              tradeChangeDate: hasLifecycleTradeChange
+                ? tradeChangeDateFromPayment
+                : (hasSlash ? (tradeChangeDateFromPayment || getDO2PayrollPeriodStartDate()) : ""),
               tradeChangeFrom: hasLifecycleTradeChange ? tradeChangeFrom : "",
               tradeChangeTo: hasLifecycleTradeChange ? tradeChangeTo : "",
               time: "(F/N)",
@@ -934,7 +957,7 @@
 
     function saveConfigData() {
       if (!isAdmin) return;
-      do2Config.lastCode = document.getElementById("cfgLastCode").value.trim() || "8578";
+      do2Config.lastCode = document.getElementById("cfgLastCode").value.trim() || "8541";
       do2Config.prevOrder = document.getElementById("cfgPrevOrder").value.trim();
       do2Config.presentOrder = document.getElementById("cfgPresentOrder").value.trim();
       do2Config.ocName = document.getElementById("cfgOcName").value.trim();
