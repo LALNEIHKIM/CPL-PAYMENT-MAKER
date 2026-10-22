@@ -841,6 +841,22 @@
         }
       });
     }
+
+    // Export-only ordering helpers. The on-screen MR order remains untouched.
+    function getExportMRNumber(mr) {
+      const label = String(mr?.label || mr?.title || "");
+      const match = label.match(/(?:MR\s*(?:NO\.?\s*)?|74\s*RCC\s*\/\s*)(\d+)/i);
+      return match ? Number(match[1]) : Number.MAX_SAFE_INTEGER;
+    }
+
+    function sortRowsByExportSNo(rows) {
+      return [...(rows || [])].sort((a, b) => {
+        const aNo = Number(String(a?.rowData?.[0] ?? "").replace(/[^\d.-]/g, ""));
+        const bNo = Number(String(b?.rowData?.[0] ?? "").replace(/[^\d.-]/g, ""));
+        return (Number.isFinite(aNo) ? aNo : Number.MAX_SAFE_INTEGER) -
+          (Number.isFinite(bNo) ? bNo : Number.MAX_SAFE_INTEGER);
+      });
+    }
     function exportSingleFromScreen3Active() {
       if (!isAdmin) {
         alert("Access Denied! Only Admin can access this feature");
@@ -862,7 +878,7 @@ if (!target) return showAlert("Selected MR sheet not found!", true);
       
       let dataRowsCount = 0;
       const exportRows = [];
-      target.rows.forEach(r => {
+      sortRowsByExportSNo(target.rows).forEach(r => {
         if (!r.isGrandTotal) {
           const exportRow = [...r.rowData];
           exportRow[23] = String(exportRow[23] || '').replace(/\s*\((?:F\/N|A\/N)\)\s*$/i, '').trim();
@@ -958,7 +974,9 @@ if (!target) return showAlert("Selected MR sheet not found!", true);
       }
       
       const wb = XLSX.utils.book_new();
-      const submittedMRs = mrSheets.filter(m => m.isSubmitted && m.rows.length > 0);
+      const submittedMRs = mrSheets
+        .filter(m => m.isSubmitted && m.rows.length > 0)
+        .sort((a, b) => getExportMRNumber(a) - getExportMRNumber(b));
       
       if (submittedMRs.length === 0) {
         return showAlert("No submitted MR sheets available to export!", true);
@@ -972,8 +990,9 @@ if (!target) return showAlert("Selected MR sheet not found!", true);
         let totalAmt = 0;
         let gtotalRowIdx = -1;
 
-        if (m.rows && m.rows.length > 0) {
-          m.rows.forEach((r, rIdx) => {
+        const sortedRows = sortRowsByExportSNo(m.rows);
+        if (sortedRows.length > 0) {
+          sortedRows.forEach((r, rIdx) => {
             const rowName = String(r.name || (r.rowData && r.rowData[3]) || '').trim().toUpperCase();
             const colType = String((r.rowData && r.rowData[17]) || '').trim().toUpperCase();
             if (r.isGrandTotal || rowName === "G/TOTAL" || colType === "G/TOTAL") {
@@ -983,7 +1002,7 @@ if (!target) return showAlert("Selected MR sheet not found!", true);
           });
 
           if (gtotalRowIdx === -1) {
-            m.rows.forEach(r => {
+            sortedRows.forEach(r => {
               if (!r.isGrandTotal && String(r.name || '').toUpperCase() !== "G/TOTAL") {
                 totalAmt += parseFloat(r.rowData && r.rowData[19] ? r.rowData[19] : 0) || 0;
               }
@@ -992,7 +1011,7 @@ if (!target) return showAlert("Selected MR sheet not found!", true);
         }
 
         grandTotalSum += totalAmt;
-        const excelTargetRow = (gtotalRowIdx !== -1) ? (gtotalRowIdx + 3) : (m.rows.length + 3);
+        const excelTargetRow = (gtotalRowIdx !== -1) ? (gtotalRowIdx + 3) : (sortedRows.length + 3);
 
         let jobClean = m.title || '';
         const jobMatch = jobClean.match(/JOB\s*No\.?\s*(.*)/i);
@@ -1123,7 +1142,7 @@ if (!target) return showAlert("Selected MR sheet not found!", true);
         const wsData = [[m.title], masterHeaders.slice(0, 24)];
         let dataRowsCount = 0;
       const exportRows = [];
-        m.rows.forEach(r => {
+        sortRowsByExportSNo(m.rows).forEach(r => {
           if (!r.isGrandTotal) {
             const exportRow = [...r.rowData];
             exportRow[23] = String(exportRow[23] || '').replace(/\s*\((?:F\/N|A\/N)\)\s*$/i, '').trim();
