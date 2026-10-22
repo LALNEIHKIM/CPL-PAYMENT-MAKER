@@ -600,7 +600,19 @@
           const realIdx = mrSheets.findIndex(sheet =>
             String(sheet.label || '').trim().toUpperCase() === String(req.mrLabel || '').trim().toUpperCase()
           );
-          if (realIdx !== -1) mrSheets[realIdx] = { ...mrSheets[realIdx], ...result.sheet };
+          if (realIdx !== -1) {
+            const localSheet = mrSheets[realIdx];
+            const approvedSheet = result.sheet || {};
+            // Approval only changes workflow state. Keep the admin browser's
+            // local row data intact; the server response may predate unsaved
+            // local cell edits (e.g. a newly entered DOB).
+            mrSheets[realIdx] = {
+              ...localSheet,
+              isSubmitted: false,
+              assignedUser: approvedSheet.assignedUser || req.user || localSheet.assignedUser,
+              editApproved: approvedSheet.editApproved === true
+            };
+          }
           serverApprovals.requests = result.requests || [];
           localStorage.setItem(
             `CPL_OFFLINE_SHEETS_${activePeriod}`,
