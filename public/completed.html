@@ -857,6 +857,52 @@
           (Number.isFinite(bNo) ? bNo : Number.MAX_SAFE_INTEGER);
       });
     }
+
+    function getExportPayrollPeriodDates(periodText) {
+      const parts = String(periodText || "").trim().toUpperCase().split(/\s+/);
+      const monthIndex = ["JAN", "FEB", "MAR", "APR", "MAY", "JUN", "JUL", "AUG", "SEP", "OCT", "NOV", "DEC"].indexOf(parts[0]);
+      const year = Number(parts[1]);
+      if (monthIndex < 0 || !Number.isFinite(year)) return null;
+      const current = new Date(year, monthIndex, 1);
+      const previous = new Date(year, monthIndex - 1, 1);
+      const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+      return {
+        start: `21 ${monthNames[previous.getMonth()]} ${previous.getFullYear()}`,
+        end: `20 ${monthNames[current.getMonth()]} ${current.getFullYear()}`
+      };
+    }
+
+    function numberToWordsUnder1000(value) {
+      const small = ["Zero", "One", "Two", "Three", "Four", "Five", "Six", "Seven", "Eight", "Nine", "Ten", "Eleven", "Twelve", "Thirteen", "Fourteen", "Fifteen", "Sixteen", "Seventeen", "Eighteen", "Nineteen"];
+      const tens = ["", "", "Twenty", "Thirty", "Forty", "Fifty", "Sixty", "Seventy", "Eighty", "Ninety"];
+      let n = Math.floor(Math.abs(value));
+      const words = [];
+      if (n >= 100) {
+        words.push(`${small[Math.floor(n / 100)]} Hundred`);
+        n %= 100;
+      }
+      if (n >= 20) {
+        words.push(tens[Math.floor(n / 10)]);
+        n %= 10;
+      }
+      if (n > 0) words.push(small[n]);
+      return words.join(" ");
+    }
+
+    function numberToIndianWords(value) {
+      let n = Math.floor(Math.abs(Number(value) || 0));
+      if (n === 0) return "Zero";
+      const groups = [[10000000, "Crore"], [100000, "Lakh"], [1000, "Thousand"], [1, ""]];
+      const words = [];
+      for (const [unit, label] of groups) {
+        if (n >= unit) {
+          const part = Math.floor(n / unit);
+          words.push(`${numberToWordsUnder1000(part)}${label ? ` ${label}` : ""}`);
+          n %= unit;
+        }
+      }
+      return words.join(" ");
+    }
     function exportSingleFromScreen3Active() {
       if (!isAdmin) {
         alert("Access Denied! Only Admin can access this feature");
@@ -985,6 +1031,9 @@ if (!target) return showAlert("Selected MR sheet not found!", true);
       // 1. FORWARDING LETTER SHEET (First Tab)
       let letterRowsData = [];
       let grandTotalSum = 0;
+      const payrollDates = getExportPayrollPeriodDates(activePeriod) || {
+        start: "21 Aug 2026", end: "20 Sep 2026"
+      };
 
       submittedMRs.forEach((m, idx) => {
         let totalAmt = 0;
@@ -1047,9 +1096,9 @@ if (!target) return showAlert("Selected MR sheet not found!", true);
         ["C/O 99 APO"],
         [],
         [`FORWARDING OF BILLS ON ACCOUNT OF WAGES OF CPL's FOR THE MONTH OF ${activePeriod.toUpperCase()}`],
-        [`(PERIOD FROM 21 AUG 2026 TO 20 SEP 2026)`],
+        [`(PERIOD FROM ${payrollDates.start.toUpperCase()} TO ${payrollDates.end.toUpperCase()})`],
         [],
-        [`1.   The under mentioned Special Wages Bills on account of wages of ${activePeriod.toUpperCase()} (Period from 21 Aug 2026 to 20 Sep 2026) alongwith Mandate form, DLRs and Part-II orders of CPLs are forwarded herewith for your pre-audit and early payment, please.`],
+        [`1.   The under mentioned Special Wages Bills on account of wages of ${activePeriod.toUpperCase()} (Period from ${payrollDates.start} to ${payrollDates.end}) alongwith Mandate form, DLRs and Part-II orders of CPLs are forwarded herewith for your pre-audit and early payment, please.`],
         [],
         ["S/No", "Mr No", "Job No.", "Amount (Rs)", "REMARKS"]
       ];
@@ -1062,9 +1111,9 @@ if (!target) return showAlert("Selected MR sheet not found!", true);
       const totalRowExcel = startRowExcel + letterRowsData.length;
       wsLetterData.push(["", "", "TOTAL (Rs)", Number(grandTotalSum), ""]);
       wsLetterData.push([]);
-      wsLetterData.push([`Total Amount in Words`]);
+      wsLetterData.push([`Rupees ${numberToIndianWords(grandTotalSum)} Only`]);
       wsLetterData.push([]);
-      wsLetterData.push([`(TOTAL CLOSED MR NOS)`]);
+      wsLetterData.push([`(TOTAL CLOSED MR ${numberToIndianWords(letterRowsData.length).toUpperCase()} NOS)`]);
       wsLetterData.push([]);
       
       const copyToStartIdx = wsLetterData.length;
