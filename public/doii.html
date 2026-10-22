@@ -605,11 +605,12 @@
       const tradeChangeDate = formatToStandardDate(row.tradeChangeDate || "");
       const time = row.time || "(F/N)";
 
-      if (row.customRemark && row.customRemark.trim() !== "") {
-        return row.customRemark;
-      }
-
       let remarksArr = [];
+      // Add custom transfer text alongside generated upgrade text instead of
+      // returning early and hiding the upgrade remark.
+      if (row.customRemark && row.customRemark.trim() !== "") {
+        remarksArr.push(row.customRemark.trim());
+      }
 
       if (code.toUpperCase() === "NEW" || recruitDate) {
         if (recruitDate) {
@@ -664,7 +665,7 @@
         return remarksArr.join(" and ");
       }
 
-      return row.customRemark || "";
+      return "";
     }
 
     function populateManualDateDropdown() {
