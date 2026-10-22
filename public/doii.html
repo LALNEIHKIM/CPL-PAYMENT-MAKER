@@ -553,6 +553,39 @@
       return `21-${monthNames[startMonthIndex]}-${year}`;
     }
 
+    function getDO2PayrollPeriodBoundsISO() {
+      const parts = String(activePeriod || "").trim().toUpperCase().replace(/_/g, " ").split(/\s+/);
+      const monthKeys = ["JAN", "FEB", "MAR", "APR", "MAY", "JUN", "JUL", "AUG", "SEP", "OCT", "NOV", "DEC"];
+      const periodMonthIndex = monthKeys.indexOf(parts[0]);
+      const year = parseInt(parts[1], 10);
+      if (periodMonthIndex < 0 || !Number.isFinite(year)) return null;
+      const startDate = getDO2PayrollPeriodStartDate();
+      const startISO = do2DateToISO(startDate);
+      const endISO = `${year}-${String(periodMonthIndex + 1).padStart(2, "0")}-20`;
+      return startISO ? { startISO, endISO } : null;
+    }
+
+    function do2DateToISO(value) {
+      const formatted = formatToStandardDate(value);
+      const match = formatted.match(/^(\d{2})-([A-Za-z]{3})-(\d{4})$/);
+      if (!match) return "";
+      const monthIndex = MONTH_NAMES.findIndex(month => month.toLowerCase() === match[2].toLowerCase());
+      if (monthIndex < 0) return "";
+      return `${match[3]}-${String(monthIndex + 1).padStart(2, "0")}-${match[1]}`;
+    }
+
+    function getTradeChangeDateForCurrentPeriod(value) {
+      const periodBounds = getDO2PayrollPeriodBoundsISO();
+      const selectedDate = formatToStandardDate(value);
+      const selectedISO = do2DateToISO(selectedDate);
+      if (periodBounds && selectedISO >= periodBounds.startISO && selectedISO <= periodBounds.endISO) {
+        return selectedDate;
+      }
+      // Old saved values outside the current payroll window (e.g. 21-Aug for
+      // OCT 2026) are stale; default this trade change to the period start.
+      return getDO2PayrollPeriodStartDate();
+    }
+
     function generateRemarkFormula(row) {
       if (row.isBlank) return "";
       
@@ -691,6 +724,7 @@
           
           const colEnrolmentDate = String((r.rowData && r.rowData[22]) || '').trim();
           const colDischargeDate = String((r.rowData && r.rowData[23]) || r.dischargeDate || '').trim();
+          const hasSlash = colTrade.includes("/");
 
           const manualMatch = manualOverrides.find(mo => mo.mrLabel.toUpperCase() === mr.label.toUpperCase() && mo.sno === (idx + 1));
           
@@ -698,9 +732,15 @@
           const lifeData = r.lifecycleData || {};
           const transferDateFromPayment = lifeData.transferDate ? formatToStandardDate(lifeData.transferDate) : "";
           const transferFnAn = lifeData.transferFnAn || "(F/N)";
-          const tradeChangeDateFromPayment = lifeData.tradeChangeDate
-            ? formatToStandardDate(lifeData.tradeChangeDate)
+          // Payment editor stores the Down/Up calendar value as gradeDate.
+          // Also accept tradeChangeDate for rows saved by other app versions.
+          const savedTradeEffectiveDate = lifeData.tradeChangeDate || lifeData.gradeDate || "";
+          const tradeChangeDateFromPayment = savedTradeEffectiveDate
+            ? formatToStandardDate(savedTradeEffectiveDate)
             : "";
+          const tradeDateForCurrentPeriod = hasSlash
+            ? getTradeChangeDateForCurrentPeriod(tradeChangeDateFromPayment)
+            : tradeChangeDateFromPayment;
           const savedChangedTrade = String(lifeData.changedTrade || "").trim();
           const changedTradeParts = savedChangedTrade.split("/").map(part => part.trim()).filter(Boolean);
           const tradeChangeFrom = String(lifeData.tradeFrom || "").trim() ||
@@ -710,7 +750,6 @@
             : savedChangedTrade;
 
           const isNew = (colCode.toUpperCase() === "NEW");
-          const hasSlash = colTrade.includes("/");
           const hasTradeChangeDate = hasSlash && tradeChangeDateFromPayment !== "";
           const hasLifecycleTradeChange = tradeChangeDateFromPayment !== "" && tradeChangeTo !== "";
           const hasDischarge = (colDischargeDate !== "");
@@ -738,12 +777,12 @@
               dateRecruit: isNew ? colEnrolmentDate : "",
               dateDischarge: colDischargeDate,
               dateTfr: manualMatch ? manualMatch.tfrDate : (transferDateFromPayment ? `${transferDateFromPayment} ${transferFnAn}` : ""),
-              dateUpgrade: (hasLifecycleTradeChange || hasTradeChangeDate)
-                ? tradeChangeDateFromPayment
-                : (hasSlash ? getDO2PayrollPeriodStartDate() : ""),
-              tradeChangeDate: hasLifecycleTradeChange
-                ? tradeChangeDateFromPayment
-                : (hasSlash ? (tradeChangeDateFromPayment || getDO2PayrollPeriodStartDate()) : ""),
+              dateUpgrade: hasSlash
+                ? tradeDateForCurrentPeriod
+                : (hasLifecycleTradeChange ? tradeChangeDateFromPayment : ""),
+              tradeChangeDate: hasSlash
+                ? tradeDateForCurrentPeriod
+                : (hasLifecycleTradeChange ? tradeChangeDateFromPayment : ""),
               tradeChangeFrom: hasLifecycleTradeChange ? tradeChangeFrom : "",
               tradeChangeTo: hasLifecycleTradeChange ? tradeChangeTo : "",
               time: "(F/N)",
