@@ -655,7 +655,66 @@
       fetch(`/api/mr-sheets?period=${encodeURIComponent(activePeriod)}`)
         .then(res => res.json())
         .then(data => {
-          if (data.mrSheets) mrSheets = data.mrSheets;
+          if (Array.isArray(data.mrSheets)) {
+            const cacheKey = `CPL_OFFLINE_SHEETS_${activePeriod}`;
+            let cachedSheets = null;
+            let cachedLastIndex = 0;
+            try {
+              const cached = JSON.parse(localStorage.getItem(cacheKey) || "null");
+              if (cached && Array.isArray(cached.mrSheets)) {
+                cachedSheets = cached.mrSheets;
+                cachedLastIndex = Number(cached.lastIndex) || 0;
+              }
+            } catch (e) {}
+
+            if (!cachedSheets) {
+              mrSheets = data.mrSheets;
+            } else {
+              const serverByLabel = new Map(data.mrSheets.map(sheet => [
+                String(sheet.label || "").trim().toUpperCase(), sheet
+              ]));
+              let previousServerLabels = [];
+              try {
+                previousServerLabels = JSON.parse(
+                  localStorage.getItem(`CPL_SERVER_MR_LABELS_${activePeriod}`) || "[]"
+                ).map(label => String(label || "").trim().toUpperCase());
+              } catch (e) {}
+              const previouslyOnServer = new Set(previousServerLabels);
+
+              // Keep locally saved row edits; use the server only for shared
+              // workflow state and for adding/removing server-side MR records.
+              mrSheets = cachedSheets
+                .filter(localMR => {
+                  const label = String(localMR.label || "").trim().toUpperCase();
+                  return !previouslyOnServer.has(label) || serverByLabel.has(label);
+                })
+                .map(localMR => {
+                  const label = String(localMR.label || "").trim().toUpperCase();
+                  const serverMR = serverByLabel.get(label);
+                  if (!serverMR) return localMR;
+                  return {
+                    ...localMR,
+                    isSubmitted: serverMR.isSubmitted === true,
+                    submittedBy: serverMR.submittedBy || localMR.submittedBy,
+                    assignedUser: serverMR.assignedUser || localMR.assignedUser,
+                    editApproved: serverMR.editApproved === true
+                  };
+                });
+
+              const localLabels = new Set(mrSheets.map(sheet =>
+                String(sheet.label || "").trim().toUpperCase()
+              ));
+              data.mrSheets.forEach(serverMR => {
+                const label = String(serverMR.label || "").trim().toUpperCase();
+                if (!localLabels.has(label)) mrSheets.push(serverMR);
+              });
+              localStorage.setItem(
+                `CPL_SERVER_MR_LABELS_${activePeriod}`,
+                JSON.stringify(data.mrSheets.map(sheet => String(sheet.label || "").trim().toUpperCase()))
+              );
+              localStorage.setItem(cacheKey, JSON.stringify({ mrSheets, lastIndex: cachedLastIndex }));
+            }
+          }
           renderCompleteMRTabs();
         })
         .catch(e => { renderCompleteMRTabs(); });
