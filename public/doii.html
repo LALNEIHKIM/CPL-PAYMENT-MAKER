@@ -396,7 +396,7 @@
 
         <div>
           <label>Last Code Number:</label>
-          <input type="text" id="cfgLastCode" value="8541">
+          <input type="text" id="cfgLastCode" value="8578">
         </div>
         <div>
           <label>Previous Order No & Date:</label>
@@ -450,7 +450,7 @@
     let isAdmin = localStorage.getItem("CPL_ADMIN_LOGGED") === "true";
 
     let do2Config = {
-      lastCode: "8541",
+      lastCode: "8578",
       prevOrder: "PREVIOUS PART-II ORDER No : 01/62/CPL/2026 DATED 22 Aug 2026.",
       presentOrder: `PRESENT PART-II ORDER No : 01/63/CPL/2026 DATED ____ ${activePeriod}.`,
       ocName: "SHRI SUJIT DEBNATH, EE (CIV), OFFICER COMMANDING, 74 RCC (GREF)",
@@ -659,7 +659,7 @@
       }
 
       do2Groups = [];
-      let baseCode = parseInt(do2Config.lastCode, 10) || 8541;
+      let baseCode = parseInt(do2Config.lastCode, 10) || 8578;
 
       completedSheets.forEach(mr => {
         const matchingRows = [];
@@ -934,7 +934,7 @@
 
     function saveConfigData() {
       if (!isAdmin) return;
-      do2Config.lastCode = document.getElementById("cfgLastCode").value.trim() || "8541";
+      do2Config.lastCode = document.getElementById("cfgLastCode").value.trim() || "8578";
       do2Config.prevOrder = document.getElementById("cfgPrevOrder").value.trim();
       do2Config.presentOrder = document.getElementById("cfgPresentOrder").value.trim();
       do2Config.ocName = document.getElementById("cfgOcName").value.trim();
