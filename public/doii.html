@@ -618,8 +618,19 @@
       }
 
       const tradeChangeFromParts = String(row.tradeChangeFrom || "").split("/").map(part => part.trim()).filter(Boolean);
-      const oldTradeForChange = tradeChangeFromParts[0] || trade.split("/")[0].trim();
+      const tradePartsForChange = trade.split("/").map(part => part.trim()).filter(Boolean);
+      let oldTradeForChange = tradeChangeFromParts[0] || tradePartsForChange[0] || "";
       const newTradeForChange = String(row.tradeChangeTo || "").trim() || trade.split("/").pop().trim();
+      // If saved lifecycle metadata says the same trade on both sides, but the
+      // displayed trade contains a prior/current pair, use the pair's first
+      // trade as the source. This avoids remarks such as "CPDVR to CPDVR".
+      if (
+        oldTradeForChange.toUpperCase() === newTradeForChange.toUpperCase() &&
+        tradePartsForChange.length > 1 &&
+        tradePartsForChange[0].toUpperCase() !== newTradeForChange.toUpperCase()
+      ) {
+        oldTradeForChange = tradePartsForChange[0];
+      }
       const isSkdIiCpdvrPair =
         (oldTradeForChange.toUpperCase() === "SKD-II" && newTradeForChange.toUpperCase() === "CPDVR") ||
         (oldTradeForChange.toUpperCase() === "CPDVR" && newTradeForChange.toUpperCase() === "SKD-II");
