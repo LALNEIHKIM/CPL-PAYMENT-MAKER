@@ -899,16 +899,16 @@ if (!target) return showAlert("Selected MR sheet not found!", true);
 
       for (let i = 0; i < dataRowsCount; i++) {
         const excelRow = startRow + i;
-
+        const savedRow = exportRows[i]?.rowData || [];
         ws[XLSX.utils.encode_cell({ r: excelRow - 1, c: 18 })] = {
           t: 'n',
-          f: `IF(RIGHT(C${excelRow},3)="MAZ",550,IF(RIGHT(C${excelRow},4)="MATE",570,IF(RIGHT(C${excelRow},7)="SKD-III",640,IF(RIGHT(C${excelRow},6)="SKD-II",770,IF(RIGHT(C${excelRow},5)="SKD-I",900,IF(RIGHT(C${excelRow},5)="CPDVR",770,""))))))`,
+          v: Number.parseFloat(savedRow[18]) || 0,
           z: '0.00'
         };
 
         ws[XLSX.utils.encode_cell({ r: excelRow - 1, c: 19 })] = {
           t: 'n',
-          f: `R${excelRow}*S${excelRow}`,
+          v: Number.parseFloat(savedRow[19]) || 0,
           z: '#,##0.00'
         };
       }
@@ -1163,14 +1163,15 @@ if (!target) return showAlert("Selected MR sheet not found!", true);
 
         for (let i = 0; i < dataRowsCount; i++) {
           const excelRow = startRow + i;
+          const savedRow = exportRows[i]?.rowData || [];
           ws[XLSX.utils.encode_cell({ r: excelRow - 1, c: 18 })] = {
             t: 'n',
-            f: `IF(RIGHT(C${excelRow},3)="MAZ",550,IF(RIGHT(C${excelRow},4)="MATE",570,IF(RIGHT(C${excelRow},7)="SKD-III",640,IF(RIGHT(C${excelRow},6)="SKD-II",770,IF(RIGHT(C${excelRow},5)="SKD-I",900,IF(RIGHT(C${excelRow},5)="CPDVR",770,""))))))`,
+            v: Number.parseFloat(savedRow[18]) || 0,
             z: '0.00'
           };
           ws[XLSX.utils.encode_cell({ r: excelRow - 1, c: 19 })] = {
             t: 'n',
-            f: `R${excelRow}*S${excelRow}`,
+            v: Number.parseFloat(savedRow[19]) || 0,
             z: '#,##0.00'
           };
         }
