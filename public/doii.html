@@ -657,7 +657,10 @@
         remarksArr.push(`Discharged w.e.f. ${dischargeDateOnly} ${dischargeSession}`);
       }
 
-      if (tfrDateOnly) {
+      // The custom transfer remark may already include its date and source MR.
+      // Do not append a second generic transfer line in that case.
+      const hasDetailedTransferRemark = /\btransferred\b/i.test(String(row.customRemark || ""));
+      if (tfrDateOnly && !hasDetailedTransferRemark) {
         remarksArr.push(`Transferred w.e.f. ${tfrDateOnly} ${tfrSession}`);
       }
 
