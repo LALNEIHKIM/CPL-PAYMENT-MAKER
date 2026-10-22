@@ -993,21 +993,20 @@ if (!target) return showAlert("Selected MR sheet not found!", true);
         const sortedRows = sortRowsByExportSNo(m.rows);
         if (sortedRows.length > 0) {
           sortedRows.forEach((r, rIdx) => {
-            const rowName = String(r.name || (r.rowData && r.rowData[3]) || '').trim().toUpperCase();
-            const colType = String((r.rowData && r.rowData[17]) || '').trim().toUpperCase();
-            if (r.isGrandTotal || rowName === "G/TOTAL" || colType === "G/TOTAL") {
+            const rowValues = Array.isArray(r.rowData) ? r.rowData : [];
+            const isGrandTotalRow = r.isGrandTotal ||
+              String(r.name || '').trim().toUpperCase() === "G/TOTAL" ||
+              rowValues.some(value => String(value ?? '').trim().toUpperCase() === "G/TOTAL");
+            if (isGrandTotalRow) {
               gtotalRowIdx = rIdx;
-              totalAmt = parseFloat(r.rowData[19]) || 0;
+              // Use the final total cell on the G/TOTAL row (normally U / index 20,
+              // with T / index 19 as the legacy fallback).
+              const finalTotal = rowValues[20] !== undefined && rowValues[20] !== ""
+                ? rowValues[20]
+                : rowValues[19];
+              totalAmt = parseFloat(finalTotal) || 0;
             }
           });
-
-          if (gtotalRowIdx === -1) {
-            sortedRows.forEach(r => {
-              if (!r.isGrandTotal && String(r.name || '').toUpperCase() !== "G/TOTAL") {
-                totalAmt += parseFloat(r.rowData && r.rowData[19] ? r.rowData[19] : 0) || 0;
-              }
-            });
-          }
         }
 
         grandTotalSum += totalAmt;
