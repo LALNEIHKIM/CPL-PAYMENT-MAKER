@@ -767,7 +767,11 @@
           const hasTransfer = (transferDateFromPayment !== "");
           const hasManual = (manualMatch !== undefined);
 
-          if (isNew || hasSlash || hasDischarge || hasTransfer || hasManual || hasTradeChangeDate || hasLifecycleTradeChange) {
+          // A single current trade (for example SKD-II) is not a DO-II event.
+          // Ignore stale trade lifecycle metadata unless the row's Trade field
+          // is an actual slash pair; recruitment, discharge, transfer and
+          // explicit manual entries continue to be included independently.
+          if (isNew || hasSlash || hasDischarge || hasTransfer || hasManual) {
             let assignedNewCode = "";
 
             // Agar payment screen se MR From / To bhara gaya hai toh custom remark bana lo, warna default
