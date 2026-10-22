@@ -1010,7 +1010,10 @@ if (!target) return showAlert("Selected MR sheet not found!", true);
         }
 
         grandTotalSum += totalAmt;
-        const excelTargetRow = (gtotalRowIdx !== -1) ? (gtotalRowIdx + 3) : (sortedRows.length + 3);
+        // MR tabs exported below contain only employee rows, followed by the
+        // generated G/TOTAL row. Link the letter to that exported row directly.
+        const exportedEmployeeCount = sortedRows.filter(r => !r.isGrandTotal).length;
+        const excelTargetRow = exportedEmployeeCount + 3;
 
         let jobClean = m.title || '';
         const jobMatch = jobClean.match(/JOB\s*No\.?\s*(.*)/i);
@@ -1018,7 +1021,7 @@ if (!target) return showAlert("Selected MR sheet not found!", true);
           jobClean = jobMatch[1].trim();
         }
 
-        let tabName = m.label || `MR NO. ${idx + 1}`;
+        let tabName = (m.label || `MR NO. ${idx + 1}`).replace(/[:\\/?*\[\]]/g, "_");
         const numMatch = tabName.match(/\d+/);
         const mrNum = numMatch ? numMatch[0] : (idx + 1);
         let mrClean = `74 RCC/${mrNum}/${activePeriod.toUpperCase()}`;
