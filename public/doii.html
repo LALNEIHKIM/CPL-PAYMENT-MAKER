@@ -635,9 +635,9 @@
         (oldTradeForChange.toUpperCase() === "SKD-II" && newTradeForChange.toUpperCase() === "CPDVR") ||
         (oldTradeForChange.toUpperCase() === "CPDVR" && newTradeForChange.toUpperCase() === "SKD-II");
 
-      if (tradeChangeDate && row.tradeChangeTo && isSkdIiCpdvrPair) {
+      if (trade.includes("/") && tradeChangeDate && row.tradeChangeTo && isSkdIiCpdvrPair) {
         remarksArr.push(`Trade changed ${oldTradeForChange} to ${newTradeForChange} w.e.f. ${tradeChangeDate} ${time}`);
-      } else if (tradeChangeDate && row.tradeChangeTo) {
+      } else if (trade.includes("/") && tradeChangeDate && row.tradeChangeTo) {
         const oldRank = TRADE_RANKS.indexOf(oldTradeForChange.toUpperCase());
         const newRank = TRADE_RANKS.indexOf(newTradeForChange.toUpperCase());
         const actionWord = oldRank < newRank ? "Upgraded" : "Downgraded";
@@ -788,14 +788,10 @@
               dateRecruit: isNew ? colEnrolmentDate : "",
               dateDischarge: colDischargeDate,
               dateTfr: manualMatch ? manualMatch.tfrDate : (transferDateFromPayment ? `${transferDateFromPayment} ${transferFnAn}` : ""),
-              dateUpgrade: hasSlash
-                ? tradeDateForCurrentPeriod
-                : (hasLifecycleTradeChange ? tradeChangeDateFromPayment : ""),
-              tradeChangeDate: hasSlash
-                ? tradeDateForCurrentPeriod
-                : (hasLifecycleTradeChange ? tradeChangeDateFromPayment : ""),
-              tradeChangeFrom: hasLifecycleTradeChange ? tradeChangeFrom : "",
-              tradeChangeTo: hasLifecycleTradeChange ? tradeChangeTo : "",
+              dateUpgrade: hasSlash ? tradeDateForCurrentPeriod : "",
+              tradeChangeDate: hasSlash ? tradeDateForCurrentPeriod : "",
+              tradeChangeFrom: hasSlash && hasLifecycleTradeChange ? tradeChangeFrom : "",
+              tradeChangeTo: hasSlash && hasLifecycleTradeChange ? tradeChangeTo : "",
               time: "(F/N)",
               customRemark: manualMatch ? manualMatch.remark : autoRemark
             };
