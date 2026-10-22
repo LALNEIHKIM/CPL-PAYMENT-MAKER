@@ -3,2848 +3,1209 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>CPL PAYMENT WORKSPACE</title>
+  <title>CPL DO PART-II ORDER</title>
   <script src="https://cdn.jsdelivr.net/npm/xlsx-js-style@1.2.0/dist/xlsx.bundle.js"></script>
   <style>
-    * { box-sizing: border-box; margin: 0; padding: 0; font-family: Arial, Helvetica, sans-serif; }
-    body { min-height: 100vh; background-color: #332e1d; }
-
-    
-    #screen2 { display: flex; height: 100vh; background: #332e1d; flex-direction: row; }
-    .sidebar { width: 140px; min-width: 140px; border-right: 2px solid #e0e0e0; padding: 8px 6px; display: flex; flex-direction: column; justify-content: space-between; background: #00796b; }
-    .sidebar-top { display: flex; flex-direction: column; gap: 6px; overflow-y: auto; max-height: 40vh; }
-    .btn-add-mr { background: linear-gradient(180deg, #fbe3d5 0%, #e2b99f 100%); color: #000000; font-size: 13px; font-weight: 800; padding: 6px 4px; border-radius: 4px; cursor: pointer; text-align: center; }
-    .btn-mr-tab {
-      background: #ffffff; color: #333333; font-size: 12px; font-weight: 900; padding: 5px 4px; border-radius: 4px; border: 1.5px solid #bbb;
-      box-shadow: 0 2px 4px rgba(0,0,0,0.1); cursor: pointer; text-align: center; text-transform: uppercase; word-break: break-all;
-    }
-    .btn-mr-tab.active { background: linear-gradient(180deg, #00c853 0%, #007e33 100%); color: #ffffff; border-top: 1.5px solid #72ff9f; border-bottom: 2.5px solid #004d1f; }
-
-    .sidebar-bottom { display: flex; flex-direction: column; gap: 5px; padding-top: 6px; border-top: 1px solid rgba(255,255,255,0.2); }
-    .btn-sidebar-fn { background: linear-gradient(180deg, #1b499b 0%, #0d2857 100%); color: #ffffff; font-size: 11px; font-weight: 800; padding: 4px 4px; border: none; border-radius: 4px; cursor: pointer; text-align: center; text-decoration: none; display: block; }
-    .btn-sidebar-letter { background: linear-gradient(180deg, #d35400 0%, #a04000 100%); }
-
-    .workspace-main { flex: 1; padding: 6px 12px; display: flex; flex-direction: column; gap: 6px; overflow: hidden; background: #f4f4f4; }
-    .main-banner { background: linear-gradient(180deg, #2b579a 0%, #153465 100%); color: #ffffff; font-size: 15px; font-weight: 900; text-align: center; padding: 5px; border-radius: 4px; }
-    .search-row { display: flex; justify-content: space-between; align-items: center; gap: 6px; background: #f8f9fa; padding: 4px 8px; border-radius: 4px; }
-
-    .action-buttons { display: flex; gap: 2px; align-items: center; }
-    .btn-action { font-weight: bold; font-size: 11px; border: none; padding: 2px 4px; border-radius: 4px; cursor: pointer; color: #ffffff; height: 25px; display: flex; align-items: center; text-decoration: none; }
-
-    .btn-goto-home { background: #2c04f7; }
-    .btn-submit-sync { background: #2b579a; font-weight: 900; }
-    .btn-edit { background: #2980b9; }
-    .btn-save-alert { background: #14059a; font-weight: 900; }
-    .btn-undo-redo { background: #f53c17; height: 25px; }
-    .btn-page-total { background: #2c3e50; color: #fff; font-weight: 900; font-size: 11px; border: none; padding: 0 8px; height: 25px; border-radius: 4px; cursor: pointer; }
-
-    .dropdown { position: relative; display: inline-block; }
-    .dropdown-content { display: none; position: absolute; right: 0; background-color: #f9f9f9; min-width: 190px; box-shadow: 0px 8px 16px rgba(0,0,0,0.2); z-index: 10; border-radius: 4px; }
-    .dropdown-content button { color: black; padding: 8px 12px; text-decoration: none; display: block; width: 100%; border: none; background: none; text-align: left; font-size: 11px; font-weight: bold; cursor: pointer; }
-    .dropdown-content button:hover { background-color: #f1f1f1; }
-    .dropdown:hover .dropdown-content { display: block; }
-
-    .rs-total-box {
-      background: #ffffff; border: 2px solid #007e33; height: 25px; min-width: 110px; display: flex; align-items: center; padding: 0 6px;
-      font-size: 12px; font-weight: 900; color: #000000; border-radius: 4px; gap: 4px; cursor: pointer;
-    }
-    .rs-total-box span { color: #c0392b; font-size: 13px; }
-
-    .table-container { flex: 1; overflow: auto; border: 1.5px solid #000000; background: #ffffff; }
-    table { border-collapse: collapse; font-size: 11px; width: 100%; white-space: nowrap; }
-    th, td { border: 1px solid #000000; padding: 3px 6px; height: 28px; }
-    
-    /* ONLY HEADINGS WRAP TEXT */
-    th { background: #ffffff; font-weight: bold; position: sticky; top: 0; z-index: 5; text-align: center; white-space: normal !important; word-wrap: break-word !important; }
-    
-    .row-letter th { font-size: 11.5px; font-weight: 900; background: #f0f0f0; height: 20px; z-index: 5; white-space: nowrap !important; }
-    .row-name th { font-size: 10px; font-weight: 800; min-height: 35px; background: #ffffff; text-transform: uppercase; z-index: 5; }
-    
-    tbody tr { height: 28px; cursor: pointer; }
-    tbody tr:hover { background-color: #f1f7ff; }
-    
-    tbody tr.selected-row { background-color: #2980b9 !important; color: #ffffff !important; }
-    tbody tr.selected-row td { color: #ffffff !important; border-color: #154360 !important; background-color: #2980b9 !important; }
-
-    tbody tr.grand-total-row { background-color: #ffffff !important; font-weight: 900 !important; }
-    .td-merged-gtotal { text-align: center !important; font-weight: 900 !important; background-color: #fff3cd !important; color: #000 !important; }
-    .td-gtotal-amount { text-align: center !important; font-weight: 900 !important; color: #c0392b !important; background-color: #fff3cd !important; }
-    .td-gtotal-page { text-align: center !important; font-weight: 900 !important; color: #856404 !important; background-color: #fff3cd !important; }
-    
-    /* DATA CELLS SINGLE-LINE & ELLIPSIS (NO UNWANTED WRAP) */
-    tbody td { font-weight: 600; white-space: nowrap !important; text-align: left; }
-
-    th:nth-child(1), td:nth-child(1) { position: sticky; left: 0; z-index: 6; background-color: #ffffff; width: 45px; min-width: 45px; border-right: 1px solid #000000 !important; }
-    th:nth-child(2), td:nth-child(2) { position: sticky; left: 45px; z-index: 6; background-color: #ffffff; width: 65px; min-width: 65px; border-right: 1px solid #000000 !important; }
-    th:nth-child(3), td:nth-child(3) { position: sticky; left: 110px; z-index: 6; background-color: #ffffff; width: 90px; min-width: 90px; border-right: 2px solid #000000 !important; }
-
-    /* NOK DETAILS COLUMN H FIXED WIDTH & ELLIPSIS */
-    th:nth-child(8), td:nth-child(8) { width: 130px !important; min-width: 130px !important; max-width: 180px !important; white-space: nowrap !important; overflow: hidden !important; text-overflow: ellipsis !important; }
-
-    .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.6); z-index: 200; justify-content: center; align-items: center; }
-    .modal-window { background: #ffffff; border-radius: 6px; box-shadow: 0 6px 20px rgba(0,0,0,0.4); display: flex; flex-direction: column; overflow: hidden; }
-    .modal-header { background: #2b579a; color: white; padding: 10px 16px; font-size: 15px; font-weight: bold; display: flex; justify-content: space-between; align-items: center; }
-    .btn-modal { padding: 6px 14px; font-weight: bold; font-size: 12px; border-radius: 4px; cursor: pointer; border: none; }
-
-    .edit-tabs { display: flex; background: #eef2f7; border-bottom: 1px solid #ccc; }
-    .edit-tab-btn { flex: 1; padding: 10px; font-weight: bold; font-size: 12px; background: none; border: none; cursor: pointer; text-align: center; }
-    .edit-tab-btn.active { background: #fff; border-bottom: 3px solid #2b579a; color: #2b579a; }
-
-    .edit-grid { padding: 16px; display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; overflow-y: auto; max-height: 60vh; background: #f8f9fa; }
-    .edit-table-container { padding: 10px; overflow: auto; height: 65vh; max-height: 75vh; background: #fff; }
-    .edit-table { width: max-content; min-width: 100%; border-collapse: collapse; font-size: 11px; white-space: nowrap; }
-    .edit-table th, .edit-table td { border: 1px solid #000; padding: 4px 6px; height: 26px; }
-    .edit-table th { background: #f0f0f0; text-align: center; }
-    .edit-table input { width: 100%; border: none; background: transparent; font-size: 11px; outline: none; }
-
-    /* 💡 Column H (NoK Details) ko fix width dena taaki baaki columns kharab na hon */
-    .edit-table th:nth-child(9), .edit-table td:nth-child(9) { 
-      width: 250px !important; 
-      min-width: 250px !important; 
-      max-width: 300px !important; 
-      white-space: nowrap !important; 
-      overflow: hidden !important; 
-      text-overflow: ellipsis !important; 
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: Arial, Helvetica, sans-serif;
     }
 
-    .form-group { display: flex; flex-direction: column; gap: 3px; }
-    .form-group label { font-size: 11px; font-weight: bold; }
-    .form-group input, .form-group select, .form-group textarea { padding: 5px 8px; font-size: 12px; border: 1px solid #ccc; border-radius: 4px; }
-
-    .code-by-grid { display: flex; gap: 12px; padding: 16px; height: 440px; background: #f8f9fa; }
-    .code-by-col { flex: 1; display: flex; flex-direction: column; gap: 6px; }
-    .code-by-col label { font-size: 11px; font-weight: bold; color: #333; }
-    .code-by-col textarea { flex: 1; padding: 8px; font-family: monospace; font-size: 12px; border: 1.5px solid #ccc; border-radius: 4px; resize: none; outline: none; line-height: 19.5px; }
-    .name-preview-box { flex: 1; padding: 8px; background: #ffffff; border: 1.5px solid #ccc; border-radius: 4px; overflow-y: auto; font-size: 11.5px; font-weight: bold; color: #2b579a; line-height: 19.5px; }
-
-    #alertToast { position: fixed; top: 20px; right: 20px; background: #27ae60; color: #ffffff; padding: 10px 18px; border-radius: 4px; font-size: 13px; font-weight: bold; box-shadow: 0 4px 12px rgba(0,0,0,0.3); z-index: 9999; display: none; }
-    #alertToast.error { background: #c0392b; }
-    
-    .cal-grid {
-      display: grid;
-      grid-template-columns: repeat(7, 1fr);
-      gap: 8px;
-      margin-top: 10px;
-    }
-    .cal-day-cell {
-      border: 1.5px solid #ccc;
-      border-radius: 4px;
-      padding: 10px 4px;
-      cursor: pointer;
-      font-weight: bold;
-      font-size: 12px;
-      background: #f8f9fa;
-      position: relative;
-      user-select: none;
-      transition: all 0.2s;
-    }
-    .cal-day-cell:hover {
-      background: #e2e6ea;
-    }
-    .cal-day-cell.absent {
-      background: #f8d7da;
-      border-color: #dc3545;
-      color: #dc3545;
-    }
-    .cal-day-cell.absent::after {
-      content: "❌";
-      display: block;
-      font-size: 14px;
-      margin-top: 2px;
-    }
-
-    @keyframes blinkWarning {
-      0% { opacity: 1; }
-      50% { opacity: 0.2; }
-      100% { opacity: 1; }
-    }
-    .blink-not-match {
-      color: #dc3545;
-      font-weight: 900;
-      animation: blinkWarning 1s infinite;
-    }
-    .match-ok {
-      color: #27ae60;
-      font-weight: 900;
-    }
-    .calendar-footer-stats {
+    body {
+      background: #2b271d;
+      height: 100vh;
       display: flex;
-      justify-content: space-around;
-      align-items: center;
-      background: #f8f9fa;
-      border: 1px solid #ccc;
-      border-radius: 4px;
-      padding: 8px;
-      margin-top: 10px;
-      font-size: 11.5px;
-      font-weight: bold;
+      flex-direction: column;
+      padding: 8px 12px;
+      color: #000;
+      overflow: hidden;
     }
 
-    /* TRANSFER & UP/DOWN GRADE SETTINGS STYLES */
-.lifecycle-fieldset {
-  border: 1.5px solid #b0c4de;
-  padding: 10px 14px;
-  border-radius: 6px;
-  background: #fdfdfd;
-}
-.lifecycle-legend {
-  font-size: 11px;
-  font-weight: bold;
-  color: #2b579a;
-  padding: 0 6px;
-}
-.lifecycle-row {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 10px;
-}
-.lifecycle-group {
-  display: flex;
-  flex-direction: column;
-  gap: 3px;
-}
-.lifecycle-group label {
-  font-size: 10.5px;
-  font-weight: bold;
-  color: #333;
-}
-.lifecycle-group input, .lifecycle-group select {
-  height: 30px;
-  padding: 4px 6px;
-  font-size: 11.5px;
-  border: 1px solid #ccc;
-  border-radius: 4px;
-  background: #fff;
-}
+    /* TOP SINGLE-LINE APP TOOLBAR */
+    .app-toolbar {
+      background: #ffffff;
+      padding: 5px 10px;
+      border-radius: 6px;
+      display: flex;
+      flex-direction: row;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 6px;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+      border: 1px solid #ccc;
+      gap: 8px;
+      flex-wrap: nowrap;
+      flex-shrink: 0;
+    }
+    .toolbar-left, .toolbar-actions {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      white-space: nowrap;
+    }
+    .btn-nav-home {
+      background: #4b6584;
+      color: #ffffff;
+      text-decoration: none;
+      font-size: 11px;
+      font-weight: 900;
+      padding: 6px 12px;
+      border-radius: 4px;
+      height: 28px;
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      cursor: pointer;
+      border: none;
+    }
+    .btn-tool {
+      font-size: 11px;
+      font-weight: bold;
+      padding: 5px 9px;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      color: #fff;
+      height: 28px;
+      display: inline-flex;
+      align-items: center;
+      gap: 3px;
+      white-space: nowrap;
+      text-decoration: none;
+    }
+    .btn-refresh-codes { background: #d35400; }
+    .btn-edit-tool { background: #8e44ad; }
+    .btn-export { background: #16a085; }
+    .btn-completed-mr { background: #007e33; }
+    .btn-increase { background: #9b59b6; }
+
+    /* FULL SCREEN CLEAN CONTAINER */
+    .paper-container {
+      background: #ffffff;
+      border-radius: 4px;
+      padding: 12px;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.4);
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      overflow-y: auto;
+    }
+
+    .doc-header {
+      text-align: center;
+      margin-bottom: 8px;
+      flex-shrink: 0;
+    }
+    .doc-header h4 {
+      font-size: 12px;
+      text-decoration: underline;
+      font-weight: 900;
+      letter-spacing: 1px;
+    }
+    .doc-header h3 {
+      font-size: 13px;
+      font-weight: 900;
+      text-decoration: underline;
+      margin: 2px 0;
+    }
+    .doc-header p {
+      font-size: 10.5px;
+      font-weight: bold;
+      text-decoration: underline;
+      margin-bottom: 2px;
+    }
+    .last-code-badge {
+      font-size: 11.5px;
+      font-weight: 900;
+      text-decoration: underline;
+    }
+
+    .order-ref-row {
+      display: flex;
+      justify-content: space-between;
+      font-size: 10.5px;
+      font-weight: 900;
+      text-decoration: underline;
+      margin: 6px 0 6px 0;
+      padding: 0 4px;
+      flex-shrink: 0;
+    }
+
+    /* TABLE CONTAINER */
+    .table-responsive-box {
+      width: 100%;
+      border: 1px solid #000;
+      background: #fff;
+      margin-bottom: 15px;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 11px;
+    }
+    th, td {
+      border: 1px solid #000000;
+      padding: 4px 6px;
+      text-align: center;
+      height: 28px;
+    }
+    thead th {
+      background: #ffffff;
+      font-weight: 900;
+      text-transform: uppercase;
+      font-size: 10px;
+      position: sticky;
+      top: 0;
+      z-index: 5;
+    }
+
+    .mr-header-row td {
+      background: #f8f9fa;
+      text-align: left !important;
+      font-weight: 900;
+      font-style: italic;
+      text-decoration: underline;
+      padding: 5px 8px;
+      font-size: 11px;
+    }
+
+    .col-left { text-align: left !important; }
+    .col-bold { font-weight: bold; }
+    .col-remark {
+      text-align: left !important;
+      font-size: 10.5px;
+      white-space: normal;
+      min-width: 250px;
+    }
+
+    /* FOOTER SIGNATURE SECTION */
+    .doc-footer {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-end;
+      margin-top: auto;
+      padding-top: 15px;
+      padding-bottom: 5px;
+      border-top: 1px dashed #ccc;
+      font-size: 11px;
+      font-weight: bold;
+      flex-shrink: 0;
+    }
+    .doc-footer-right {
+      text-align: left;
+      line-height: 1.3;
+    }
+
+    /* CUSTOM CONFIRMATION MODAL */
+    .custom-confirm-overlay {
+      display: none;
+      position: fixed;
+      top: 0; left: 0; width: 100vw; height: 100vh;
+      background: rgba(0,0,0,0.6);
+      z-index: 999;
+      justify-content: center;
+      align-items: center;
+    }
+    .custom-confirm-box {
+      background: #fff;
+      padding: 20px;
+      border-radius: 6px;
+      width: 360px;
+      box-shadow: 0 6px 20px rgba(0,0,0,0.4);
+      text-align: center;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+    .custom-confirm-box p {
+      font-size: 13px;
+      font-weight: bold;
+      color: #333;
+    }
+
+    /* MODALS */
+    .modal-overlay {
+      display: none;
+      position: fixed;
+      top: 0; left: 0; width: 100vw; height: 100vh;
+      background: rgba(0,0,0,0.7);
+      z-index: 99999;
+      justify-content: center;
+      align-items: center;
+    }
+    .modal-box {
+      background: #ffffff;
+      border-radius: 6px;
+      padding: 18px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      box-shadow: 0 8px 30px rgba(0,0,0,0.6);
+      border: 2px solid #2b579a;
+    }
+    .modal-box label {
+      font-size: 11px;
+      font-weight: bold;
+      display: block;
+      margin-bottom: 2px;
+      color: #333;
+    }
+    .modal-box input, .modal-box select, .modal-box textarea {
+      width: 100%;
+      height: 32px;
+      padding: 4px 8px;
+      font-size: 12px;
+      border: 1.5px solid #2b579a;
+      border-radius: 4px;
+      outline: none;
+      background: #fff;
+    }
   </style>
 </head>
 <body>
 
-  <div id="alertToast">Success Message</div>
-
-  <div id="screen2">
-    <div class="sidebar">
-      <div class="sidebar-top">
-        <div class="btn-add-mr" id="btnAddMrTab" onclick="openMRModal()">ADD MR +</div>
-        <div id="mrTabsContainer" style="display:flex; flex-direction:column; gap:6px;"></div>
-      </div>
-      <div class="sidebar-bottom">
-        <a href="/letter.html" class="btn-sidebar-fn btn-sidebar-letter">LETTER</a>
-        <button class="btn-sidebar-fn" onclick="openCodeByModal()">CODE BY</button>
-        <button class="btn-sidebar-fn" onclick="openDaysModal()">DAYS</button>
-      </div>
+  <!-- SINGLE-LINE COMPACT TOOLBAR -->
+  <div class="app-toolbar">
+    <div class="toolbar-left">
+      <button class="btn-nav-home" onclick="confirmNavigate('completed_mr')">📁 GO TO COMPLETED MR</button>
+      <button class="btn-nav-home" style="background:#576574;" onclick="confirmNavigate('home')">🏠 HOME</button>
     </div>
 
-    <div class="workspace-main">
-      <div class="main-banner" id="mainBanner">PLEASE CREATE / SELECT AN MR SHEET</div>
-      <div class="search-row">
-        <div style="display:flex; gap:6px; align-items:center;">
-          <input type="text" id="nameSearch" list="nameOptions" placeholder="Search NAME..." oninput="onNameSearchInput(this.value)" style="height:20px; padding:2px 2px; border:1px solid #ccc; border-radius:4px; width:150px;">
-          <datalist id="nameOptions"></datalist>
-          
-          <button class="btn-action" style="background:#e67e22; font-weight:900;" onclick="openFindModal()">🔍 FIND</button>
-          <button class="btn-action btn-undo-redo" onclick="undoAction()" title="Undo">↩️</button>
-          <button class="btn-action btn-undo-redo" onclick="redoAction()" title="Redo">↪️</button>
-          <button class="btn-page-total" onclick="openPageTotalModal()">Page-Total</button>
-          
-          <div class="rs-total-box" onclick="insertGrandTotalRow()" title="Click to insert/update G/TOTAL row">
-            G/Total Rs= <span id="grandTotalDisplay">0</span>
-          </div>
-        </div>
-
-        <div style="display:flex; gap:8px; align-items:center;">
-          <button class="btn-action btn-submit-sync" onclick="submitToSever()" style="background:#2b579a; font-weight:900; padding: 6px 20px; font-size:13px; height:25px;">🚀 SUBMIT</button>
-          <button class="btn-action btn-save-alert" onclick="triggerSaveAlert()" title="Check save status">💾 SAVE</button>
-          <button class="btn-action" style="background: linear-gradient(180deg, #8e44ad 0%, #512e5f 100%); font-weight:900; height:25px; padding:0 10px;" onclick="openCompleteMRWindow()">📁 COMPLETED MR</button>
-        </div>
-
-        <div class="action-buttons">
-          <button class="btn-action btn-edit" id="btnEditRow" onclick="openEditModal()">✏️ EDIT INDL</button>
-          
-          <!-- VIEW 1 / VIEW 2 DROPDOWN -->
-          <div class="dropdown">
-            <button class="btn-action" style="background:#27ae60; font-weight:900;" onclick="">👁️ VIEW ▾</button>
-            <div class="dropdown-content">
-              <button onclick="setTableView('view1')">📄 View 1 (A-F & P-U)</button>
-              <button onclick="setTableView('view2')">📑 View 2 (All Columns)</button>
-            </div>
-          </div>
-
-          <div class="dropdown">
-            <button class="btn-action" style="background:#d35400; font-weight:900;" onclick="checkExcelImportAccess(event)">⚙️ OPTIONS ▾</button>
-            <div class="dropdown-content">
-              <input type="file" id="excelImportFile" accept=".xlsx, .xls" style="display:none;" onchange="handleExcelImport(event)">
-              <button onclick="checkAndTriggerExcelImport()">📁 Import Excel</button>
-              <button onclick="deleteActiveMR()" style="color:#c0392b;">🗑️ Delete MR</button>
-              <button onclick="changeRowFontColorModal()">🎨 Row Font Colour Changed</button>
-              <button onclick="changeRowHighlightColorModal()">🖌️ Row Highlight Colour Changed</button>
-            </div>
-          </div>
-
-          <button class="btn-action btn-goto-home" onclick="goToHome()">🏠 HOME</button>
-        </div>
-      </div>
-      <div class="table-container">
-        <table>
-          <thead>
-            <tr class="row-letter" id="letterHead"></tr>
-            <tr class="row-name" id="nameHead"></tr>
-          </thead>
-          <tbody id="tableBody"></tbody>
-        </table>
-      </div>
+    <div class="toolbar-actions">
+      <button class="btn-tool btn-completed-mr" onclick="confirmNavigate('completed_mr')">📁 COMPLETED MR</button>
+      <button class="btn-tool btn-increase" onclick="confirmNavigate('increase')">📊 INCREASE & DECREASE</button>
+      <button class="btn-tool btn-refresh-codes" onclick="refreshNewCodesAction()" title="Refresh New Codes">🔄 REFRESH NEW CODE</button>
+      <button class="btn-tool btn-edit-tool" id="btnEditConfig" onclick="openConfigModal()">✏️ EDIT CONFIG</button>
+      <button class="btn-tool btn-export" onclick="exportDO2Excel()">📊 EXPORT DO-II EXCEL (.XLSX)</button>
     </div>
   </div>
 
-  <!-- MODALS -->
-  <div class="modal-overlay" id="customConfirmModal">
-    <div class="modal-window" style="width: 420px; padding: 20px; gap: 14px; text-align: center;">
+  <!-- CUSTOM CONFIRMATION MODAL -->
+  <div class="custom-confirm-overlay" id="customConfirmModal">
+    <div class="custom-confirm-box">
       <h3 style="color:#2b579a; font-size:16px;">CONFIRMATION</h3>
-      <p id="customConfirmText" style="font-size: 13px; font-weight: bold; color: #333; line-height: 1.4;">Are you sure?</p>
-      <div style="display:flex; justify-content:center; gap:10px; margin-top:6px;">
-        <button class="btn-modal" style="background:#666; color:#fff;" onclick="closeCustomConfirm(false)">NO</button>
-        <button class="btn-modal" style="background:#007e33; color:#fff;" onclick="closeCustomConfirm(true)">YES</button>
+      <p id="customConfirmText">Kya aap yahan jana chahte hain?</p>
+      <div style="display:flex; justify-content:center; gap:10px; margin-top:4px;">
+        <button class="btn-tool" style="background:#777; padding:6px 14px;" onclick="closeConfirmModal(false)">NO</button>
+        <button class="btn-tool" style="background:#2b579a; padding:6px 14px; font-weight:900;" onclick="closeConfirmModal(true)">YES</button>
       </div>
     </div>
   </div>
 
-  <div class="modal-overlay" id="searchEmpModal">
-    <div class="modal-window" style="width: 440px; padding: 20px; gap: 12px;">
-      <h3 style="color:#2b579a; text-align:center;">EMPLOYEE DETAILS</h3>
-      <div id="searchEmpContent" style="font-size: 12px; line-height: 1.6; background: #f8f9fa; padding: 12px; border: 1px solid #ccc; border-radius: 4px;">
-      </div>
-      <div style="display:flex; justify-content:space-between; gap:10px; margin-top:4px;">
-        <button class="btn-modal" style="background:#666; color:#fff;" onclick="closeModal('searchEmpModal')">CLOSE</button>
-        <button class="btn-modal" id="btnAddSearchedData" style="background:#27ae60; color:#fff;" onclick="addSearchedEmployeeToSheet()">➕ ADD DATA</button>
+  <!-- OFFICIAL DO-II FORMAT PRINT AREA -->
+  <div class="paper-container">
+    <div class="doc-header">
+      <h4>RESTRICTED</h4>
+      <h3 id="doHeaderTitle">DO PART - II ORDER OF CPLs FOR THE MONTH OF SEP 2026</h3>
+      <p>BY<br><span id="displayOCName">SHRI SUJIT DEBNATH, EE (CIV), OFFICER COMMANDING, 74 RCC (GREF)</span></p>
+      <div class="last-code-badge">(LAST CODE No.<span id="lastCodeNum">8541</span>)</div>
+    </div>
+
+    <div class="order-ref-row">
+      <span id="displayPrevOrder">PREVIOUS PART-II ORDER No : 01/62/CPL/2026 DATED 22 Aug 2026.</span>
+      <span id="presentOrderRef">PRESENT PART-II ORDER No : 01/63/CPL/2026 DATED ____ Sep 2026.</span>
+    </div>
+
+    <!-- TABLE WRAPPER -->
+    <div class="table-responsive-box">
+      <table>
+        <thead>
+          <tr>
+            <th style="width: 35px;">S/No</th>
+            <th style="width: 45px;">MR S/NO</th>
+            <th style="width: 55px;">CODE</th>
+            <th style="width: 55px;">NEW CODE</th>
+            <th style="width: 90px;">TRADE</th>
+            <th style="width: 180px;">NAME</th>
+            <th style="width: 180px;">FATHER'S NAME</th>
+            <th style="width: 100px;">DATE OF RECRUITMENT/<br>RE-RECRUITMENT</th>
+            <th style="width: 100px;">DATE OF DISCHARGED/<br>DIED/INJURED</th>
+            <th style="width: 90px;">DATE OF<br>TFR</th>
+            <th style="width: 100px;">DATE OF<br>UPGRADATION/<br>DOWNGRADATION</th>
+            <th style="width: 200px;">REMARKS</th>
+          </tr>
+        </thead>
+        <tbody id="do2TableBody"></tbody>
+      </table>
+    </div>
+
+    <!-- OFFICIAL FOOTER SECTION -->
+    <div class="doc-footer">
+      <div id="displayStation">Station : C/o 99 APO<br><br>Dated : <span id="displayDatedText">____ SEP 2026</span></div>
+      <div class="doc-footer-right">
+        (<span id="displaySignName">Sujit Debnath</span>)<br>
+        <span id="displaySignDesig">EE (Civ)</span><br>
+        <span id="displaySignOrg">Officer Commanding</span><br>
+        <span id="displaySignUnit">74 RCC (GREF)</span>
       </div>
     </div>
   </div>
 
-  <div class="modal-overlay" id="mrModal">
-    <div class="modal-window" style="width: 420px; padding: 20px; gap: 12px;">
-      <h3 style="color:#2b579a; text-align:center;">CREATE NEW MR SHEET</h3>
+  <!-- MODAL: CONFIG & MANUAL OVERRIDE -->
+  <div class="modal-overlay" id="configModal">
+    <div class="modal-box" style="width: 540px;">
+      <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid #ddd; padding-bottom:6px;">
+        <span style="font-weight:900; color:#2b579a; font-size:15px;">EDIT DO-II CONFIG & MANUAL MR / TRANSFER ENTRY</span>
+        <span style="cursor:pointer; font-weight:bold;" onclick="closeModal('configModal')">✖</span>
+      </div>
       
-      <!-- MR No. ka Dropdown -->
-      <div style="display:flex; flex-direction:column; gap:4px; text-align:left;">
-        <label style="font-size:11px; font-weight:bold;">Select MR No:</label>
-        <select id="modalMrDropdown" onchange="onModalMrSelectChange(this.value)" style="width:100%; height:32px;">
-          <option value="MR NO. 374">MR NO. 374</option>
-          <option value="MR NO. 375">MR NO. 375</option>
-          <option value="MR NO. 9">MR NO. 9</option>
-          <option value="MR NO. 380">MR NO. 380</option>
-          <option value="MR NO. 376">MR NO. 376</option>
-          <option value="MR NO. 41">MR NO. 41</option>
-          <option value="MR NO. 377">MR NO. 377</option>
-          <option value="MR NO. 378">MR NO. 378</option>
-          <option value="MR NO. 8">MR NO. 8</option>
-          <option value="MR NO. 379">MR NO. 379</option>
-          <option value="MR NO. 381">MR NO. 381</option>
-          <option value="MR NO. 27">MR NO. 27</option>
-          <option value="MR NO. 28">MR NO. 28</option>
-          <option value="MR NO. 29">MR NO. 29</option>
-          <option value="MR NO. 30">MR NO. 30</option>
-          <option value="MR NO. 31">MR NO. 31</option>
-          <option value="MR NO. 32">MR NO. 32</option>
-          <option value="MR NO. 33">MR NO. 33</option>
-          <option value="MR NO. 34">MR NO. 34</option>
-          <option value="MR NO. 35">MR NO. 35</option>
-          <option value="MR NO. 36">MR NO. 36</option>
-          <option value="MR NO. 37">MR NO. 37</option>
-          <option value="MR NO. 38">MR NO. 38</option>
-          <option value="MR NO. 39">MR NO. 39</option>
-          <option value="MR NO. 40">MR NO. 40</option>
-        </select>
-      </div>
-
-      <!-- Job No Display / Select Field -->
-      <div style="display:flex; flex-direction:column; gap:4px; text-align:left;">
-        <label style="font-size:11px; font-weight:bold;">Job No / Description:</label>
-        <input type="text" id="modalJobInput" style="width:100%; height:32px; padding:4px; font-weight:bold; background:#eef2f7;" readonly>
-      </div>
-
-      <div style="display:flex; justify-content:flex-end; gap:10px; margin-top:6px;">
-        <button class="btn-modal" style="background:#666; color:#fff;" onclick="closeModal('mrModal')">CANCEL</button>
-        <button class="btn-modal" style="background:#007e33; color:#fff;" onclick="confirmAddMR()">CREATE</button>
-      </div>
-    </div>
-  </div>
-
-  <div class="modal-overlay" id="codeByModal">
-    <div class="modal-window" style="width: 640px;">
-      <div class="modal-header">
-        <span>BULK IMPORT BY CODES</span>
-        <span style="cursor:pointer;" onclick="closeModal('codeByModal')">✖</span>
-      </div>
-      <div style="padding: 10px 16px 0 16px; background: #f8f9fa;">
-        <label style="font-size:11px; font-weight:bold; display:block; margin-bottom:3px;">START S/NO (Optional):</label>
-        <input type="number" id="codeStartNo" value="" placeholder="e.g. 5" oninput="previewBulkCodes()" style="width:100%; height:30px; padding:4px 8px; border:1.5px solid #ccc; border-radius:4px;">
-      </div>
-      <div class="code-by-grid">
-        <div class="code-by-col">
-          <label>PASTE CODES (COLUMN A):</label>
-          <textarea id="bulkCodeInput" placeholder="Paste codes here (one per line)..." oninput="previewBulkCodes()"></textarea>
-        </div>
-        <div class="code-by-col">
-          <label>MATCHED NAMES & DUPLICATE CHECK:</label>
-          <div class="name-preview-box" id="bulkNamePreview">
-            <i>Names will appear here as you paste codes...</i>
+      <div style="display:flex; flex-direction:column; gap:10px; font-size:11px; max-height: 65vh; overflow-y: auto; padding: 4px;">
+        
+        <!-- MANUAL OVERRIDE SECTION -->
+        <div style="background: #f0f4f8; border: 1.5px solid #2b579a; border-radius: 6px; padding: 10px; display: flex; flex-direction: column; gap: 8px;">
+          <strong style="color: #2b579a; font-size: 12px;">➕ Manual MR & S/No Override (Transfer / Remarks):</strong>
+          
+          <div style="display:flex; gap:6px;">
+            <div style="flex:1;">
+              <label>Select MR Sheet:</label>
+              <select id="manualMrSelect" onchange="loadMrRowsForManual()" style="height:30px; font-weight:bold;">
+                <option value="">-- Select MR --</option>
+              </select>
+            </div>
+            <div style="flex:1;">
+              <label>Select Employee (S/No):</label>
+              <select id="manualSnoSelect" onchange="fillEmployeeDetailsForManual()" style="height:30px; font-weight:bold;">
+                <option value="">-- Select S/No --</option>
+              </select>
+            </div>
           </div>
-        </div>
-      </div>
-      <div style="padding: 12px 16px; background:#fff; border-top:1px solid #ddd; display:flex; justify-content:space-between; align-items:center;">
-        <span id="bulkDuplicateWarning" style="color:#c0392b; font-size:11px; font-weight:bold;"></span>
-        <div style="display:flex; gap:10px;">
-          <button class="btn-modal" style="background:#888; color:white;" onclick="closeModal('codeByModal')">CANCEL</button>
-          <button class="btn-modal" id="btnApplyBulk" style="background:#27ae60; color:white;" onclick="applyBulkCodes()">➕ ADD ALL TO SHEET</button>
-        </div>
-      </div>
-    </div>
-  </div>
 
-  <div class="modal-overlay" id="daysModal">
-    <div class="modal-window" style="width: 520px;">
-      <div class="modal-header">
-        <span>BULK PASTE WORKING DAYS (COL R)</span>
-        <span style="cursor:pointer;" onclick="closeModal('daysModal')">✖</span>
-      </div>
-      <div style="padding:16px; background:#f8f9fa; display:flex; flex-direction:column; gap:10px;">
-        <div style="display:flex; gap:10px;">
-          <div style="flex:1;">
-            <label style="font-size:11px; font-weight:bold;">FROM S/NO:</label>
-            <input type="number" id="daysStartNo" value="1" oninput="updateDaysHelper(); previewBulkDays();" style="width:100%; height:30px; padding:4px 8px; border:1.5px solid #ccc; border-radius:4px;">
+          <div id="selectedEmpPreview" style="font-size: 11px; font-weight: bold; color: #007e33; background: #fff; padding: 6px; border: 1px solid #ccc; border-radius: 4px; display: none;">
+            Selected: <span id="previewEmpName">---</span> (Code: <span id="previewEmpCode">---</span>)
           </div>
-          <div style="flex:1;">
-            <label style="font-size:11px; font-weight:bold;">TO S/NO:</label>
-            <input type="number" id="daysEndNo" value="20" oninput="updateDaysHelper()" style="width:100%; height:30px; padding:4px 8px; border:1.5px solid #ccc; border-radius:4px;">
+
+          <div style="display:flex; gap:6px;">
+            <div style="flex:1;">
+              <label>Date of Transfer (TFR):</label>
+              <select id="manualTfrDate" style="height:30px; font-weight:bold;">
+                <option value="">-- Select Transfer Date --</option>
+              </select>
+            </div>
+            <div style="flex:2;">
+              <label>Custom Remark:</label>
+              <input type="text" id="manualRemark" placeholder="e.g. Transferred w.e.f. ...">
+            </div>
           </div>
+
+          <button class="btn-tool" style="background:#27ae60; font-weight:900; justify-content:center; margin-top:2px;" onclick="saveManualDo2Override()">💾 SAVE MANUAL ENTRY</button>
+        </div>
+
+        <hr style="border:0; border-top:1px solid #ccc;">
+
+        <div>
+          <label>Last Code Number:</label>
+          <input type="text" id="cfgLastCode" value="8541">
         </div>
         <div>
-          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 3px;">
-            <label style="font-size:11px; font-weight:bold;">PASTE DAYS (Line by line or Comma separated):</label>
-            <span id="daysRangeHelper" style="font-size: 10.5px; font-weight: bold; color: #2b579a; background: #eef2f7; padding: 2px 6px; border-radius: 3px;">Target: S/No 1 to 20</span>
-          </div>
-          <div style="display: flex; gap: 8px;">
-            <div id="daysSNoList" style="width: 45px; background: #fff; border: 1.5px solid #ccc; border-radius: 4px; padding: 8px 2px; font-family: monospace; font-size: 13px; color: #666; text-align: right; line-height: 19.5px; height: 380px; overflow: hidden; user-select: none;">
-              1.
-            </div>
-            <textarea id="bulkDaysInput" placeholder="31&#10;31&#10;25&#10;28&#10;..." oninput="previewBulkDays()" onscroll="document.getElementById('daysSNoList').scrollTop = this.scrollTop;" style="flex: 1; height: 380px; padding: 8px; font-size: 13px; font-family: monospace; line-height: 19.5px; border: 1.5px solid #ccc; border-radius: 4px; outline: none; resize: vertical;"></textarea>
-          </div>
+          <label>Previous Order No & Date:</label>
+          <input type="text" id="cfgPrevOrder" value="PREVIOUS PART-II ORDER No : 01/62/CPL/2026 DATED 22 Aug 2026.">
+        </div>
+        <div>
+          <label>Present Order No & Date:</label>
+          <input type="text" id="cfgPresentOrder" value="PRESENT PART-II ORDER No : 01/63/CPL/2026 DATED ____ Sep 2026.">
+        </div>
+        <div>
+          <label>Officer Commanding Name:</label>
+          <input type="text" id="cfgOcName" value="SHRI SUJIT DEBNATH, EE (CIV), OFFICER COMMANDING, 74 RCC (GREF)">
+        </div>
+        <div>
+          <label>Footer Station Text:</label>
+          <input type="text" id="cfgStation" value="Station : C/o 99 APO">
+        </div>
+        <div>
+          <label>Footer Dated Text:</label>
+          <input type="text" id="cfgDated" value="____ SEP 2026">
+        </div>
+        <div>
+          <label>Signature Name:</label>
+          <input type="text" id="cfgSignName" value="Sujit Debnath">
+        </div>
+        <div>
+          <label>Signature Designation:</label>
+          <input type="text" id="cfgSignDesig" value="EE (Civ)">
+        </div>
+        <div>
+          <label>Signature Organization Line 1:</label>
+          <input type="text" id="cfgSignOrg" value="Officer Commanding">
+        </div>
+        <div>
+          <label>Signature Organization Line 2:</label>
+          <input type="text" id="cfgSignUnit" value="74 RCC (GREF)">
         </div>
       </div>
-      <div style="padding: 10px 16px; background:#fff; border-top:1px solid #ddd; display:flex; justify-content:flex-end; gap:10px;">
-        <button class="btn-modal" style="background:#888; color:white;" onclick="closeModal('daysModal')">CANCEL</button>
-        <button class="btn-modal" style="background:#2b579a; color:white;" onclick="applyBulkDays()">APPLY TO COL R</button>
+      <div style="display:flex; justify-content:flex-end; gap:8px; border-top:1px solid #ddd; padding-top:8px;">
+        <button class="btn-tool" style="background:#777;" onclick="closeModal('configModal')">CANCEL</button>
+        <button class="btn-tool" style="background:#2b579a;" onclick="saveConfigData()">SAVE CONFIG</button>
       </div>
     </div>
   </div>
 
-  <div class="modal-overlay" id="pageTotalModal">
-  <div class="modal-window" style="width: 420px; padding: 20px; gap: 12px;">
-    <h3 style="color:#2b579a; text-align:center;">CALCULATE & APPLY PAGE TOTAL</h3>
-    <div style="display:flex; gap:10px;">
-      <div style="flex:1;">
-        <label style="font-size:11px; font-weight:bold;">FROM S/NO:</label>
-        <input type="number" id="pageTotalStart" value="1" oninput="previewPageTotalSum()" style="width:100%; height:30px; padding:4px 8px; border:1px solid #ccc; border-radius:4px;">
-      </div>
-      <div style="flex:1;">
-        <label style="font-size:11px; font-weight:bold;">TO S/NO:</label>
-        <input type="number" id="pageTotalEnd" value="20" oninput="previewPageTotalSum()" style="width:100%; height:30px; padding:4px 8px; border:1px solid #ccc; border-radius:4px;">
-      </div>
-    </div>
-    
-    <!-- Live Amount Preview Box -->
-    <div id="pageTotalPreviewBox" style="background:#eef2f7; border:1.5px solid #2b579a; padding:8px; border-radius:4px; font-size:12.5px; font-weight:900; text-align:center; color:#c0392b;">
-      Live Amount: Rs. 0
-    </div>
-
-    <div style="display:flex; justify-content:flex-end; gap:10px; margin-top:6px;">
-      <button class="btn-modal" style="background:#666; color:#fff;" onclick="closeModal('pageTotalModal')">CANCEL</button>
-      <button class="btn-modal" style="background:#2c3e50; color:#fff;" onclick="applyPageTotal()">APPLY PAGE TOTAL</button>
-    </div>
-  </div>
-</div>
-    <div class="modal-overlay" id="findModal">
-    <div class="modal-window" style="width: 380px; padding: 20px;">
-      <h3 style="color:#2b579a; margin-bottom:10px;">FIND INDIVIDUAL</h3>
-      <input type="text" id="findInput" placeholder="Enter name to find..." oninput="executeFind(this.value)" style="width:100%; height:32px; padding:4px 8px; border:1px solid #ccc; border-radius:4px;">
-      <div id="findResultBox" style="max-height:150px; overflow-y:auto; margin-top:10px; font-size:11.5px;"></div>
-      <div style="display:flex; justify-content:flex-end; margin-top:10px;">
-        <button class="btn-modal" style="background:#666; color:#fff;" onclick="closeModal('findModal')">CLOSE</button>
-      </div>
-    </div>
-  </div>
-
-  <div class="modal-overlay" id="colorPickerModal">
-    <div class="modal-window" style="width: 320px; padding: 20px; gap: 14px; text-align:center;">
-      <h3 id="colorPickerTitle" style="color:#2b579a; font-size:15px;">SELECT COLOR</h3>
-      <input type="color" id="colorPickerInput" value="#000000" style="width:100%; height:45px; border:none; cursor:pointer; background:none;">
-      <div style="display:flex; justify-content:center; gap:10px; margin-top:6px;">
-        <button class="btn-modal" style="background:#666; color:#fff;" onclick="closeModal('colorPickerModal')">CANCEL</button>
-        <button class="btn-modal" style="background:#27ae60; color:#fff;" onclick="applyChosenColor()">APPLY</button>
-      </div>
-    </div>
-  </div>
-
-  <!-- EDIT INDL MODAL -->
-  <div class="modal-overlay" id="editModal">
-    <div class="modal-window" style="width: 92%; max-width: 1050px;">
-      <div class="modal-header">
-        <span id="editModalTitle">EDIT EMPLOYEE RECORD</span>
-        <span style="cursor:pointer;" onclick="closeModal('editModal')">✖</span>
-      </div>
-      <div class="edit-tabs">
-  <button class="edit-tab-btn active" id="tabBtnForm" onclick="switchEditTab('form')">📋 Form View</button>
-  <button class="edit-tab-btn" id="tabBtnTable" onclick="switchEditTab('table')">📊 Excel Grid Table View</button>
-  <button class="edit-tab-btn" id="tabBtnCalendar" onclick="switchEditTab('calendar')">DO-II AND REMARKS</button>
-  
-  <!-- 🔒 LOCK / UNLOCK EDIT TOGGLE BUTTON -->
-  <button class="btn-modal" id="btnToggleEditMode" style="background:#d35400; color:#fff; padding: 4px 12px; margin: 6px 10px; font-size:11px;" onclick="toggleEditMode()">🔓 EDIT DATA</button>
-</div>
-      <div id="editFormView" class="edit-grid"></div>
-      <div id="editTableView" class="edit-table-container" style="display:none;"></div>
-      <div id="editCalendarView" style="display:none; padding:12px 16px; background:#fff; max-height:65vh; overflow-y:auto;">
-  
-  <!-- INDIVIDUAL EMPLOYEE QUICK INFO BAR (Changes on Prev/Next) -->
-  <div id="lifecycleEmpInfoBar" style="background: #eef2f7; border: 1px solid #b0c4de; padding: 10px 14px; border-radius: 6px; margin-bottom: 12px; display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; font-size: 11.5px; color: #153465;">
-    <div>S/No: <strong id="lcInfoSNo" style="color:#000;">1</strong></div>
-    <div>Code No: <strong id="lcInfoCode" style="color:#007e33;">-</strong></div>
-    <div style="grid-column: span 2;">Name: <strong id="lcInfoName" style="color:#007e33;">-</strong></div>
-    <div style="grid-column: span 2;">Father's Name: <strong id="lcInfoFather" style="color:#333;">-</strong></div>
-    <div>Bank A/C: <strong id="lcInfoAcc" style="color:#333;">-</strong></div>
-    <div>Working Days: <strong id="lcInfoDays" style="color:#c0392b;">-</strong></div>
-    <div>Rate/Day: <strong id="lcInfoRate" style="color:#333;">-</strong></div>
-    <div style="grid-column: span 2;">Net Amount: <strong id="lcInfoAmt" style="color:#c0392b; font-size:12.5px;">-</strong></div>
-  </div>
-
-  <!-- TRANSFER & UP/DOWN GRADE SETTINGS FIELDSET -->
-  <fieldset class="lifecycle-fieldset">
-    <legend class="lifecycle-legend">TRANSFER & UP/DOWN GRADE SETTINGS</legend>
-    
-    <!-- 1st Line: Recruitment & Discharge -->
-    <div class="lifecycle-row">
-      <div class="lifecycle-group">
-        <label>Date of Recruitment:</label>
-        <div style="display:flex; gap:4px;">
-          <input type="date" id="lifecycleRecDate" style="flex:1;">
-          <select id="lifecycleRecFnAn" style="width:55px;"><option value="F/N">F/N</option><option value="A/N">A/N</option></select>
-        </div>
-      </div>
-
-      <div class="lifecycle-group">
-        <label>Date of Discharge:</label>
-        <div style="display:flex; gap:4px;">
-          <input type="date" id="lifecycleDisDate" style="flex:1;">
-          <select id="lifecycleDisFnAn" style="width:55px;"><option value="F/N">F/N</option><option value="A/N">A/N</option></select>
-        </div>
-      </div>
-    </div>
-
-    <!-- 2nd Line: Down/Up, Current Trade, Changed To -->
-    <div class="lifecycle-row" style="margin-top:10px;">
-      <div class="lifecycle-group">
-        <label>Date of Down/Up:</label>
-        <div style="display:flex; gap:4px;">
-          <input type="date" id="lifecycleGradeDate" style="flex:1;">
-          <select id="lifecycleGradeFnAn" style="width:55px;"><option value="F/N">F/N</option><option value="A/N">A/N</option></select>
-        </div>
-      </div>
-
-      <div class="lifecycle-group">
-        <label>Current Trade:</label>
-        <input type="text" id="lifecycleCurrentTrade" readonly style="background:#e9ecef; font-weight:bold; color:#007e33; text-align:center;">
-      </div>
-
-      <div class="lifecycle-group">
-        <label>Changed To (Trade):</label>
-        <select id="lifecycleChangedTrade" onchange="updateTradeChangePreview()">
-          <option value="">-- Select --</option>
-          <option value="MAZ">MAZ</option>
-          <option value="MATE">MATE</option>
-          <option value="SKD-III">SKD-III</option>
-          <option value="SKD-II">SKD-II</option>
-          <option value="SKD-I">SKD-I</option>
-          <option value="CPDVR">CPDVR</option>
-        </select>
-        <label style="margin-top:4px;">Trade effective from (blank = period start):</label>
-        <input type="date" id="lifecycleTradeChangeDate" onchange="updateTradeChangePreview()">
-      </div>
-    </div>
-
-    <!-- Dashed Separator Line -->
-    <div style="border-top: 1px dashed #ccc; margin: 12px 0;"></div>
-
-    <!-- 3rd Line: Date of Transfer, MR From, MR To -->
-    <div class="lifecycle-row">
-      <div class="lifecycle-group">
-        <label>Date of Transfer:</label>
-        <div style="display:flex; gap:4px;">
-          <input type="date" id="lifecycleTransferDate" style="flex:1;">
-          <select id="lifecycleTransferFnAn" style="width:55px;"><option value="F/N">F/N</option><option value="A/N">A/N</option></select>
-        </div>
-      </div>
-
-      <div class="lifecycle-group">
-        <label>MR From & Sl.:</label>
-        <div style="display:flex; gap:4px;">
-          <input type="text" id="lifecycleMrFrom" list="lifecycleMrOptions" placeholder="Select or type MR" style="flex:2; min-width:0;">
-          <input type="text" id="lifecycleSlFrom" placeholder="Sl" style="flex:1; text-align:center;">
-        </div>
-      </div>
-
-      <div class="lifecycle-group">
-        <label>MR To & Sl.:</label>
-        <div style="display:flex; gap:4px;">
-          <input type="text" id="lifecycleMrTo" list="lifecycleMrOptions" placeholder="Select or type MR" style="flex:2; min-width:0;">
-          <input type="text" id="lifecycleSlTo" placeholder="Sl" style="flex:1; text-align:center;">
-        </div>
-      </div>
-    </div>
-    <datalist id="lifecycleMrOptions"></datalist>
-
-  </fieldset>
-
-</div>
-
-      <div style="padding: 10px 16px; background:#fff; display:flex; justify-content:space-between; align-items:center; border-top:1px solid #ccc;">
-        <div style="display:flex; gap:6px;">
-          <button class="btn-modal" style="background:#dc3545; color:white;" onclick="deleteCurrentRow()">🗑️ DELETE</button>
-          <button class="btn-modal" style="background:#6c757d; color:white;" onclick="navigateEmployee(-1)">⬅️ Prev S/No</button>
-          <button class="btn-modal" style="background:#6c757d; color:white;" onclick="navigateEmployee(1)">Next S/No ➡️</button>
-        </div>
-        <div style="display:flex; gap:10px;">
-          <button class="btn-modal" style="background:#34495e; color:white;" onclick="insertBlankRowBelow()">➕ INSERT BLANK</button>
-          <button class="btn-modal" style="background:#888;" onclick="closeModal('editModal')">CANCEL</button>
-          <button class="btn-modal" style="background:#27ae60;" onclick="saveEditedData()">UPDATE & APPLY</button>
-        </div>
-      </div>
-    </div>
-  </div>
-  
   <script>
-    // Har MR No. ka apna fix lamba Job No. yahan define hai
-const mrJobMapping = {
-  'MR NO. 374': "ADG (B)/BFR Cell/A/A & E/S/2024/832 FMN",
-  'MR NO. 375': "ADG (B)/BFR Cell/A/A & E/S/2024/831 FMN",
-  'MR NO. 9': "Maint CHK Road (2026-27) Km 0.00 to 10.00",
-  'MR NO. 380': "80/515 (PSK)",
-  'MR NO. 376': "Maint CHK Road (2026-27) Km 10.00 to 75.50",
-  'MR NO. 41': "710-A/50 Rehab CHK road (PMT)",
-  'MR NO. 377': "710-A/52 (24 TF)",
-  'MR NO. 378': "Maint K-V-K Road (2026-27)",
-  'MR NO. 8': "Maint DVF (2026-27) KM 0.00 to 35.20",
-  'MR NO. 379': "Maint FT KM 0.00 to 10.775 (2026-27)",
-  'MR NO. 381': "Maint NVT Road (2026-27) KM 0-45.358",
-  'MR NO. 27': "L-3307/07 TBSPS road (Pmt)",
-  'MR NO. 28': "L-3307/07 TBSPS road (Surf)",
-  'MR NO. 29': "L-3307/10 TBSPS road (Fmn)",
-  'MR NO. 30': "L-3307/10 TBSPS road (PMT)",
-  'MR NO. 31': "L-3307/12 (DPR)",
-  'MR NO. 32': "Maint S-T Road (2026-27) KM 82.00-164.53",
-  'MR NO. 33': "709/157 (Fmn)",
-  'MR NO. 34': "709/157 (PMT)",
-  'MR NO. 35': "Maint K-D-A Road (2026-27)",
-  'MR NO. 36': "Maint S-T Road (2026-27)  KM 31.12-42.00",
-  'MR NO. 37': "ADG(B)/BFR Cell/A/A & E/S/2024/832 FMN",
-  'MR NO. 38': "ADG(B)/BFR Cell/A/A & E/S/2024/832 SURF",
-  'MR NO. 39': "ADG(B)/BFR Cell/A/A & E/S/2024/831 FMN",
-  'MR NO. 40': "ADG(B)/BFR Cell/A/A & E/S/2024/831 SURF"
-};
-
-// Dropdown change hone par Job No auto-fill karne ka function
-function onModalMrSelectChange(selectedMr) {
-  const jobInput = document.getElementById("modalJobInput");
-  if (jobInput && mrJobMapping[selectedMr]) {
-    jobInput.value = mrJobMapping[selectedMr];
-  }
-}
-    let masterData = [];
-    let masterHeaders = [];
-    let mrSheets = [];
-    let currentMRIndex = 0;
-    let selectedRowIdx = 0;
+    let do2Groups = [];
     let activePeriod = localStorage.getItem("CPL_GLOBAL_MONTH") || "SEP 2026";
-    let pendingConfirmAction = null;
-    let activeColorMode = 'font';
-    let currentTableView = 'view1'; // Default View 1
+    let pendingNavigationUrl = "";
+    let cachedSubmittedSheets = [];
+    let isAdmin = localStorage.getItem("CPL_ADMIN_LOGGED") === "true";
 
-    let undoStack = [];
-    let redoStack = [];
-    const MAX_UNDO = 5;
+    let do2Config = {
+      lastCode: "8541",
+      prevOrder: "PREVIOUS PART-II ORDER No : 01/62/CPL/2026 DATED 22 Aug 2026.",
+      presentOrder: `PRESENT PART-II ORDER No : 01/63/CPL/2026 DATED ____ ${activePeriod}.`,
+      ocName: "SHRI SUJIT DEBNATH, EE (CIV), OFFICER COMMANDING, 74 RCC (GREF)",
+      station: "Station : C/o 99 APO",
+      dated: `____ ${activePeriod.toUpperCase()}`,
+      signName: "Sujit Debnath",
+      signDesig: "EE (Civ)",
+      signOrg: "Officer Commanding",
+      signUnit: "74 RCC (GREF)"
+    };
 
-    const tradeOptions = [
-      "MAZ", "MATE", "SKD-III", "SKD-II", "SKD-I", "CPDVR",
-      "MAZ/MATE", "MAZ/SKD-III", "MAZ/SKD-II", "MAZ/SKD-I", "MAZ/CPDVR",
-      "MATE/MAZ", "MATE/SKD-III", "MATE/SKD-II", "MATE/SKD-I", "MATE/CPDVR",
-      "SKD-III/MAZ", "SKD-III/MATE", "SKD-III/SKD-II", "SKD-III/SKD-I", "SKD-III/CPDVR",
-      "SKD-II/MAZ", "SKD-II/MATE", "SKD-II/SKD-III", "SKD-II/SKD-I", "SKD-II/CPDVR",
-      "SKD-I/MAZ", "SKD-I/MATE", "SKD-I/SKD-III", "SKD-I/SKD-II", "SKD-I/CPDVR",
-      "CPDVR/MAZ", "CPDVR/MATE", "CPDVR/SKD-III", "CPDVR/SKD-II", "CPDVR/SKD-I"
-    ];
-
-    const gridColsList = [0, 1, 2, 3, 4, 5, 7, 8, 12, 15, 16, 17, 21, 22, 23];
-
-    function showAlert(message, isError = false) {
-      const toast = document.getElementById("alertToast");
-      toast.innerText = message;
-      toast.className = isError ? "error" : "";
-      toast.style.display = "block";
-      setTimeout(() => { toast.style.display = "none"; }, 3000);
-    }
-
-    function calculateRateByTrade(tradeVal) {
-      if (!tradeVal) return "";
-      const t = String(tradeVal).trim().toUpperCase();
-      if (t.endsWith("MAZ")) return "550";
-      if (t.endsWith("MATE")) return "570";
-      if (t.endsWith("SKD-III")) return "640";
-      if (t.endsWith("SKD-II")) return "770";
-      if (t.endsWith("SKD-I")) return "900";
-      if (t.endsWith("CPDVR")) return "770";
-      return "550";
-    }
-
-    function getPayrollPeriodBounds() {
-      const period = String(activePeriod || "").trim().replace(/[_-]+/g, " ").toUpperCase();
-      const match = period.match(/\b(JAN|FEB|MAR|APR|MAY|JUN|JUL|AUG|SEP|OCT|NOV|DEC)\s+(\d{4})\b/);
-      if (!match) return null;
-      const monthIndex = ["JAN", "FEB", "MAR", "APR", "MAY", "JUN", "JUL", "AUG", "SEP", "OCT", "NOV", "DEC"].indexOf(match[1]);
-      const year = Number(match[2]);
-      const start = Date.UTC(year, monthIndex - 1, 21);
-      const end = Date.UTC(year, monthIndex, 20);
-      return {
-        start,
-        end,
-        startISO: new Date(start).toISOString().slice(0, 10),
-        endISO: new Date(end).toISOString().slice(0, 10),
-        totalDays: Math.round((end - start) / 86400000) + 1
-      };
-    }
-
-    function calculateTradeChangePayment(currentTrade, changedTrade, effectiveDate, workingDays) {
-      const selectedTrade = String(changedTrade || "").trim();
-      const tradeParts = selectedTrade.split("/").map(part => part.trim()).filter(Boolean);
-      const currentParts = String(currentTrade || "").split("/").map(part => part.trim()).filter(Boolean);
-      const oldTrade = tradeParts.length > 1 ? tradeParts[0] : (currentParts[currentParts.length - 1] || selectedTrade);
-      const newTrade = tradeParts.length > 1 ? tradeParts[tradeParts.length - 1] : selectedTrade;
-      const bounds = getPayrollPeriodBounds();
-      const periodStart = bounds ? bounds.start : 0;
-      const periodDays = bounds ? bounds.totalDays : 1;
-
-      let changeStart = effectiveDate ? Date.parse(`${effectiveDate}T00:00:00Z`) : periodStart;
-      if (!Number.isFinite(changeStart)) changeStart = periodStart;
-      const newCalendarDays = Math.max(0, Math.min(periodDays, periodDays - Math.floor((changeStart - periodStart) / 86400000)));
-      const totalPaidDays = Math.max(0, parseFloat(workingDays) || 0);
-      const newPaidDays = Math.round((totalPaidDays * newCalendarDays / periodDays) * 100) / 100;
-      const oldPaidDays = totalPaidDays - newPaidDays;
-      const oldRate = parseFloat(calculateRateByTrade(oldTrade)) || 0;
-      const newRate = parseFloat(calculateRateByTrade(newTrade)) || 0;
-      const amount = Math.round((oldPaidDays * oldRate + newPaidDays * newRate) * 100) / 100;
-
-      return { oldTrade, newTrade, oldPaidDays, newPaidDays, oldRate, newRate, amount };
-    }
-
-    function updateTradeChangePreview() {
-      const row = getEditableEmployeeRow(selectedRowIdx);
-      if (!row) return;
-      const selectedTrade = document.getElementById("lifecycleChangedTrade")?.value || "";
-      const dateInput = document.getElementById("lifecycleTradeChangeDate");
-      if (!selectedTrade) {
-        document.getElementById("lcInfoRate").innerText = row.rowData[18] || "0";
-        const amountInfo = document.getElementById("lcInfoAmt");
-        amountInfo.innerText = "Rs " + (row.rowData[19] || "0");
-        amountInfo.title = "";
-        return;
-      }
-      const calculation = calculateTradeChangePayment(
-        row.rowData[2], selectedTrade, dateInput?.value || "", row.rowData[17]
-      );
-      document.getElementById("lcInfoRate").innerText = calculation.newRate;
-      const amountInfo = document.getElementById("lcInfoAmt");
-      amountInfo.innerText = "Rs " + calculation.amount.toLocaleString("en-IN");
-      amountInfo.title = `${calculation.oldTrade}: ${calculation.oldPaidDays} days × Rs ${calculation.oldRate} + ${calculation.newTrade}: ${calculation.newPaidDays} days × Rs ${calculation.newRate}`;
-    }
-
-    // NOK Details Cleaner: Removes extra spaces and blank newlines
-    function cleanNokDetails(nokStr) {
-      if (!nokStr) return "";
-      return String(nokStr)
-        .replace(/\r\n/g, "\n")
-        .replace(/\r/g, "\n")
-        .split("\n")
-        .map(line => line.trim())
-        .filter(line => line.length > 0)
-        .join("\n");
-    }
+    const TRADE_RANKS = ["MAZ", "MATE", "SKD-III", "SKD-II", "CPDVR", "SKD-I"];
+    const MONTH_NAMES = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 
     window.addEventListener("DOMContentLoaded", () => {
-      const savedMonth = localStorage.getItem("CPL_GLOBAL_MONTH");
-      if (savedMonth) activePeriod = savedMonth;
-
-      const localData = localStorage.getItem(`CPL_OFFLINE_SHEETS_${activePeriod}`);
-      if (localData) {
-        try {
-          const parsed = JSON.parse(localData);
-          if (parsed.mrSheets && parsed.mrSheets.length > 0) {
-            mrSheets = parsed.mrSheets;
-            currentMRIndex = parsed.lastIndex || 0;
-          }
-        } catch(e) {}
-      }
-
-      const savedMaster = localStorage.getItem('CPL_OFFLINE_MASTER_DATA');
-      if (savedMaster) {
-        try {
-          const pm = JSON.parse(savedMaster);
-          masterHeaders = pm.headers || [];
-          masterData = pm.data || [];
-          populateDatalists();
-        } catch(e) {}
-      }
-
-      renderHeaders();
-      if (mrSheets.length > 0) {
-        if (
-          currentMRIndex < 0 ||
-          currentMRIndex >= mrSheets.length ||
-          !mrSheets[currentMRIndex] ||
-          mrSheets[currentMRIndex].isSubmitted
-        ) {
-          const firstActive = mrSheets.findIndex(m => !m.isSubmitted);
-          currentMRIndex = firstActive !== -1 ? firstActive : 0;
+      // Check admin status for Edit Config button
+      const editBtn = document.getElementById("btnEditConfig");
+      if (editBtn) {
+        if (!isAdmin) {
+          editBtn.style.opacity = "0.5";
+          editBtn.title = "Access Denied! Only Admin can edit config.";
         }
-        renderTabs();
-        renderBody();
       }
 
-      // Master data and MR sheets are independent; fetch them in parallel so
-      // a slow workbook read does not delay the user's MR list.
-      fetchMRDataFromServer();
-      fetch(`/api/master-data`)
-        .then(res => res.json())
-        .then(res => {
-          if (res.data) {
-            masterHeaders = res.headers; masterData = res.data;
-            localStorage.setItem('CPL_OFFLINE_MASTER_DATA', JSON.stringify({ headers: masterHeaders, data: masterData }));
-            populateDatalists();
-          }
-        })
-        .catch(e => {});
+      loadAndRenderDO2();
+      populateManualDateDropdown();
     });
 
-    function fetchMRDataFromServer() {
-      fetch(`/api/mr-sheets?period=${encodeURIComponent(activePeriod)}`)
-        .then(res => res.json())
-        .then(data => {
-          if (Array.isArray(data.mrSheets)) {
-            const localData = localStorage.getItem(`CPL_OFFLINE_SHEETS_${activePeriod}`);
-            if (!localData) {
-              mrSheets = data.mrSheets;
-              currentMRIndex = data.lastIndex || 0;
-            } else {
-              // Server owns the submitted/edit-approved status. Preserve cached
-              // row edits, but sync status/assignment from the shared server so
-              // other PCs also stop showing an approved MR as completed.
-              const serverByLabel = new Map(data.mrSheets.map(m => [String(m.label || '').trim().toUpperCase(), m]));
-              const previousServerLabels = new Set(JSON.parse(
-                localStorage.getItem(`CPL_SERVER_MR_LABELS_${activePeriod}`) || '[]'
-              ).map(label => String(label).trim().toUpperCase()));
-              // Drop from local cache only those records that were previously
-              // known to exist on the server and have now been explicitly deleted.
-              mrSheets = mrSheets.filter(localMR => {
-                const label = String(localMR.label || '').trim().toUpperCase();
-                return !previousServerLabels.has(label) || serverByLabel.has(label);
-              }).map(localMR => {
-                const serverMR = serverByLabel.get(String(localMR.label || '').trim().toUpperCase());
-                if (!serverMR) return localMR; // keep genuinely local/offline-only sheets
-                return {
-                  ...localMR,
-                  isSubmitted: !!serverMR.isSubmitted,
-                  submittedBy: serverMR.submittedBy || localMR.submittedBy,
-                  assignedUser: serverMR.assignedUser || localMR.assignedUser
-                };
-              });
-              const localLabels = new Set(mrSheets.map(m => String(m.label || '').trim().toUpperCase()));
-              data.mrSheets.forEach(serverMR => {
-                const label = String(serverMR.label || '').trim().toUpperCase();
-                if (!localLabels.has(label)) mrSheets.push(serverMR);
-              });
-              localStorage.setItem(
-                `CPL_SERVER_MR_LABELS_${activePeriod}`,
-                JSON.stringify(data.mrSheets.map(m => String(m.label || '').trim().toUpperCase()))
-              );
-            }
-            currentMRIndex = Math.min(currentMRIndex, Math.max(0, mrSheets.length - 1));
-            saveToLocal(true);
-          }
-          renderHeaders();
-          const activeMRs = mrSheets.filter(m => !m.isSubmitted);
-          if (activeMRs.length === 0 && mrSheets.length === 0) {
-            openMRModal();
-          } else {
-            if (
-              currentMRIndex < 0 ||
-              currentMRIndex >= mrSheets.length ||
-              !mrSheets[currentMRIndex] ||
-              mrSheets[currentMRIndex].isSubmitted
-            ) {
-              const firstActive = mrSheets.findIndex(m => !m.isSubmitted);
-              currentMRIndex = firstActive !== -1 ? firstActive : 0;
-            }
-            renderTabs(); renderBody();
-          }
-        })
-        .catch(e => {
-          renderHeaders();
-          const activeMRs = mrSheets.filter(m => !m.isSubmitted);
-          if (activeMRs.length === 0 && mrSheets.length === 0) openMRModal();
-          else { renderTabs(); renderBody(); }
-        });
-    }
-
-    // Use the server's latest full list for writes so an unrelated stale
-    // local MR cannot make a save or delete fail row-count protection.
-    async function postMRSheetsWithLatestServer({ targetLabel, deleteLabel, lastIndex }) {
-      const readResponse = await fetch(`/api/mr-sheets?period=${encodeURIComponent(activePeriod)}`);
-      const latestData = await readResponse.json();
-      if (!readResponse.ok || !Array.isArray(latestData.mrSheets)) {
-        throw new Error(latestData.error || 'Could not read latest MR sheets from server');
+    function confirmNavigate(target) {
+      if (target === 'home') {
+        pendingNavigationUrl = "/login.html";
+        document.getElementById("customConfirmText").innerText = "Did you check everything yourself? Are you sure you want to go to Home (Login Screen)?";
+      } else if (target === 'completed_mr') {
+        pendingNavigationUrl = "/completed.html";
+        document.getElementById("customConfirmText").innerText = "Did you check everything yourself? Are you sure you want to go to Completed MR?";
+      } else if (target === 'increase') {
+        pendingNavigationUrl = "/increase.html";
+        document.getElementById("customConfirmText").innerText = "Did you check everything yourself? Are you sure you want to go to Increase & Decrease page?";
       }
-
-      let latestSheets = latestData.mrSheets.map(sheet => ({ ...sheet }));
-
-      if (deleteLabel) {
-        const deleteKey = String(deleteLabel).trim().toUpperCase();
-        latestSheets = latestSheets.filter(sheet =>
-          String(sheet.label || '').trim().toUpperCase() !== deleteKey
-        );
-      } else {
-        const targetKey = String(targetLabel || '').trim().toUpperCase();
-        const localTarget = mrSheets.find(sheet =>
-          String(sheet.label || '').trim().toUpperCase() === targetKey
-        );
-        if (!localTarget) throw new Error(`MR not found in this browser: ${targetLabel}`);
-
-        const serverIndex = latestSheets.findIndex(sheet =>
-          String(sheet.label || '').trim().toUpperCase() === targetKey
-        );
-        if (serverIndex === -1) {
-          latestSheets.push({ ...localTarget });
-        } else {
-          const serverTarget = latestSheets[serverIndex];
-          latestSheets[serverIndex] = {
-            ...serverTarget,
-            ...localTarget,
-            assignedUser: serverTarget.assignedUser || localTarget.assignedUser,
-            editApproved: serverTarget.editApproved
-          };
-        }
-      }
-
-      const payload = {
-        mrSheets: latestSheets,
-        lastIndex,
-        period: activePeriod
-      };
-      if (deleteLabel) payload.deleteLabels = [deleteLabel];
-
-      const writeResponse = await fetch('/api/mr-sheets', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload)
-      });
-      const result = await writeResponse.json().catch(() => ({}));
-      if (!writeResponse.ok || result.success === false) {
-        throw new Error(result.error || `Server response ${writeResponse.status}`);
-      }
-      return result;
-    }
-
-    function populateDatalists() {
-      const nameDl = document.getElementById("nameOptions");
-      nameDl.innerHTML = "";
-      masterData.forEach(item => {
-        if (item.name) {
-          const opt = document.createElement("option");
-          opt.value = item.name;
-          nameDl.appendChild(opt);
-        }
-      });
-    }
-
-    let selectedSearchedEmp = null;
-
-    function onNameSearchInput(val) {
-  const query = val.trim().toLowerCase();
-  if (!query) return;
-
-  const matchedEmp = masterData.find(d => (d.name || '').toLowerCase() === query);
-  if (matchedEmp) {
-    document.getElementById("nameSearch").value = "";
-    selectedSearchedEmp = matchedEmp;
-
-    const name = matchedEmp.name || matchedEmp.rowData[3] || '';
-    const code = matchedEmp.code || matchedEmp.rowData[1] || '';
-    const father = matchedEmp.rowData[5] || '';
-    const account = matchedEmp.rowData[15] || '';
-    const recruitmentDate = matchedEmp.rowData[22] || '';
-    const dischargeVal = String(matchedEmp.rowData[23] || '').trim();
-
-    let duplicateFound = false;
-    let duplicateInfoText = "No (Not in any MR)";
-
-    mrSheets.forEach(mr => {
-      if (mr.rows) {
-        mr.rows.forEach((r, rIdx) => {
-          if (!r.isGrandTotal) {
-            const rCode = String(r.code || r.rowData[1] || '').trim().toLowerCase();
-            const rName = String(r.name || r.rowData[3] || '').trim().toLowerCase();
-
-            if (
-              (code && rCode === String(code).trim().toLowerCase()) ||
-              (name && rName === name.toLowerCase())
-            ) {
-              duplicateFound = true;
-              duplicateInfoText =
-                `Yes! Found in Sheet: <strong>${mr.label}</strong> at S/No: <strong>${rIdx + 1}</strong>`;
-            }
-          }
-        });
-      }
-    });
-
-    const contentBox = document.getElementById("searchEmpContent");
-    const addBtn = document.getElementById("btnAddSearchedData");
-
-    if (dischargeVal !== "") {
-      contentBox.innerHTML = `
-        <div style="color: #c0392b; font-weight: 900; font-size: 13px; margin-bottom: 6px;">
-          ⚠️ WARNING: THIS EMPLOYEE IS DISCHARGED!
-        </div>
-        <div><strong>Code:</strong> ${code}</div>
-        <div><strong>Name:</strong> ${name}</div>
-        <div><strong>Discharge Date/Status:</strong>
-          <span style="color: #c0392b;">${dischargeVal}</span>
-        </div>
-        <div style="margin-top: 6px; color: #555; font-size: 11px;">
-          Discharged employee cannot be added to active MR sheet.
-        </div>
-      `;
-      if (addBtn) addBtn.style.display = "none";
-    } else {
-      const duplicateHtmlColor = duplicateFound ? "#c0392b" : "#007e33";
-
-      contentBox.innerHTML = `
-        <div><strong>Code:</strong>
-          <span style="color: #007e33; font-weight: 900; font-size: 13px;">${code}</span>
-        </div>
-        <div><strong>Name:</strong>
-          <span style="color: #007e33; font-weight: 900;">${name}</span>
-        </div>
-        <div><strong>Father's Name:</strong>
-          <span style="color: #007e33; font-weight: 900;">${father}</span>
-        </div>
-        <div><strong>Account No:</strong>
-          <span style="color: #007e33; font-weight: 900;">${account}</span>
-        </div>
-        <div><strong>Date of Recruitment:</strong>
-          <span style="color: #007e33; font-weight: 900;">${recruitmentDate}</span>
-        </div>
-        <hr style="margin: 8px 0; border: 0; border-top: 1px solid #ccc;">
-        <div><strong>Duplicate Status:</strong>
-          <span style="color: ${duplicateHtmlColor}; font-weight: 900;">${duplicateInfoText}</span>
-        </div>
-      `;
-      if (addBtn) addBtn.style.display = "block";
-    }
-
-    document.getElementById("searchEmpModal").style.display = "flex";
-  }
-}
-
-    function addSearchedEmployeeToSheet() {
-      if (!selectedSearchedEmp) {
-        closeModal('searchEmpModal');
-        return;
-      }
-
-      const dischargeVal = String(selectedSearchedEmp.rowData[23] || '').trim();
-      if (dischargeVal !== "") {
-        showAlert("Discharged employee cannot be added!", true);
-        closeModal('searchEmpModal');
-        return;
-      }
-
-      if (
-        mrSheets.length === 0 ||
-        !mrSheets[currentMRIndex] ||
-        mrSheets[currentMRIndex].isSubmitted
-      ) {
-        showAlert("Pehle koi active MR sheet select ya create karein!", true);
-        return;
-      }
-
-      pushUndoState();
-      
-      const found = selectedSearchedEmp;
-      const rowCopy = [...found.rowData];
-      
-      // Clean NoK details (Column H -> index 7) to remove extra spaces/newlines
-      if (rowCopy[7]) {
-        rowCopy[7] = cleanNokDetails(rowCopy[7]);
-      }
-
-      rowCopy[18] = calculateRateByTrade(rowCopy[2]);
-      const days = parseFloat(rowCopy[17]) || 0;
-      const rate = parseFloat(rowCopy[18]) || 0;
-      if (days > 0 && rate > 0) rowCopy[19] = String(days * rate);
-
-      const newObj = { code: found.code, name: found.name, rowData: rowCopy };
-      
-      if (!mrSheets[currentMRIndex].rows) {
-        mrSheets[currentMRIndex].rows = [];
-      }
-      mrSheets[currentMRIndex].rows = mrSheets[currentMRIndex].rows.filter(r => !r.isGrandTotal);
-      mrSheets[currentMRIndex].rows.push(newObj);
-
-      updateGrandTotalInternal();
-
-      closeModal('searchEmpModal');
-      renderBody();
-      saveToLocal(true);
-      showAlert(`Employee ${found.name} successfully added and saved locally!`);
-      selectedSearchedEmp = null;
-    }
-
-    function updateGrandTotalInternal() {
-      const curRows = mrSheets[currentMRIndex].rows;
-      if (!curRows || curRows.length === 0) return;
-      
-      // 💡 Pehle se jo row selected thi, usko yaad rakho (agar valid hai toh)
-      const prevSelectedRow = curRows[selectedRowIdx];
-
-      let sumAmt = 0;
-      curRows.forEach(r => {
-        if (!r.isGrandTotal && r.rowData) {
-          let amt = parseFloat(r.rowData[19]) || 0;
-          sumAmt += amt;
-        }
-      });
-
-      const idx = curRows.findIndex(r => r.isGrandTotal); 
-      if (idx !== -1) curRows.splice(idx, 1);
-
-      const gData = new Array(24).fill(''); 
-      gData[17] = "G/Total Rs="; 
-      gData[19] = String(sumAmt); 
-      
-      let totalPageSum = 0;
-      curRows.forEach(r => {
-        if (!r.isGrandTotal && r.rowData && r.rowData[20]) {
-          let pVal = typeof r.rowData[20] === 'object' ? (r.rowData[20].v || 0) : parseFloat(r.rowData[20]) || 0;
-          totalPageSum += pVal;
-        }
-      });
-      gData[20] = totalPageSum > 0 ? String(totalPageSum) : "0";
-
-      curRows.push({ code: "", name: "G/Total Rs=", isGrandTotal: true, rowData: gData });
-
-      // 💡 Agar pehle koi employee row selected thi, toh wahi index wapas set karo, warna hi Grand Total par jane do
-      if (prevSelectedRow && !prevSelectedRow.isGrandTotal) {
-        const newIdx = curRows.indexOf(prevSelectedRow);
-        if (newIdx !== -1) {
-          selectedRowIdx = newIdx;
-        } else {
-          selectedRowIdx = Math.max(0, curRows.length - 2);
-        }
-      } else {
-        selectedRowIdx = curRows.length - 1;
-      }
-    }
-
-    function checkExcelImportAccess(e) {
-      let isAdmin = localStorage.getItem("CPL_ADMIN_LOGGED") === "true";
-      if (!isAdmin) {}
-    }
-
-    function checkAndTriggerExcelImport() {
-      let isAdmin = localStorage.getItem("CPL_ADMIN_LOGGED") === "true";
-      if (!isAdmin) {
-        alert("Only for Admin!");
-        return;
-      }
-      document.getElementById('excelImportFile').click();
-    }
-
-    function goToHome() {
-      pendingConfirmAction = () => {
-        localStorage.removeItem("CPL_IN_PAYMENT_SCREEN");
-        window.location.href = "/login.html";
-      };
-      document.getElementById("customConfirmText").innerText = "Did you check everything yourself? Are you sure you want to go to Home (Login Screen)?";
       document.getElementById("customConfirmModal").style.display = "flex";
     }
 
-    function closeCustomConfirm(yes) {
+    function closeConfirmModal(yes) {
       document.getElementById("customConfirmModal").style.display = "none";
-      if (yes && pendingConfirmAction) pendingConfirmAction();
-      pendingConfirmAction = null;
-    }
-
-    function setTableView(view) {
-      currentTableView = view;
-      renderHeaders();
-      renderBody();
-    }
-
-    function renderHeaders() {
-      let r1 = "", r2 = "";
-      for (let i = 0; i < 24; i++) {
-        let displayStyle = "";
-        if (currentTableView === 'view1') {
-          if ((i > 5 && i < 15) || (i > 20)) {
-            displayStyle = "display:none;";
-          }
-        }
-        r1 += `<th style="${displayStyle}">${String.fromCharCode(65 + i)}</th>`;
-        r2 += `<th style="${displayStyle}">${masterHeaders[i] || ''}</th>`;
+      if (yes && pendingNavigationUrl) {
+        window.location.href = pendingNavigationUrl;
       }
-      document.getElementById("letterHead").innerHTML = r1;
-      document.getElementById("nameHead").innerHTML = r2;
+      pendingNavigationUrl = "";
     }
 
-   function openMRModal() {
-  const dropdown = document.getElementById("modalMrDropdown");
-  if (dropdown && dropdown.options.length > 0) {
-    dropdown.selectedIndex = 0;
-    onModalMrSelectChange(dropdown.value);
-  }
-  document.getElementById("mrModal").style.display = "flex";
-}
-    function closeModal(id) {
-      document.getElementById(id).style.display = "none";
-      if (id === "editModal") pendingEmployeeEdits.clear();
+    function refreshNewCodesAction() {
+      loadAndRenderDO2();
+      alert("New codes refreshed successfully!");
     }
 
-    function openCodeByModal() {
-      if (mrSheets.length === 0) { showAlert("Please create an MR sheet first!", true); return; }
-      document.getElementById("bulkCodeInput").value = "";
-      document.getElementById("codeStartNo").value = "";
-      document.getElementById("bulkNamePreview").innerHTML = "<i>Names & Father's names will appear here as you paste codes...</i>";
-      document.getElementById("bulkDuplicateWarning").innerText = "";
-      document.getElementById("codeByModal").style.display = "flex";
-    }
+    function formatToStandardDate(inputDate) {
+      if (!inputDate || inputDate === "00-00-0000" || inputDate === "-- Select Date --") return "";
+      let str = String(inputDate).trim();
+      str = str.replace(/\s*\(F\/N\)|\s*\(A\/N\)/gi, "").trim();
 
-    function previewBulkCodes() {
-  const textarea = document.getElementById("bulkCodeInput");
-  if (!textarea) return;
-
-  const rawText = textarea.value;
-  const codes = rawText.split(/[\n,]+/).map(c => c.trim()).filter(c => c.length > 0);
-  const previewBox = document.getElementById("bulkNamePreview");
-  const warningBox = document.getElementById("bulkDuplicateWarning");
-  if (!previewBox) return;
-
-  if (codes.length === 0) {
-    previewBox.innerHTML = "<i>Names & Father's names will appear here as you paste codes...</i>";
-    if (warningBox) warningBox.innerText = "";
-    return;
-  }
-
-  const normalize = value =>
-    String(value ?? "").replace(/[\s-]/g, "").toUpperCase();
-
-  const curRows =
-    mrSheets[currentMRIndex]?.rows?.filter(r => !r.isGrandTotal) || [];
-
-  let baseStartNo = curRows.length + 1;
-  const startNoInput = document.getElementById("codeStartNo");
-
-  if (startNoInput && startNoInput.value.trim() !== "") {
-    const parsed = parseInt(startNoInput.value.trim(), 10);
-    if (!isNaN(parsed) && parsed > 0) baseStartNo = parsed;
-  }
-
-  let html = "";
-  const duplicateMessages = [];
-
-  codes.forEach((code, idx) => {
-    const currentSNo = baseStartNo + idx;
-    const found = masterData.find(
-      d => normalize(d.code) === normalize(code)
-    );
-
-    if (!found) {
-      html += `<div style="height:19.5px; line-height:19.5px; color:#dc3545; font-weight:bold; font-size:11px;">
-        <span style="color:#666; display:inline-block; width:22px; text-align:right;">${currentSNo}.</span>
-        &nbsp;[NOT FOUND: ${code}]
-      </div>`;
-      return;
-    }
-
-    const workerName = found.name || found.rowData?.[3] || "";
-    const fatherName = found.rowData?.[5] || "";
-    const dischargeVal = String(found.rowData?.[23] || "").trim();
-
-    if (dischargeVal !== "") {
-      html += `<div style="height:19.5px; line-height:19.5px; color:#c0392b; font-weight:bold; font-size:11px;">
-        <span style="color:#666; display:inline-block; width:22px; text-align:right;">${currentSNo}.</span>
-        &nbsp;[DISCHARGED: ${workerName}]
-      </div>`;
-      return;
-    }
-
-    const importedCode = normalize(found.code || found.rowData?.[1]);
-    const importedAccount = normalize(found.rowData?.[15]);
-
-    let foundInMR = null;
-    let duplicateReason = "";
-
-    mrSheets.forEach(mr => {
-      (mr.rows || []).forEach(row => {
-        if (row.isGrandTotal) return;
-
-        const rowCode = normalize(row.rowData?.[1] || row.code);
-        const rowAccount = normalize(row.rowData?.[15]);
-
-        if (importedCode && rowCode === importedCode) {
-          foundInMR = mr.label;
-          duplicateReason = "CODE";
-        } else if (importedAccount && rowAccount === importedAccount) {
-          foundInMR = mr.label;
-          duplicateReason = "ACCOUNT NO";
-        }
-      });
-    });
-
-    if (foundInMR) {
-      duplicateMessages.push(`${workerName} (${duplicateReason}) already in ${foundInMR}`);
-
-      html += `<div style="height:19.5px; line-height:19.5px; color:#c0392b; font-weight:bold; font-size:11px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">
-        <span style="color:#666; display:inline-block; width:22px; text-align:right;">${currentSNo}.</span>
-        &nbsp;[DUPLICATE ${duplicateReason}: ${workerName} in ${foundInMR}]
-      </div>`;
-    } else {
-      html += `<div style="height:19.5px; line-height:19.5px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; font-size:11px;">
-        <span style="color:#666; font-weight:bold; display:inline-block; width:22px; text-align:right;">${currentSNo}.</span>
-        &nbsp;<span style="color:#007e33; font-weight:bold; text-transform:uppercase;">${workerName}</span>
-        &nbsp;&nbsp;<span style="color:#444;">${fatherName}</span>
-      </div>`;
-    }
-  });
-
-  previewBox.innerHTML = html;
-
-  if (warningBox) {
-    warningBox.innerText = duplicateMessages.length > 0
-      ? "⚠️ Warning: Matching employee code or account number already exists in an MR sheet."
-      : "";
-  }
-}
-
-    function applyBulkCodes() {
-      const rawText = document.getElementById("bulkCodeInput").value;
-      const codes = rawText.split(/[\n,]+/).map(c => c.trim()).filter(c => c.length > 0);
-      const startNoInput = document.getElementById("codeStartNo").value.trim();
-      const curRows = mrSheets[currentMRIndex].rows;
-
-      mrSheets[currentMRIndex].rows = curRows.filter(r => !r.isGrandTotal);
-      const activeRows = mrSheets[currentMRIndex].rows;
-
-      let targetIndex = startNoInput !== "" ? parseInt(startNoInput) - 1 : activeRows.length;
-      if (isNaN(targetIndex) || targetIndex < 0) targetIndex = activeRows.length;
-
-      pushUndoState();
-      let addedCount = 0;
-
-      codes.forEach(code => {
-        const found = masterData.find(d => d.code.toLowerCase() === code.toLowerCase());
-        if (found) {
-          const dischargeVal = String(found.rowData[23] || '').trim();
-          if (dischargeVal === "") {
-            const rowCopy = [...found.rowData];
-            
-            // Clean NoK details for bulk import
-            if (rowCopy[7]) {
-              rowCopy[7] = cleanNokDetails(rowCopy[7]);
-            }
-
-            rowCopy[18] = calculateRateByTrade(rowCopy[2]);
-            const days = parseFloat(rowCopy[17]) || 0;
-            const rate = parseFloat(rowCopy[18]) || 0;
-            if (days > 0 && rate > 0) rowCopy[19] = String(days * rate);
-
-            const newObj = { code: found.code, name: found.name, rowData: rowCopy };
-            if (targetIndex < activeRows.length) {
-              activeRows.splice(targetIndex, 0, newObj);
-            } else {
-              activeRows.push(newObj);
-            }
-            targetIndex++;
-            addedCount++;
-          }
-        }
-      });
-
-      updateGrandTotalInternal();
-
-      closeModal("codeByModal");
-      renderBody(); saveToLocal(true);
-      showAlert(`${addedCount} active employee(s) added successfully!`);
-    }
-
-    function openDaysModal() {
-      if (mrSheets.length === 0 || mrSheets[currentMRIndex].rows.length === 0) { showAlert("Current MR sheet has no rows!", true); return; }
-
-      document.getElementById("bulkDaysInput").value = "";
-      const curRows = mrSheets[currentMRIndex].rows.filter(r => !r.isGrandTotal);
-      let nextStart = 1;
-      for (let i = 0; i < curRows.length; i++) {
-        const dayVal = curRows[i].rowData[17];
-        if (dayVal === undefined || String(dayVal).trim() === "") {
-          nextStart = i + 1;
-          break;
-        }
-        if (i === curRows.length - 1) nextStart = curRows.length + 1;
-      }
-      if (nextStart > curRows.length) nextStart = 1;
-      let nextEnd = nextStart + 19;
-      if (nextEnd > curRows.length) nextEnd = curRows.length;
-
-      document.getElementById("daysStartNo").value = nextStart;
-      document.getElementById("daysEndNo").value = nextEnd >= nextStart ? nextEnd : nextStart;
-
-      document.getElementById("daysModal").style.display = "flex";
-      updateDaysHelper();
-      previewBulkDays();
-    }
-
-    function updateDaysHelper() {
-      const startNo = document.getElementById("daysStartNo").value || 1;
-      const endNo = document.getElementById("daysEndNo").value || 20;
-      const helper = document.getElementById("daysRangeHelper");
-      if (helper) helper.innerText = `Target: S/No ${startNo} to ${endNo}`;
-      previewBulkDays();
-    }
-
-    function previewBulkDays() {
-      const startNo = parseInt(document.getElementById("daysStartNo").value) || 1;
-      const rawText = document.getElementById("bulkDaysInput").value;
-      const daysList = rawText.split(/[\n,]+/).map(d => d.trim()).filter(d => d.length > 0);
-      const snoBox = document.getElementById("daysSNoList");
-      if (!snoBox) return;
-
-      let count = Math.max(daysList.length, 1);
-      let html = "";
-      for (let i = 0; i < count; i++) {
-        html += `<div style="height: 19.5px; line-height: 19.5px;">${startNo + i}.</div>`;
-      }
-      snoBox.innerHTML = html;
-    }
-
-    function applyBulkDays() {
-      const startNo = parseInt(document.getElementById("daysStartNo").value) || 1;
-      const endNo = parseInt(document.getElementById("daysEndNo").value) || 20;
-      const rawText = document.getElementById("bulkDaysInput").value;
-      const daysList = rawText.split(/[\n,]+/).map(d => d.trim()).filter(d => d.length > 0);
-      const curRowsData = mrSheets[currentMRIndex].rows;
-
-      if (daysList.length === 0) { showAlert("Please paste at least one day entry!", true); return; }
-      if (startNo > endNo || startNo < 1) { showAlert("Invalid S/No range!", true); return; }
-
-      pushUndoState();
-      let listIdx = 0;
-      for (let i = startNo - 1; i < Math.min(endNo, curRowsData.length); i++) {
-        if (!curRowsData[i].isGrandTotal && listIdx < daysList.length) {
-          const daysVal = daysList[listIdx++];
-          curRowsData[i].rowData[17] = daysVal;
-          if (!curRowsData[i].rowData[18]) curRowsData[i].rowData[18] = calculateRateByTrade(curRowsData[i].rowData[2]);
-          const rateVal = parseFloat(curRowsData[i].rowData[18]) || 0;
-          if (daysVal === "" || daysVal === null) {
-            curRowsData[i].rowData[19] = "0";
-          } else if (curRowsData[i].lifecycleData?.changedTrade) {
-            const tradePayment = calculateTradeChangePayment(
-              curRowsData[i].rowData[2],
-              curRowsData[i].lifecycleData.changedTrade,
-              curRowsData[i].lifecycleData.tradeChangeDate || getPayrollPeriodBounds()?.startISO || "",
-              daysVal
-            );
-            curRowsData[i].rowData[18] = String(tradePayment.newRate);
-            curRowsData[i].rowData[19] = String(tradePayment.amount);
-          } else {
-            const daysNum = parseFloat(daysVal) || 0;
-            curRowsData[i].rowData[19] = String(daysNum * rateVal);
-          }
-        }
+      const textDateMatch = str.match(/^(\d{1,2})-([A-Za-z]{3})-(\d{4})$/);
+      if (textDateMatch) {
+        const monthIndex = MONTH_NAMES.findIndex(month => month.toLowerCase() === textDateMatch[2].toLowerCase());
+        if (monthIndex >= 0) return `${textDateMatch[1].padStart(2, '0')}-${MONTH_NAMES[monthIndex]}-${textDateMatch[3]}`;
       }
 
-      updateGrandTotalInternal();
-
-      closeModal("daysModal");
-      renderBody(); saveToLocal(true);
-      showAlert("Working days applied successfully!");
-    }
-
-   function confirmAddMR() {
-      const selectedMr = document.getElementById("modalMrDropdown").value; // e.g. "MR NO. 374"
-      const jobNo = document.getElementById("modalJobInput").value;
-      
-      // 💡 Sidebar ke liye chhota label (e.g. "MR NO. 374")
-      const tabLabel = selectedMr; 
-
-      // 💡 Top banner aur Excel ke liye lamba title format
-      const mrNumOnly = selectedMr.replace(/\D/g, ''); // "374" nikal lega
-      const formattedTitle = `MR No. 74RCC/${mrNumOnly}/OCT-2026, JOB No. ${jobNo}`;
-
-      if (mrSheets.some(m => m.label.toUpperCase() === tabLabel.toUpperCase())) {
-        return showAlert("This MR number already exists!", true);
-      }
-
-      let loggedUser = (localStorage.getItem("CPL_LOGGED_USER") || "ADMIN").toUpperCase();
-
-      mrSheets.push({ 
-        label: tabLabel,          // Sidebar par sirf "MR NO. 374" dikhega
-        title: formattedTitle,    // Top heading aur Excel mein lamba naam aayega
-        isLocked: false, 
-        isSubmitted: false, 
-        assignedUser: loggedUser, 
-        rows: [] 
-      });
-
-      currentMRIndex = mrSheets.length - 1;
-      closeModal("mrModal");
-      saveToLocal(true);
-      renderTabs(); 
-      renderBody(); 
-      showAlert("MR created successfully!");
-    }
-
-    function renderTabs() {
-      const container = document.getElementById("mrTabsContainer"); 
-      container.innerHTML = "";
-
-      let loggedUser = (localStorage.getItem("CPL_LOGGED_USER") || "ADMIN").toUpperCase();
-
-      const activeMRs = mrSheets.filter(m => {
-        if (m.isSubmitted) return false;
-        const assignedUser = (m.assignedUser || "ADMIN").trim().toUpperCase();
-        // An edit-approved MR belongs on the assigned operator's Payment screen.
-        // Admin sees admin-assigned drafts, while each operator sees their own.
-        return assignedUser === loggedUser;
-      });
-
-      activeMRs.sort((a, b) => {
-        const numA = parseInt((a.label || "").replace(/\D/g, '')) || 0;
-        const numB = parseInt((b.label || "").replace(/\D/g, '')) || 0;
-        return numA - numB;
-      });
-
-      if (activeMRs.length === 0) {
-        // Do not leave the hidden index pointing at another operator's MR.
-        currentMRIndex = mrSheets.length === 0 ? 0 : -1;
-        document.getElementById("mainBanner").innerText = "Aapke paas koi active MR nahi hai.";
-        document.getElementById("tableBody").innerHTML = "";
-        return;
-      }
-
-      // A saved index can point to a submitted MR or another operator's MR.
-      // Select the first sheet this operator is allowed to work on instead.
-      if (!activeMRs.includes(mrSheets[currentMRIndex])) {
-        currentMRIndex = mrSheets.indexOf(activeMRs[0]);
-      }
-
-      activeMRs.forEach(mr => {
-        const idx = mrSheets.indexOf(mr);
-        const tab = document.createElement("div");
-        tab.className = `btn-mr-tab ${idx === currentMRIndex ? 'active' : ''}`;
-        tab.innerText = mr.label;
-        tab.onclick = () => { currentMRIndex = idx; renderTabs(); renderBody(); };
-        container.appendChild(tab);
-      });
-
-      if (mrSheets[currentMRIndex]) {
-        document.getElementById("mainBanner").innerText = mrSheets[currentMRIndex].title;
-      }
-    }
-
-    function renderBody() {
-      const tbody = document.getElementById("tableBody"); tbody.innerHTML = "";
-      if (!mrSheets[currentMRIndex] || mrSheets[currentMRIndex].isSubmitted) return;
-      const curRows = mrSheets[currentMRIndex].rows;
-      let grandTotal = 0;
-
-      // Duplicate Code OR Bank A/C No should mark all matching rows.
-      // "NEW" is only a placeholder, not a duplicate employee code number.
-      const normalizeDuplicateValue = value =>
-        String(value ?? "").trim().replace(/[\s-]/g, "").toUpperCase();
-      const isPlaceholderCode = value =>
-        !value || ["NEW", "N/A", "NA", "-"].includes(value);
-      const codeCounts = {};
-      const accountCounts = {};
-
-      curRows.forEach((r) => {
-        if (r.isGrandTotal) return;
-        const internalCode = normalizeDuplicateValue(r.code);
-        const displayedCode = normalizeDuplicateValue(r.rowData?.[1]);
-        const cleanCode = !isPlaceholderCode(internalCode) ? internalCode : displayedCode;
-        const cleanAccount = normalizeDuplicateValue(r.rowData?.[15]);
-        if (!isPlaceholderCode(cleanCode)) {
-          codeCounts[cleanCode] = (codeCounts[cleanCode] || 0) + 1;
-        }
-        if (cleanAccount) {
-          accountCounts[cleanAccount] = (accountCounts[cleanAccount] || 0) + 1;
-        }
-      });
-
-      curRows.forEach((r, idx) => {
-        if (!r.isGrandTotal) {
-          r.rowData[0] = idx + 1;
-          grandTotal += parseFloat(r.rowData[19]) || 0;
-        }
-
-        const tr = document.createElement("tr");
-        if (r.isGrandTotal) tr.classList.add("grand-total-row");
-        if (idx === selectedRowIdx) tr.classList.add("selected-row");
-        tr.onclick = () => { selectedRowIdx = idx; renderBody(); };
-
-        // Highlight if either the employee code or account number repeats.
-        const internalCode = normalizeDuplicateValue(r.code);
-        const displayedCode = normalizeDuplicateValue(r.rowData?.[1]);
-        const cleanCode = !isPlaceholderCode(internalCode) ? internalCode : displayedCode;
-        const cleanAccount = normalizeDuplicateValue(r.rowData?.[15]);
-        const duplicateCode = !isPlaceholderCode(cleanCode) && codeCounts[cleanCode] > 1;
-        const duplicateAccount = !!cleanAccount && accountCounts[cleanAccount] > 1;
-
-        if (duplicateCode || duplicateAccount) {
-          tr.style.backgroundColor = "#f8d7da"; // Light red highlight for ALL duplicate rows
-          tr.title = duplicateCode && duplicateAccount
-            ? "⚠️ Duplicate employee code and bank account number in this MR."
-            : duplicateCode
-              ? "⚠️ Duplicate employee code in this MR."
-              : "⚠️ Duplicate bank account number in this MR.";
-        } else {
-          if (r.rowFontColor) tr.style.color = r.rowFontColor;
-          if (r.rowHighlightColor) tr.style.backgroundColor = r.rowHighlightColor;
-        }
-
-        let html = "";
-        if (r.isGrandTotal) {
-          for (let c = 0; c <= 16; c++) {
-            let displayStyle = "";
-            if (currentTableView === 'view1') {
-              if ((c > 5 && c < 15) || (c > 20)) displayStyle = "display:none;";
-            }
-            html += `<td style="${displayStyle}"></td>`;
-          }
-          
-          let gTotalColStyle = "";
-          html += `<td colspan="2" class="td-merged-gtotal" style="${gTotalColStyle}">G/Total Rs</td>`;
-          
-          html += `<td class="td-gtotal-amount">${r.rowData[19] || '0'}</td>`;
-          html += `<td class="td-gtotal-page">${r.rowData[20] || r.rowData[19] || '0'}</td>`;
-          for (let c = 21; c < 24; c++) {
-            let displayStyle = "";
-            if (currentTableView === 'view1') displayStyle = "display:none;";
-            html += `<td style="${displayStyle}"></td>`;
-          }
-        } else {
-          for (let c = 0; c < 24; c++) {
-            let val = r.rowData[c] || '';
-            
-            if (typeof val === 'object' && val !== null) {
-              val = val.v !== undefined ? val.v : '';
-            }
-
-            if (c === 23 && val) {
-              val = val.replace(/\s*\(F\/N\)|\s*\(A\/N\)/gi, "").trim();
-            }
-
-            let displayStyle = "";
-            if (currentTableView === 'view1') {
-              if ((c > 5 && c < 15) || (c > 20)) {
-                displayStyle = "display:none;";
-              }
-            }
-            html += `<td style="${displayStyle}" title="${val}">${val}</td>`;
-          }
-        }
-        tr.innerHTML = html; tbody.appendChild(tr);
-      });
-      document.getElementById("grandTotalDisplay").innerText = Number(grandTotal).toLocaleString('en-IN');
-    }
-
-    function pushUndoState() {
-      if (mrSheets.length === 0) return;
-      undoStack.push(JSON.parse(JSON.stringify(mrSheets)));
-      if (undoStack.length > MAX_UNDO) undoStack.shift();
-      redoStack = [];
-    }
-
-    function undoAction() {
-      if (undoStack.length === 0) { showAlert("No actions to undo!", true); return; }
-      redoStack.push(JSON.parse(JSON.stringify(mrSheets)));
-      mrSheets = undoStack.pop();
-      renderTabs(); renderBody(); saveToLocal(true); showAlert("Undo applied!");
-    }
-
-    function redoAction() {
-      if (redoStack.length === 0) { showAlert("No actions to redo!", true); return; }
-      undoStack.push(JSON.parse(JSON.stringify(mrSheets)));
-      mrSheets = redoStack.pop();
-      renderTabs(); renderBody(); saveToLocal(true); showAlert("Redo applied!");
-    }
-
-    function openFindModal() {
-      document.getElementById("findInput").value = "";
-      document.getElementById("findResultBox").innerHTML = "";
-      document.getElementById("findModal").style.display = "flex";
-    }
-
-    function executeFind(query) {
-      const box = document.getElementById("findResultBox");
-      if (!query.trim()) { box.innerHTML = ""; return; }
-      let foundHtml = "";
-      mrSheets.forEach((mr, mIdx) => {
-        (mr.rows || []).forEach((r, rIdx) => {
-          if (!r.isGrandTotal && r.rowData.some(cell => String(cell).toLowerCase().includes(query.toLowerCase()))) {
-            foundHtml += `<div style="padding:4px; border-bottom:1px solid #eee; cursor:pointer;" onclick="jumpToFoundRow(${mIdx}, ${rIdx})">
-              <b>${mr.label}</b> - S/No: ${r.rowData[0]} | Name: <b>${r.rowData[3]}</b>
-            </div>`;
-          }
-        });
-      });
-      box.innerHTML = foundHtml || "<i>No matching records found.</i>";
-    }
-
-    function jumpToFoundRow(mIdx, rIdx) {
-      currentMRIndex = mIdx;
-      selectedRowIdx = rIdx;
-      closeModal("findModal");
-      renderTabs(); renderBody();
-    }
-
-    function changeRowFontColorModal() {
-      const curRows = mrSheets[currentMRIndex].rows;
-      if (!curRows || curRows.length === 0 || selectedRowIdx < 0) return showAlert("Please select a row first!", true);
-      activeColorMode = 'font';
-      document.getElementById("colorPickerTitle").innerText = "SELECT ROW FONT COLOR";
-      document.getElementById("colorPickerModal").style.display = "flex";
-    }
-
-    function changeRowHighlightColorModal() {
-      const curRows = mrSheets[currentMRIndex].rows;
-      if (!curRows || curRows.length === 0 || selectedRowIdx < 0) return showAlert("Please select a row first!", true);
-      activeColorMode = 'highlight';
-      document.getElementById("colorPickerTitle").innerText = "SELECT ROW HIGHLIGHT BACKGROUND COLOR";
-      document.getElementById("colorPickerModal").style.display = "flex";
-    }
-
-    function applyChosenColor() {
-      const color = document.getElementById("colorPickerInput").value;
-      const curRows = mrSheets[currentMRIndex].rows;
-      pushUndoState();
-      if (activeColorMode === 'font') {
-        curRows[selectedRowIdx].rowFontColor = color;
-        showAlert("Row font color updated!");
-      } else {
-        curRows[selectedRowIdx].rowHighlightColor = color;
-        showAlert("Row highlight color updated!");
-      }
-      closeModal("colorPickerModal");
-      renderBody(); saveToLocal(true);
-    }
-
-    async function deleteActiveMR() {
-      if (mrSheets.length === 0 || !mrSheets[currentMRIndex]) return;
-      const target = mrSheets[currentMRIndex];
-      const targetLabel = String(target.label || '').trim();
-      if (!confirm(`Delete ${targetLabel} from Payment and server permanently? A previous Google Drive backup may still contain an older copy.`)) return;
-      if (!navigator.onLine) {
-        showAlert("Internet required: MR was not deleted from server.", true);
-        return;
-      }
-
-      const previousSheets = JSON.parse(JSON.stringify(mrSheets));
-      const previousIndex = currentMRIndex;
-      pushUndoState();
-      mrSheets.splice(currentMRIndex, 1);
-      currentMRIndex = Math.max(0, currentMRIndex - 1);
-      renderTabs(); renderBody();
-
-      try {
-        await postMRSheetsWithLatestServer({
-          deleteLabel: targetLabel,
-          lastIndex: currentMRIndex
-        });
-        saveToLocal(true);
-        showAlert(`${targetLabel} deleted from Payment and server.`);
-      } catch (error) {
-        mrSheets = previousSheets;
-        currentMRIndex = previousIndex;
-        saveToLocal(true); renderTabs(); renderBody();
-        showAlert(`Delete failed; MR restored. ${error.message}`, true);
-      }
-    }
-
-    function handleExcelImport(event) {
-      const file = event.target.files[0];
-      if (!file) return;
-
-      const reader = new FileReader();
-      reader.onload = function(e) {
-        try {
-          const data = new Uint8Array(e.target.result);
-          const workbook = XLSX.read(data, { type: 'array' });
-          
-          let importedMRSheets = [];
-          
-          workbook.SheetNames.forEach(sheetName => {
-            if (sheetName.toLowerCase() === 'forwarding_letter') return;
-            
-            const worksheet = workbook.Sheets[sheetName];
-            const jsonRows = XLSX.utils.sheet_to_json(worksheet, { header: 1, defval: '' });
-            
-            if (jsonRows.length > 1) {
-              let titleStr = jsonRows[0][0] || `MR No. 74 RCC / ${sheetName} / ${activePeriod}`;
-              let rowsData = [];
-              
-              for (let r = 2; r < jsonRows.length; r++) {
-                let rVals = jsonRows[r];
-                if (rVals && rVals.length > 0) {
-                  let rowArr = new Array(24).fill('');
-                  for (let c = 0; c < Math.min(rVals.length, 24); c++) {
-                    rowArr[c] = String(rVals[c] !== undefined ? rVals[c] : '').trim();
-                  }
-                  
-                  let isGTotal = (String(rowArr[17]).toUpperCase() === 'G/TOTAL' || String(rowArr[3]).toUpperCase() === 'G/TOTAL' || String(rowArr[2]).toUpperCase() === 'G/TOTAL');
-                  
-                  if (rowArr[1] || rowArr[3] || isGTotal) {
-                    rowsData.push({
-                      code: rowArr[1],
-                      name: rowArr[3],
-                      isGrandTotal: isGTotal,
-                      rowData: rowArr
-                    });
-                  }
-                }
-              }
-              
-              if (rowsData.length > 0) {
-                let formattedLabel = sheetName.toUpperCase();
-                if (!formattedLabel.includes("MR")) {
-                  formattedLabel = `MR NO. ${sheetName}`;
-                }
-
-                importedMRSheets.push({
-                  label: formattedLabel,
-                  title: titleStr,
-                  isLocked: false,
-                  isSubmitted: false,
-                  rows: rowsData
-                });
-              }
-            }
-          });
-
-          if (importedMRSheets.length > 0) {
-            mrSheets = importedMRSheets;
-            currentMRIndex = 0;
-            saveToLocal(true);
-            showAlert("Excel file ki sabhi sheets successfully import ho gayi hain!");
-            renderTabs();
-            renderBody();
-            document.getElementById('excelImportFile').value = '';
-          } else {
-            showAlert("Excel file me koi valid MR data nahi mila!", true);
-          }
-        } catch (err) {
-          console.error("Import error:", err);
-          showAlert("Excel file parse karne me error aayi!", true);
-        }
-      };
-      reader.readAsArrayBuffer(file);
-    }
-
-    async function openCompleteMRWindow() {
-      if (openCompleteMRWindow._checkingConnection) return;
-
-      if (!navigator.onLine) {
-        showAlert("Internet connected nahi hai! Completed MR open karne ke liye internet connection zaroori hai.", true);
-        return;
-      }
-
-      openCompleteMRWindow._checkingConnection = true;
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 8000);
-
-      try {
-        const response = await fetch(
-          `/api/mr-sheets?period=${encodeURIComponent(activePeriod)}`,
-          { cache: "no-store", signal: controller.signal }
-        );
-        if (!response.ok) {
-          throw new Error(`Server response ${response.status}`);
-        }
-        window.location.href = "/completed.html";
-      } catch (error) {
-        showAlert("Server se connection nahi ho raha. Internet check karke Completed MR dobara kholen.", true);
-        console.error("Completed MR connection check failed:", error);
-      } finally {
-        clearTimeout(timeoutId);
-        openCompleteMRWindow._checkingConnection = false;
-      }
-    }
-
-    function submitToSever() {
-      const selectedSheet = mrSheets[currentMRIndex];
-      if (!selectedSheet) return;
-      if (selectedSheet.isSubmitted) {
-        showAlert("Ye MR pehle se submitted hai.", true);
-        return;
-      }
-
-      if (!navigator.onLine) {
-        showAlert("Internet connected nahi hai. MR Payment screen par pending rahega; internet aane par dobara Submit karein.", true);
-        return;
-      }
-
-      pendingConfirmAction = () => {
-        const targetIndex = currentMRIndex;
-        const localSheet = mrSheets[targetIndex];
-        if (!localSheet || localSheet.isSubmitted) return;
-
-        const targetLabel = localSheet.label;
-        const inFlightLabels = submitToSever._inFlightLabels ||
-          (submitToSever._inFlightLabels = new Set());
-        const normalizedLabel = String(targetLabel || "").trim().toUpperCase();
-
-        if (inFlightLabels.has(normalizedLabel)) {
-          showAlert("Is MR ka upload pehle se chal raha hai. Thoda wait karein.", true);
-          return;
-        }
-        inFlightLabels.add(normalizedLabel);
-
-        const loggedUser = String(
-          localStorage.getItem("CPL_LOGGED_USER") ||
-          (localStorage.getItem("CPL_ADMIN_LOGGED") === "true" ? "ADMIN" : "UNKNOWN USER")
-        ).toUpperCase();
-
-        // Data locally safe rahe, lekin server confirmation tak submitted=false hi rahe.
-        localSheet.isSubmitted = false;
-        saveToLocal(true);
-        showAlert("MR upload ho raha hai. Confirmation tak yeh Payment screen par rahega.");
-
-        const fetchWithTimeout = async (url, options = {}) => {
-          const controller = new AbortController();
-          const timeoutId = setTimeout(() => controller.abort(), 20000);
-          try {
-            return await fetch(url, { ...options, signal: controller.signal });
-          } finally {
-            clearTimeout(timeoutId);
-          }
-        };
-
-        const uploadOnce = async () => {
-          const readResponse = await fetchWithTimeout(
-            `/api/mr-sheets?period=${encodeURIComponent(activePeriod)}`
-          );
-          const latestData = await readResponse.json();
-          if (!readResponse.ok || !Array.isArray(latestData.mrSheets)) {
-            throw new Error(latestData.error || `Server read failed (${readResponse.status})`);
-          }
-
-          const latestSheets = latestData.mrSheets.map(sheet => ({ ...sheet }));
-          const currentLocalSheet = mrSheets.find(sheet =>
-            String(sheet.label || "").trim().toUpperCase() === normalizedLabel
-          );
-          if (!currentLocalSheet) throw new Error(`MR not found locally: ${targetLabel}`);
-
-          const submittedSheet = {
-            ...currentLocalSheet,
-            isSubmitted: true,
-            submittedBy: loggedUser
-          };
-          const serverIndex = latestSheets.findIndex(sheet =>
-            String(sheet.label || "").trim().toUpperCase() === normalizedLabel
-          );
-
-          if (serverIndex === -1) {
-            latestSheets.push(submittedSheet);
-          } else {
-            const serverSheet = latestSheets[serverIndex];
-            latestSheets[serverIndex] = {
-              ...serverSheet,
-              ...submittedSheet,
-              assignedUser: serverSheet.assignedUser || currentLocalSheet.assignedUser,
-              editApproved: serverSheet.editApproved
-            };
-          }
-
-          const payload = {
-            mrSheets: latestSheets,
-            lastIndex: targetIndex,
-            period: activePeriod
-          };
-          const writeResponse = await fetchWithTimeout("/api/mr-sheets", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(payload)
-          });
-          const result = await writeResponse.json().catch(() => ({}));
-          if (!writeResponse.ok || result.success === false) {
-            throw new Error(result.error || `Server response ${writeResponse.status}`);
-          }
-        };
-
-        const sendWithRetry = async () => {
-          let lastError = null;
-          for (let attempt = 1; attempt <= 4; attempt++) {
-            try {
-              await uploadOnce();
-
-              const submittedLocalSheet = mrSheets.find(sheet =>
-                String(sheet.label || "").trim().toUpperCase() === normalizedLabel
-              );
-              if (submittedLocalSheet) {
-                submittedLocalSheet.isSubmitted = true;
-                submittedLocalSheet.submittedBy = loggedUser;
-              }
-              saveToLocal(true);
-              renderTabs();
-              renderBody();
-              showAlert("MR successfully submitted & uploaded to server!");
-              fetchMRDataFromServer();
-              return;
-            } catch (error) {
-              lastError = error;
-              if (attempt < 4) {
-                console.warn(`MR upload attempt ${attempt} failed; retrying shortly.`, error);
-                await new Promise(resolve => setTimeout(resolve, 3000));
-              }
-            }
-          }
-
-          // Upload confirm nahi hua: MR pending/unsubmitted hi rahe aur Payment par dikhe.
-          const pendingLocalSheet = mrSheets.find(sheet =>
-            String(sheet.label || "").trim().toUpperCase() === normalizedLabel
-          );
-          if (pendingLocalSheet) pendingLocalSheet.isSubmitted = false;
-          saveToLocal(true);
-          renderTabs();
-          renderBody();
-          showAlert(
-            `Server upload confirm nahi hua. MR Payment screen par pending hai; internet stable hone par dobara Submit karein. ${lastError?.message || ""}`,
-            true
-          );
-          console.error("MR upload failed; local MR remains pending:", lastError);
-        };
-
-        sendWithRetry().finally(() => inFlightLabels.delete(normalizedLabel));
-      };
-
-      document.getElementById("customConfirmText").innerText = "Are you sure you want to submit this MR sheet? Once the server confirms the upload, it will move from Payment to Completed MR and cannot be edited without Admin approval. If the connection fails, it will remain on the Payment screen. Please check all details carefully before proceeding.";
-      document.getElementById("customConfirmModal").style.display = "flex";
-    }
-
-
-    function saveToLocal(silent = false) {
-      localStorage.setItem(`CPL_OFFLINE_SHEETS_${activePeriod}`, JSON.stringify({ mrSheets: mrSheets, lastIndex: currentMRIndex }));
-      if (!silent) showAlert("Data successfully saved locally!");
-    }
-
-    function triggerSaveAlert() { 
-      saveToLocal(false);
-    }
-
-    function insertGrandTotalRow() {
-      const curRows = mrSheets[currentMRIndex].rows;
-      if (!curRows || curRows.length === 0) return showAlert("Empty MR!", true);
-      pushUndoState();
-      updateGrandTotalInternal();
-      renderBody(); 
-      saveToLocal(true); 
-      showAlert("Grand Total is added successfully!");
-    }
-
-    // 1. PAGE TOTAL AUTO-INCREMENT & CAPPING LOGIC
-let lastPageTotalEndIndex = 0;
-
-function openPageTotalModal() {
-  const curRows = mrSheets[currentMRIndex].rows.filter(r => !r.isGrandTotal);
-  const totalRowsCount = curRows.length;
-
-  const startInput = document.getElementById("pageTotalStart");
-  const endInput = document.getElementById("pageTotalEnd");
-  
-  let nextStart = 1;
-  let nextEnd = 20;
-
-  // Agar pehle koi page total apply ho chuka hai, toh agli range automatically set hogi
-  if (lastPageTotalEndIndex > 0 && lastPageTotalEndIndex < totalRowsCount) {
-    nextStart = lastPageTotalEndIndex + 1;
-    nextEnd = Math.min(nextStart + 19, totalRowsCount);
-  } else if (lastPageTotalEndIndex >= totalRowsCount) {
-    nextStart = 1;
-    nextEnd = Math.min(20, totalRowsCount);
-  } else {
-    nextEnd = Math.min(20, totalRowsCount);
-  }
-
-  startInput.value = nextStart;
-  endInput.value = nextEnd;
-
-  document.getElementById("pageTotalModal").style.display = "flex";
-  previewPageTotalSum(); // Modal khulte hi live amount calculate ho jayega
-}
-
-function previewPageTotalSum() {
-  const startNo = parseInt(document.getElementById("pageTotalStart").value) || 1;
-  const endNo = parseInt(document.getElementById("pageTotalEnd").value) || 1;
-  const curRows = mrSheets[currentMRIndex].rows;
-
-  let pageSum = 0;
-  let nonGrandTotalCount = 0;
-
-  for (let i = 0; i < curRows.length; i++) {
-    if (!curRows[i].isGrandTotal) {
-      nonGrandTotalCount++;
-      if (nonGrandTotalCount >= startNo && nonGrandTotalCount <= endNo) {
-        let amt = parseFloat(curRows[i].rowData[19]) || 0;
-        pageSum += amt;
-      }
-    }
-  }
-
-  const previewBox = document.getElementById("pageTotalPreviewBox");
-  if (previewBox) {
-    previewBox.innerText = `Live Amount (S/No ${startNo} to ${endNo}): Rs. ${pageSum.toLocaleString('en-IN')}`;
-  }
-}
-
-function applyPageTotal() {
-  const startNo = parseInt(document.getElementById("pageTotalStart").value) || 1;
-  const endNo = parseInt(document.getElementById("pageTotalEnd").value) || 20;
-  
-  // Save current end index so next time it starts from endNo + 1
-  lastPageTotalEndIndex = endNo;
-  
-  const curRows = mrSheets[currentMRIndex].rows;
-
-  if (startNo > endNo || startNo < 1) {
-    showAlert("Invalid S/No range!", true);
-    return;
-  }
-
-  const excelStartRow = 3 + (startNo - 1);
-  const excelEndRow = 3 + (endNo - 1);
-
-  let pageSum = 0;
-  let targetRowIndex = -1;
-  let nonGrandTotalCount = 0;
-
-  for (let i = 0; i < curRows.length; i++) {
-    if (!curRows[i].isGrandTotal) {
-      nonGrandTotalCount++;
-      if (nonGrandTotalCount >= startNo && nonGrandTotalCount <= endNo) {
-        let amt = parseFloat(curRows[i].rowData[19]) || 0;
-        pageSum += amt;
-        targetRowIndex = i;
-      }
-    }
-  }
-
-  if (targetRowIndex === -1) {
-    for (let i = curRows.length - 1; i >= 0; i--) {
-      if (!curRows[i].isGrandTotal) {
-        targetRowIndex = i;
-        break;
-      }
-    }
-  }
-
-  if (targetRowIndex === -1) {
-    showAlert("No records found in the specified S/No range!", true);
-    return;
-  }
-
-  pushUndoState();
-
-  // Column U (index 20) mein formula aur calculated amount set karna
-  curRows[targetRowIndex].rowData[20] = {
-    f: `SUM(T${excelStartRow}:T${excelEndRow})`,
-    v: pageSum
-  };
-
-  updateGrandTotalInternal();
-
-  closeModal("pageTotalModal"); 
-  renderBody(); 
-  saveToLocal(true); 
-  showAlert(`Page Total (Rs. ${pageSum.toLocaleString('en-IN')}) applied successfully! (Next will start from S/No ${endNo + 1})`);
-}
-
-    let activeEditMode = 'form';
-    // Employee changes made while navigating in Edit Employee stay staged
-    // until the user presses Update & Apply.
-    let pendingEmployeeEdits = new Map();
-    let lifecycleEditRowIndex = null;
-    let editFormDirty = false;
-
-    function getEditableEmployeeRow(rowIndex) {
-      const rows = mrSheets[currentMRIndex]?.rows || [];
-      return pendingEmployeeEdits.get(rowIndex) || rows[rowIndex];
-    }
-
-    function captureCurrentEmployeeEdit() {
-      const rows = mrSheets[currentMRIndex]?.rows || [];
-      const baseRow = getEditableEmployeeRow(selectedRowIdx);
-      if (!baseRow || baseRow.isGrandTotal) return null;
-
-      const draft = {
-        ...baseRow,
-        rowData: [...(baseRow.rowData || [])],
-        lifecycleData: { ...(baseRow.lifecycleData || {}) }
-      };
-      while (draft.rowData.length < 24) draft.rowData.push("");
-
-      if (activeEditMode === 'form' && editFormDirty) {
-        for (let i = 0; i < 24; i++) {
-          const input = document.getElementById(`editField_${i}`);
-          if (!input) continue;
-          const val = input.value.trim();
-          if (i === 20) {
-            draft.rowData[i] = val;
-          } else if (val !== "") {
-            if (i === 4 || i === 22) {
-              draft.rowData[i] = isoToDisplayDate(val);
-            } else if (i === 23) {
-              const session = document.getElementById("editDischargeSession")?.value || "(F/N)";
-              draft.rowData[i] = `${isoToDisplayDate(val)} ${session}`;
-            } else {
-              draft.rowData[i] = val;
-            }
-          }
-        }
-
-        const formTrade = document.getElementById("editField_2")?.value.trim() || "";
-        const formTradeDate = document.getElementById("editTradeChangeDate")?.value || "";
-        const originalTrade = String(baseRow.rowData?.[2] || "").trim();
-        const originalTradeDate = baseRow.lifecycleData?.tradeChangeDate || getPayrollPeriodBounds()?.startISO || "";
-        const tradeSelectionChanged = formTrade !== originalTrade;
-        const tradeDateChanged = formTradeDate !== originalTradeDate;
-        if ((tradeSelectionChanged || tradeDateChanged) && formTrade) {
-          draft.lifecycleData.changedTrade = formTrade;
-          draft.lifecycleData.tradeChangeDate = formTradeDate || getPayrollPeriodBounds()?.startISO || "";
-          draft.lifecycleData.tradeFrom = originalTrade;
-        }
-      }
-
-      draft.code = draft.rowData[1];
-      draft.name = draft.rowData[3];
-      const formDataChanged = JSON.stringify(draft.rowData) !== JSON.stringify(baseRow.rowData || []);
-      const days = parseFloat(draft.rowData[17]) || 0;
-      const tradeLifecycleChanged = draft.lifecycleData.changedTrade &&
-        (draft.lifecycleData.changedTrade !== baseRow.lifecycleData?.changedTrade ||
-         draft.lifecycleData.tradeChangeDate !== baseRow.lifecycleData?.tradeChangeDate);
-      if (formDataChanged || tradeLifecycleChanged) {
-        if (draft.lifecycleData.changedTrade) {
-          const tradePayment = calculateTradeChangePayment(
-            baseRow.rowData[2],
-            draft.lifecycleData.changedTrade,
-            draft.lifecycleData.tradeChangeDate || getPayrollPeriodBounds()?.startISO || "",
-            days
-          );
-          draft.rowData[18] = String(tradePayment.newRate);
-          draft.rowData[19] = String(tradePayment.amount);
-        } else {
-          draft.rowData[18] = calculateRateByTrade(draft.rowData[2]);
-          draft.rowData[19] = String(days * (parseFloat(draft.rowData[18]) || 0));
-        }
-      }
-
-      let recDate = "";
-      let disDate = "";
-      let changedTrade = "";
-      if (activeEditMode === 'calendar' || lifecycleEditRowIndex === selectedRowIdx) {
-        recDate = document.getElementById("lifecycleRecDate")?.value || "";
-        disDate = document.getElementById("lifecycleDisDate")?.value || "";
-        changedTrade = document.getElementById("lifecycleChangedTrade")?.value || "";
-        const savedChangedTrade = draft.lifecycleData.changedTrade || "";
-        const tradeChangeDateInput = document.getElementById("lifecycleTradeChangeDate")?.value || "";
-        const tradeChangeDate = (changedTrade || savedChangedTrade)
-          ? (tradeChangeDateInput || getPayrollPeriodBounds()?.startISO || "")
-          : (Object.prototype.hasOwnProperty.call(draft.lifecycleData, "tradeChangeDate") ? tradeChangeDateInput : "");
-        const lifecycleValues = {
-          recDate,
-          disDate,
-          gradeDate: document.getElementById("lifecycleGradeDate")?.value || "",
-          changedTrade,
-          tradeChangeDate,
-          transferDate: document.getElementById("lifecycleTransferDate")?.value || "",
-          mrFrom: document.getElementById("lifecycleMrFrom")?.value || "",
-          slFrom: document.getElementById("lifecycleSlFrom")?.value || "",
-          mrTo: document.getElementById("lifecycleMrTo")?.value || "",
-          slTo: document.getElementById("lifecycleSlTo")?.value || ""
-        };
-        for (const [key, value] of Object.entries(lifecycleValues)) {
-          if (value !== "" || Object.prototype.hasOwnProperty.call(draft.lifecycleData, key)) {
-            draft.lifecycleData[key] = value;
-          }
-        }
-      }
-
-      if (changedTrade !== "") {
-        const oldTrade = String(draft.lifecycleData.tradeFrom || baseRow.rowData[2] || "").trim().split("/").pop().trim();
-        const newTrade = String(changedTrade).trim().split("/").pop().trim();
-        // DO-II identifies an upgrade from the old/current trade pair in column C.
-        // Keep that pair in rowData while lifecycleData retains the effective date.
-        draft.rowData[2] = oldTrade && oldTrade.toUpperCase() !== newTrade.toUpperCase()
-          ? `${oldTrade}/${newTrade}`
-          : newTrade;
-        const tradePayment = calculateTradeChangePayment(
-          baseRow.rowData[2],
-          changedTrade,
-          draft.lifecycleData.tradeChangeDate || getPayrollPeriodBounds()?.startISO || "",
-          days
-        );
-        draft.rowData[18] = String(tradePayment.newRate);
-        draft.rowData[19] = String(tradePayment.amount);
-        draft.code = draft.rowData[1];
-        draft.name = draft.rowData[3];
-      }
-      if (recDate !== "") draft.rowData[22] = isoToDisplayDate(recDate);
-      if (disDate !== "") draft.rowData[23] = isoToDisplayDate(disDate);
-
-      return draft;
-    }
-
-    function stageCurrentEmployeeEdit() {
-      if (activeEditMode === 'form' && !editFormDirty &&
-          lifecycleEditRowIndex !== selectedRowIdx &&
-          !pendingEmployeeEdits.has(selectedRowIdx)) return false;
-      const draft = captureCurrentEmployeeEdit();
-      if (!draft) return false;
-      const original = mrSheets[currentMRIndex]?.rows?.[selectedRowIdx];
-      if (original &&
-          JSON.stringify([draft.rowData, draft.lifecycleData]) ===
-          JSON.stringify([original.rowData, original.lifecycleData || {}])) {
-        pendingEmployeeEdits.delete(selectedRowIdx);
-        return false;
-      }
-      pendingEmployeeEdits.set(selectedRowIdx, draft);
-      return true;
-    }
-
-    function switchEditTab(mode) {
-      if (activeEditMode !== mode) stageCurrentEmployeeEdit();
-      activeEditMode = mode;
-      document.getElementById("tabBtnForm").className = `edit-tab-btn ${mode === 'form' ? 'active' : ''}`;
-      document.getElementById("tabBtnTable").className = `edit-tab-btn ${mode === 'table' ? 'active' : ''}`;
-      document.getElementById("tabBtnCalendar").className = `edit-tab-btn ${mode === 'calendar' ? 'active' : ''}`;
-
-      document.getElementById("editFormView").style.display = mode === 'form' ? 'grid' : 'none';
-      document.getElementById("editTableView").style.display = mode === 'table' ? 'block' : 'none';
-      document.getElementById("editCalendarView").style.display = mode === 'calendar' ? 'block' : 'none';
-
-      if (mode === 'form') renderEditFormView();
-      if (mode === 'table') renderEditGridTable();
-      if (mode === 'calendar') renderAttendanceCalendar();
-    }
-
-    function navigateEmployee(direction) {
-      const curRows = mrSheets[currentMRIndex].rows.filter(r => !r.isGrandTotal);
-      let newIdx = selectedRowIdx + direction;
-      if (newIdx >= 0 && newIdx < curRows.length) {
-        const previousIdx = selectedRowIdx;
-        const staged = stageCurrentEmployeeEdit();
-        selectedRowIdx = newIdx;
-        renderEditFormView();
-        if (activeEditMode === 'table') renderEditGridTable();
-        if (activeEditMode === 'calendar') renderAttendanceCalendar();
-        document.getElementById("editModalTitle").innerText = `EDIT EMPLOYEE (S/No: ${selectedRowIdx + 1})`;
-        if (staged) showAlert(`S/No ${previousIdx + 1} ka edit pending hai. Aakhir mein Update & Apply dabayein.`);
-      } else {
-        showAlert(direction > 0 ? "Yeh aakhri employee hai!" : "Yeh pehla employee hai!", true);
-      }
-    }
-
-  function renderAttendanceCalendar() {
-      const curRows = mrSheets[currentMRIndex].rows.filter(r => !r.isGrandTotal);
-      const row = getEditableEmployeeRow(selectedRowIdx) || curRows[selectedRowIdx];
-      if (!row) return;
-      lifecycleEditRowIndex = selectedRowIdx;
-
-      // 1. Fill Individual Employee Quick Info Bar
-      document.getElementById("lcInfoSNo").innerText = selectedRowIdx + 1;
-      document.getElementById("lcInfoCode").innerText = row.rowData[1] || "-";
-      document.getElementById("lcInfoName").innerText = row.rowData[3] || "-";
-      document.getElementById("lcInfoFather").innerText = row.rowData[5] || "-";
-      document.getElementById("lcInfoAcc").innerText = row.rowData[15] || "-";
-      document.getElementById("lcInfoDays").innerText = row.rowData[17] || "0";
-      document.getElementById("lcInfoRate").innerText = row.rowData[18] || "0";
-      document.getElementById("lcInfoAmt").innerText = "Rs " + (row.rowData[19] || "0");
-
-     // 2. Populate All MR Dropdowns for Transfer section (Fixed List + Dynamic Sheets)
-      const allPossibleMRs = [
-        "MR NO. 374", "MR NO. 375", "MR NO. 9", "MR NO. 380", "MR NO. 376", 
-        "MR NO. 41", "MR NO. 377", "MR NO. 378", "MR NO. 8", "MR NO. 379", 
-        "MR NO. 381", "MR NO. 27", "MR NO. 28", "MR NO. 29", "MR NO. 30", 
-        "MR NO. 31", "MR NO. 32", "MR NO. 33", "MR NO. 34", "MR NO. 35", 
-        "MR NO. 36", "MR NO. 37", "MR NO. 38", "MR NO. 39", "MR NO. 40"
-      ];
-
-      const mrOptions = document.getElementById("lifecycleMrOptions");
-      if (mrOptions) {
-        mrOptions.innerHTML = allPossibleMRs
-          .map(mrName => `<option value="${mrName}"></option>`)
-          .join("");
-      }
-
-      // 3. Set Current Trade (Column C -> index 2)
-      let rawDesig = row.rowData[2] || 'MAZ';
-      const parts = rawDesig.split('/');
-      document.getElementById("lifecycleCurrentTrade").value = parts[parts.length - 1].trim();
-
-      // 4. Load Saved Lifecycle Data if exists
-      if (row.lifecycleData) {
-        document.getElementById("lifecycleRecDate").value = row.lifecycleData.recDate || "";
-        document.getElementById("lifecycleRecFnAn").value = row.lifecycleData.recFnAn || "F/N";
-        document.getElementById("lifecycleDisDate").value = row.lifecycleData.disDate || "";
-        document.getElementById("lifecycleDisFnAn").value = row.lifecycleData.disFnAn || "F/N";
-        document.getElementById("lifecycleGradeDate").value = row.lifecycleData.gradeDate || "";
-        document.getElementById("lifecycleGradeFnAn").value = row.lifecycleData.gradeFnAn || "F/N";
-        document.getElementById("lifecycleChangedTrade").value = row.lifecycleData.changedTrade || "";
-        document.getElementById("lifecycleTradeChangeDate").value = row.lifecycleData.tradeChangeDate || getPayrollPeriodBounds()?.startISO || "";
-        document.getElementById("lifecycleTransferDate").value = row.lifecycleData.transferDate || "";
-        document.getElementById("lifecycleTransferFnAn").value = row.lifecycleData.transferFnAn || "F/N";
-        document.getElementById("lifecycleMrFrom").value = row.lifecycleData.mrFrom || "";
-        document.getElementById("lifecycleSlFrom").value = row.lifecycleData.slFrom || "";
-        document.getElementById("lifecycleMrTo").value = row.lifecycleData.mrTo || "";
-        document.getElementById("lifecycleSlTo").value = row.lifecycleData.slTo || "";
-      } else {
-        document.getElementById("lifecycleRecDate").value = "";
-        document.getElementById("lifecycleDisDate").value = "";
-        document.getElementById("lifecycleGradeDate").value = "";
-        document.getElementById("lifecycleChangedTrade").value = "";
-        document.getElementById("lifecycleTradeChangeDate").value = getPayrollPeriodBounds()?.startISO || "";
-        document.getElementById("lifecycleTransferDate").value = "";
-        document.getElementById("lifecycleMrFrom").value = "";
-        document.getElementById("lifecycleSlFrom").value = "";
-        document.getElementById("lifecycleMrTo").value = "";
-        document.getElementById("lifecycleSlTo").value = "";
-      }
-
-      // 🔒 LOCK OTHER FIELDS EXCEPT TRANSFER & MR DETAILS
-      const disabledFields = [
-        "lifecycleRecDate", "lifecycleRecFnAn",
-        "lifecycleDisDate", "lifecycleDisFnAn",
-        "lifecycleGradeDate", "lifecycleGradeFnAn"
-      ];
-
-      disabledFields.forEach(id => {
-        const el = document.getElementById(id);
-        if (el) {
-          el.disabled = true;
-          el.style.background = "#e9ecef";
-          el.style.cursor = "not-allowed";
-        }
-      });
-
-      // 🔓 KEEP "Date of Transfer" & "MR From / To" ACTIVE & CLICKABLE
-      const activeFields = [
-        "lifecycleChangedTrade", "lifecycleTradeChangeDate",
-        "lifecycleTransferDate", "lifecycleTransferFnAn",
-        "lifecycleMrFrom", "lifecycleSlFrom",
-        "lifecycleMrTo", "lifecycleSlTo"
-      ];
-      
-      activeFields.forEach(id => {
-        const el = document.getElementById(id);
-        if (el) {
-          el.disabled = false;
-          el.style.background = "#fff";
-          el.style.cursor = "pointer";
-        }
-      });
-
-      const periodBounds = getPayrollPeriodBounds();
-      const tradeDateInput = document.getElementById("lifecycleTradeChangeDate");
-      if (tradeDateInput && periodBounds) {
-        tradeDateInput.min = periodBounds.startISO;
-        tradeDateInput.max = periodBounds.endISO;
-      }
-      updateTradeChangePreview();
-    }
-
-    function toggleAbsentDate(dateStr) {
-      const row = getEditableEmployeeRow(selectedRowIdx);
-      if (!row) return;
-      if (!row.absentDates) row.absentDates = [];
-
-      const idx = row.absentDates.indexOf(dateStr);
-      if (idx !== -1) {
-        row.absentDates.splice(idx, 1);
-      } else {
-        row.absentDates.push(dateStr);
-      }
-
-      if (!pendingEmployeeEdits.has(selectedRowIdx)) saveToLocal(true);
-      renderAttendanceCalendar();
-    }
-
-    function openEditModal() {
-  const curMR = mrSheets[currentMRIndex];
-  const curRows = curMR?.rows;
-  if (!curRows || curRows.length === 0) return showAlert("Add row first!", true);
-  pendingEmployeeEdits.clear();
-  lifecycleEditRowIndex = null;
-  
-  const row = curRows[selectedRowIdx];
-  if (row && row.isGrandTotal) {
-    return showAlert("Grand Total row ko edit nahi kiya ja sakta!", true);
-  }
-  
-  isEditModeEnabled = false; // Default Locked
-  const btn = document.getElementById("btnToggleEditMode");
-  if(btn) {
-    btn.innerText = "🔓 EDIT DATA";
-    btn.style.background = "#d35400";
-  }
-
-  activeEditMode = 'form';
-  switchEditTab('form');
-  renderEditFormView();
-  document.getElementById("editModal").style.display = "flex";
-}
-
-    function renderEditFormView() {
-      const curRows = mrSheets[currentMRIndex].rows;
-      const row = getEditableEmployeeRow(selectedRowIdx) || curRows[selectedRowIdx];
-      document.getElementById("editModalTitle").innerText = row.isGrandTotal ? `EDIT G/TOTAL` : `EDIT EMPLOYEE (S/No: ${selectedRowIdx + 1})`;
-      const grid = document.getElementById("editFormView");
-      grid.innerHTML = "";
-
-      // Lock status ke mutabiq readonly attributes tay karein
-      let readonlyAttr = isEditModeEnabled ? '' : 'readonly style="background:#e9ecef; cursor:not-allowed;"';
-      let disabledAttr = isEditModeEnabled ? '' : 'disabled style="background:#e9ecef; cursor:not-allowed;"';
-
-      for (let i = 0; i < 24; i++) {
-        const colLetter = String.fromCharCode(65 + i);
-        const colTitle = masterHeaders[i] || `Col ${colLetter}`;
-        
-        let valObj = row.rowData[i] || '';
-        const val = (typeof valObj === 'object' && valObj !== null) ? (valObj.v !== undefined ? valObj.v : '') : valObj;
-
-        const div = document.createElement("div");
-        div.className = "form-group";
-        if (i === 7 || i === 20) div.style.gridColumn = "span 2";
-
-        // 💡 Column B (CODE) ke liye Dropdown (Blank, Existing Code, aur NEW)
-        if (i === 1) {
-          let codeOpts = `<option value="">-- Select Code --</option>`;
-          
-          if (val && val.trim() !== "" && val.toUpperCase() !== 'NEW') {
-            codeOpts += `<option value="${val}" selected>${val}</option>`;
-          }
-          
-          codeOpts += `<option value="NEW" ${val.toUpperCase() === 'NEW' ? 'selected' : ''}>NEW</option>`;
-
-          div.innerHTML = `<label><strong>${colLetter}:</strong> ${colTitle}</label><select id="editField_${i}" style="height:30px;" ${disabledAttr}>${codeOpts}</select>`;
-        }
-        else if (i === 2) {
-          let opts = `<option value="">-- Select Trade --</option>`;
-          tradeOptions.forEach(t => { opts += `<option value="${t}" ${val === t ? 'selected' : ''}>${t}</option>`; });
-          const tradeChangeDate = row.lifecycleData?.tradeChangeDate || getPayrollPeriodBounds()?.startISO || "";
-          const periodBounds = getPayrollPeriodBounds();
-          div.innerHTML = `<label><strong>${colLetter}:</strong> ${colTitle}</label>
-            <select id="editField_${i}" style="height:30px;" ${disabledAttr}>${opts}</select>
-            <label for="editTradeChangeDate" style="display:block; margin-top:6px; font-size:11px;">Trade effective from (blank = period start):</label>
-            <input type="date" id="editTradeChangeDate" value="${tradeChangeDate}" style="height:30px; width:100%; ${isEditModeEnabled ? '' : 'background:#e9ecef; cursor:not-allowed;'}" min="${periodBounds?.startISO || ''}" max="${periodBounds?.endISO || ''}" ${isEditModeEnabled ? '' : 'disabled'}>`;
-        }
-        else if (i === 4) {
-          div.innerHTML = `<label><strong>${colLetter}:</strong> ${colTitle}</label><input type="date" id="editField_${i}" value="${dateToISO(val)}" style="height:30px;" ${readonlyAttr}>`;
-        }
-        else if (i === 21) {
-          div.innerHTML = `<label><strong>${colLetter}:</strong> ${colTitle}</label><input type="text" id="editField_${i}" value="${val}" ${readonlyAttr}>`;
-        }
-        else if (i === 22) {
-          div.innerHTML = `<label><strong>${colLetter}:</strong> ${colTitle}</label><input type="date" id="editField_${i}" value="${dateToISO(val)}" style="height:30px;" ${readonlyAttr}>`;
-        } 
-        else if (i === 23) {
-          let parts = String(val).trim().split(/\s+/);
-          let dateVal = parts[0] || "";
-          let sessionVal = "(F/N)";
-          
-          if (val.toUpperCase().includes("A/N") || (parts[1] && parts[1].toUpperCase() === "(A/N)")) {
-            sessionVal = "(A/N)";
-          }
-
-          div.style.gridColumn = "span 2";
-          div.innerHTML = `
-            <label><strong>${colLetter}:</strong> ${colTitle}</label>
-            <div style="display:flex; gap:6px;">
-              <input type="date" id="editField_${i}" value="${dateToISO(dateVal)}" style="height:30px; flex:2;" ${readonlyAttr}>
-              <select id="editDischargeSession" style="height:30px; flex:1; font-weight:bold;" ${disabledAttr}>
-                <option value="(F/N)" ${sessionVal === '(F/N)' ? 'selected' : ''}>(F/N)</option>
-                <option value="(A/N)" ${sessionVal === '(A/N)' ? 'selected' : ''}>(A/N)</option>
-              </select>
-            </div>`;
-        }
-        else {
-          div.innerHTML = `<label><strong>${colLetter}:</strong> ${colTitle} ${i === 20 ? '(Page Total)' : ''}</label>` +
-            (i === 7 ? `<textarea id="editField_${i}" style="height:50px;" ${readonlyAttr}>${val}</textarea>` : `<input type="text" id="editField_${i}" value="${val}" ${readonlyAttr}>`);
-        }
-        grid.appendChild(div);
-      }
-      editFormDirty = false;
-      grid.querySelectorAll("input, select, textarea").forEach(input => {
-        input.addEventListener("input", () => { editFormDirty = true; });
-        input.addEventListener("change", () => { editFormDirty = true; });
-      });
-    }
-
-    function renderEditGridTable() {
-      const container = document.getElementById("editTableView");
-      const curRows = mrSheets[currentMRIndex].rows;
-
-      let html = `<table class="edit-table"><thead><tr><th>S/No</th>`;
-      gridColsList.forEach(cIdx => {
-        html += `<th>${String.fromCharCode(65 + cIdx)} (${masterHeaders[cIdx] || ''})</th>`;
-      });
-      html += `</tr></thead><tbody>`;
-
-      curRows.forEach((r, rIdx) => {
-        if (!r.isGrandTotal) {
-          html += `<tr><td style="text-align:center; font-weight:bold; background:#eee;">${r.rowData[0] || rIdx+1}</td>`;
-          gridColsList.forEach((cIdx, colArrIdx) => {
-            let valObj = r.rowData[cIdx] || '';
-            let val = (typeof valObj === 'object' && valObj !== null) ? (valObj.v !== undefined ? valObj.v : '') : valObj;
-            // 💡 onpaste event yahan add kiya gaya hai
-            html += `<td><input type="text" value="${val}" data-row="${rIdx}" data-col="${cIdx}" oninput="updateGridCellVal(this)" onkeydown="handleGridKeyNav(event, ${rIdx}, ${colArrIdx})" onpaste="handleGridPaste(event, ${rIdx}, ${colArrIdx})"></td>`;
-          });
-          html += `</tr>`;
-        }
-      });
-      html += `</tbody></table>`;
-      container.innerHTML = html;
-    }
-    function handleGridPaste(e, startRIdx, startColArrIdx) {
-      e.preventDefault();
-      e.stopPropagation();
-
-      const clipboardData = e.clipboardData || window.clipboardData;
-      if (!clipboardData) {
-        showAlert("Clipboard data read nahi hua. Cell par dobara click karke paste karein.", true);
-        return;
-      }
-
-      // Modern browsers provide text/plain; keep Text as a legacy fallback.
-      let pastedData = clipboardData.getData("text/plain");
-      if (!pastedData) pastedData = clipboardData.getData("Text");
-      if (!pastedData) {
-        showAlert("Clipboard mein paste karne layak text nahi mila.", true);
-        return;
-      }
-
-      // Parse Excel/Sheets TSV while respecting quoted cells that contain
-      // tabs or line breaks (for example, a multi-line NOK/address field).
-      const rows = [];
-      let parsedRow = [];
-      let parsedCell = "";
-      let insideQuotedCell = false;
-      for (let i = 0; i < pastedData.length; i++) {
-        const ch = pastedData[i];
-        if (ch === '"') {
-          if (insideQuotedCell && pastedData[i + 1] === '"') {
-            parsedCell += '"';
-            i++;
-          } else if (insideQuotedCell) {
-            insideQuotedCell = false;
-          } else if (parsedCell.length === 0) {
-            insideQuotedCell = true;
-          } else {
-            parsedCell += ch;
-          }
-        } else if (ch === "\t" && !insideQuotedCell) {
-          parsedRow.push(parsedCell);
-          parsedCell = "";
-        } else if ((ch === "\n" || ch === "\r") && !insideQuotedCell) {
-          parsedRow.push(parsedCell);
-          rows.push(parsedRow);
-          parsedRow = [];
-          parsedCell = "";
-          if (ch === "\r" && pastedData[i + 1] === "\n") i++;
-        } else {
-          parsedCell += ch;
-        }
-      }
-      if (parsedCell.length > 0 || parsedRow.length > 0) {
-        parsedRow.push(parsedCell);
-        rows.push(parsedRow);
-      }
-      if (!rows.length) return;
-
-      const sheet = mrSheets[currentMRIndex];
-      const curRows = sheet && Array.isArray(sheet.rows) ? sheet.rows : [];
-      if (!curRows.length) {
-        showAlert("MR sheet mein paste karne ke liye rows nahi hain.", true);
-        return;
-      }
-
-      pushUndoState();
-      let pastedCellCount = 0;
-      rows.forEach((rowCells, rOffset) => {
-        const targetRowIdx = startRIdx + rOffset;
-        if (targetRowIdx >= curRows.length) return;
-        const targetRow = curRows[targetRowIdx];
-        if (!targetRow || targetRow.isGrandTotal) return;
-
-        rowCells.forEach((cellVal, cOffset) => {
-          const targetColArrIdx = startColArrIdx + cOffset;
-          if (targetColArrIdx >= gridColsList.length) return;
-          const targetColIdx = gridColsList[targetColArrIdx];
-          if (!Array.isArray(targetRow.rowData)) targetRow.rowData = [];
-          targetRow.rowData[targetColIdx] = cellVal.trim();
-          pastedCellCount++;
-
-          const targetInput = document.querySelector(
-            `input[data-row="${targetRowIdx}"][data-col="${targetColIdx}"]`
-          );
-          if (targetInput) targetInput.value = cellVal.trim();
-        });
-      });
-
-      if (pastedCellCount === 0) {
-        showAlert("Selected grid position par paste karne ke liye cells nahi mile.", true);
-        return;
-      }
-      saveToLocal(true);
-      showAlert(`${pastedCellCount} cell(s) paste ho gaye.`);
-    }
-
-    function updateGridCellVal(input) {
-      const rIdx = parseInt(input.getAttribute("data-row"));
-      const cIdx = parseInt(input.getAttribute("data-col"));
-      const curRows = mrSheets[currentMRIndex].rows;
-      curRows[rIdx].rowData[cIdx] = input.value.trim();
-      saveToLocal(true);
-    }
-
-    function handleGridKeyNav(e, rIdx, colArrIdx) {
-      if (e.key === 'Enter') {
-        e.preventDefault();
-        const nextInput = document.querySelector(`input[data-row="${rIdx + 1}"][data-col="${gridColsList[colArrIdx]}"]`);
-        if (nextInput) {
-          nextInput.focus();
-          nextInput.select();
-        }
-      }
-    }
-
-    function saveEditedData() {
-      const curRows = mrSheets[currentMRIndex]?.rows || [];
-      const currentRow = curRows[selectedRowIdx];
-      if (!currentRow) return showAlert("Employee row not found!", true);
-      if (currentRow.isGrandTotal) {
-        showAlert("Grand Total row cannot be edited!", true);
-        return;
-      }
-
-      stageCurrentEmployeeEdit();
-      if (pendingEmployeeEdits.size > 0) pushUndoState();
-      pendingEmployeeEdits.forEach((draft, rowIndex) => {
-        const target = curRows[rowIndex];
-        if (!target) return;
-        Object.assign(target, draft, {
-          rowData: [...draft.rowData],
-          lifecycleData: { ...(draft.lifecycleData || {}) }
-        });
-      });
-      const updatedCount = pendingEmployeeEdits.size;
-      pendingEmployeeEdits.clear();
-
-      updateGrandTotalInternal();
-      closeModal("editModal");
-      renderBody(); 
-      saveToLocal(true); 
-      showAlert(updatedCount > 1
-        ? `${updatedCount} employees updated successfully!`
-        : "Data successfully saved!");
-    }
-
-    function insertBlankRowBelow() {
-      pushUndoState();
-      const curMR = mrSheets[currentMRIndex];
-      curMR.rows.splice(selectedRowIdx + 1, 0, { code: "", name: "", rowData: new Array(24).fill("") });
-      selectedRowIdx++;
-      updateGrandTotalInternal();
-      closeModal("editModal"); renderBody(); saveToLocal(true); showAlert("Blank row inserted!");
-    }
-
-    function dateToISO(str) {
-      if (!str) return "";
-      if (/^\d{4}-\d{2}-\d{2}$/.test(str)) return str;
-      let parts = str.split(/[-/]/);
-      if (parts.length === 3) {
-        let d = parts[0];
-        let m = parts[1];
-        let y = parts[2];
-        const monthsMap = { "JAN": "01", "FEB": "02", "MAR": "03", "APR": "04", "MAY": "05", "JUN": "06", "JUL": "07", "AUG": "08", "SEP": "09", "OCT": "10", "NOV": "11", "DEC": "12", "1": "01", "2": "02", "3": "03", "4": "04", "5": "05", "6": "06", "7": "07", "8": "08", "9": "09", "10": "10", "11": "11", "12": "12" };
-        if (isNaN(m)) {
-          m = monthsMap[m.toUpperCase()] || "01";
-        } else {
-          m = String(m).padStart(2, '0');
-        }
-        d = String(d).padStart(2, '0');
-        if (y.length === 2) y = "20" + y;
-        return `${y}-${m}-${d}`;
-      }
-      return "";
-    }
-
-    function isoToDisplayDate(isoStr) {
-      if (!isoStr) return "";
-      let parts = isoStr.split("-");
-      if (parts.length === 3) {
+      // 💡 ISO format (YYYY-MM-DD) ko DD-Mon-YYYY mein convert karne ke liye
+      if (/^\d{4}-\d{2}-\d{2}$/.test(str)) {
+        let parts = str.split("-");
         let y = parts[0];
         let m = parseInt(parts[1], 10);
         let d = parts[2];
-        const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
-        let mName = months[m - 1] || "Jan";
+        let mName = MONTH_NAMES[m - 1] || 'Aug';
         return `${d}-${mName}-${y}`;
       }
-      return isoStr;
+
+      const numericDateMatch = str.match(/^(\d{1,2})[-/](\d{1,2})[-/](\d{4})$/);
+      if (numericDateMatch) {
+        const d = numericDateMatch[1].padStart(2, '0');
+        const m = parseInt(numericDateMatch[2], 10);
+        const y = numericDateMatch[3];
+        const mName = MONTH_NAMES[m - 1];
+        if (mName) return `${d}-${mName}-${y}`;
+      }
+      return str;
     }
 
-    let isEditModeEnabled = false; // Default Locked (false)
+    function getDO2PayrollPeriodStartDate() {
+      const parts = String(activePeriod || "").trim().toUpperCase().replace(/_/g, " ").split(/\s+/);
+      const monthKeys = ["JAN", "FEB", "MAR", "APR", "MAY", "JUN", "JUL", "AUG", "SEP", "OCT", "NOV", "DEC"];
+      const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+      const periodMonthIndex = monthKeys.indexOf(parts[0]);
+      let year = parseInt(parts[1], 10);
+      if (periodMonthIndex < 0 || !Number.isFinite(year)) return "";
+      let startMonthIndex = periodMonthIndex - 1;
+      if (startMonthIndex < 0) {
+        startMonthIndex = 11;
+        year -= 1;
+      }
+      return `21-${monthNames[startMonthIndex]}-${year}`;
+    }
 
-function toggleEditMode() {
-  isEditModeEnabled = !isEditModeEnabled;
-  const btn = document.getElementById("btnToggleEditMode");
-  btn.innerText = isEditModeEnabled ? "🔒 LOCK DATA" : "🔓 EDIT DATA";
-  btn.style.background = isEditModeEnabled ? "#c0392b" : "#d35400";
-  renderEditFormView(); // Form ko dobara render karein taaki fields readonly/editable ho jayein
-}
+    function getDO2PayrollPeriodBoundsISO() {
+      const parts = String(activePeriod || "").trim().toUpperCase().replace(/_/g, " ").split(/\s+/);
+      const monthKeys = ["JAN", "FEB", "MAR", "APR", "MAY", "JUN", "JUL", "AUG", "SEP", "OCT", "NOV", "DEC"];
+      const periodMonthIndex = monthKeys.indexOf(parts[0]);
+      const year = parseInt(parts[1], 10);
+      if (periodMonthIndex < 0 || !Number.isFinite(year)) return null;
+      const startDate = getDO2PayrollPeriodStartDate();
+      const startISO = do2DateToISO(startDate);
+      const endISO = `${year}-${String(periodMonthIndex + 1).padStart(2, "0")}-20`;
+      return startISO ? { startISO, endISO } : null;
+    }
 
-function deleteCurrentRow() {
-      const curRows = mrSheets[currentMRIndex].rows;
-      if (!curRows || curRows.length === 0) return;
+    function do2DateToISO(value) {
+      const formatted = formatToStandardDate(value);
+      const match = formatted.match(/^(\d{2})-([A-Za-z]{3})-(\d{4})$/);
+      if (!match) return "";
+      const monthIndex = MONTH_NAMES.findIndex(month => month.toLowerCase() === match[2].toLowerCase());
+      if (monthIndex < 0) return "";
+      return `${match[3]}-${String(monthIndex + 1).padStart(2, "0")}-${match[1]}`;
+    }
+
+    function getTradeChangeDateForCurrentPeriod(value) {
+      const periodBounds = getDO2PayrollPeriodBoundsISO();
+      const selectedDate = formatToStandardDate(value);
+      const selectedISO = do2DateToISO(selectedDate);
+      if (periodBounds && selectedISO >= periodBounds.startISO && selectedISO <= periodBounds.endISO) {
+        return selectedDate;
+      }
+      // Old saved values outside the current payroll window (e.g. 21-Aug for
+      // OCT 2026) are stale; default this trade change to the period start.
+      return getDO2PayrollPeriodStartDate();
+    }
+
+    function generateRemarkFormula(row) {
+      if (row.isBlank) return "";
       
-      const row = curRows[selectedRowIdx];
-      if (row && row.isGrandTotal) {
-        showAlert("Grand Total row ko delete nahi kiya ja sakta!", true);
+      const code = String(row.code || '').trim();
+      const trade = String(row.trade || '').trim();
+      const recruitDate = formatToStandardDate(row.dateRecruit);
+      const dischargeRaw = String(row.dateDischarge || '').trim();
+      
+      let dischargeDateOnly = formatToStandardDate(dischargeRaw.split(" ")[0]);
+      let dischargeSession = dischargeRaw.includes("(A/N)") ? "(A/N)" : "(F/N)";
+
+      const tfrRaw = String(row.dateTfr || '').trim();
+      let tfrDateOnly = formatToStandardDate(tfrRaw.split(" ")[0]);
+      let tfrSession = tfrRaw.includes("(A/N)") ? "(A/N)" : "(F/N)";
+
+      const upgradeDate = formatToStandardDate(row.dateUpgrade);
+      const tradeChangeDate = formatToStandardDate(row.tradeChangeDate || "");
+      const time = row.time || "(F/N)";
+
+      if (row.customRemark && row.customRemark.trim() !== "") {
+        return row.customRemark;
+      }
+
+      let remarksArr = [];
+
+      if (code.toUpperCase() === "NEW" || recruitDate) {
+        if (recruitDate) {
+          remarksArr.push(`Newly recruited as ${trade || 'MAZ'} w.e.f. ${recruitDate} ${time}`);
+        }
+      }
+
+      const tradeChangeFromParts = String(row.tradeChangeFrom || "").split("/").map(part => part.trim()).filter(Boolean);
+      const tradePartsForChange = trade.split("/").map(part => part.trim()).filter(Boolean);
+      let oldTradeForChange = tradeChangeFromParts[0] || tradePartsForChange[0] || "";
+      const newTradeForChange = String(row.tradeChangeTo || "").trim() || trade.split("/").pop().trim();
+      // If saved lifecycle metadata says the same trade on both sides, but the
+      // displayed trade contains a prior/current pair, use the pair's first
+      // trade as the source. This avoids remarks such as "CPDVR to CPDVR".
+      if (
+        oldTradeForChange.toUpperCase() === newTradeForChange.toUpperCase() &&
+        tradePartsForChange.length > 1 &&
+        tradePartsForChange[0].toUpperCase() !== newTradeForChange.toUpperCase()
+      ) {
+        oldTradeForChange = tradePartsForChange[0];
+      }
+      const isSkdIiCpdvrPair =
+        (oldTradeForChange.toUpperCase() === "SKD-II" && newTradeForChange.toUpperCase() === "CPDVR") ||
+        (oldTradeForChange.toUpperCase() === "CPDVR" && newTradeForChange.toUpperCase() === "SKD-II");
+
+      if (trade.includes("/") && tradeChangeDate && row.tradeChangeTo && isSkdIiCpdvrPair) {
+        remarksArr.push(`Trade changed ${oldTradeForChange} to ${newTradeForChange} w.e.f. ${tradeChangeDate} ${time}`);
+      } else if (trade.includes("/") && tradeChangeDate && row.tradeChangeTo) {
+        const oldRank = TRADE_RANKS.indexOf(oldTradeForChange.toUpperCase());
+        const newRank = TRADE_RANKS.indexOf(newTradeForChange.toUpperCase());
+        const actionWord = oldRank < newRank ? "Upgraded" : "Downgraded";
+        remarksArr.push(`${actionWord} ${oldTradeForChange} to ${newTradeForChange} w.e.f. ${tradeChangeDate} ${time}`);
+      } else if (trade.includes("/") && upgradeDate) {
+        const parts = trade.split("/");
+        const oldTrade = parts[0].trim();
+        const newTrade = parts[parts.length - 1].trim();
+        const oldRank = TRADE_RANKS.indexOf(oldTrade);
+        const newRank = TRADE_RANKS.indexOf(newTrade);
+        const actionWord = (oldRank < newRank) ? "Upgraded" : "Downgraded";
+        remarksArr.push(`${actionWord} ${oldTrade} to ${newTrade} w.e.f. ${upgradeDate} ${time}`);
+      }
+
+      if (dischargeDateOnly) {
+        remarksArr.push(`Discharged w.e.f. ${dischargeDateOnly} ${dischargeSession}`);
+      }
+
+      if (tfrDateOnly) {
+        remarksArr.push(`Transferred w.e.f. ${tfrDateOnly} ${tfrSession}`);
+      }
+
+      if (remarksArr.length > 0) {
+        return remarksArr.join(" and ");
+      }
+
+      return row.customRemark || "";
+    }
+
+    function populateManualDateDropdown() {
+      const dateSelect = document.getElementById("manualTfrDate");
+      if (!dateSelect) return;
+      dateSelect.innerHTML = `<option value="">-- Select Transfer Date --</option>`;
+
+      const parts = activePeriod.trim().toUpperCase().split(/\s+/);
+      let curMonthStr = parts[0] || "SEP";
+      let curYear = parseInt(parts[1]) || 2026;
+
+      const monthsMap = { "JAN": "Jan", "FEB": "Feb", "MAR": "Mar", "APR": "Apr", "MAY": "May", "JUN": "Jun", "JUL": "Jul", "AUG": "Aug", "SEP": "Sep", "OCT": "Oct", "NOV": "Nov", "DEC": "Dec" };
+      const monthKeys = ["JAN", "FEB", "MAR", "APR", "MAY", "JUN", "JUL", "AUG", "SEP", "OCT", "NOV", "DEC"];
+
+      let mIdx = monthKeys.indexOf(curMonthStr);
+      let prevMIdx = mIdx - 1;
+      let prevYear = curYear;
+      if (prevMIdx < 0) { prevMIdx = 11; prevYear -= 1; }
+
+      let prevMonthStr = monthsMap[monthKeys[prevMIdx]] || "Aug";
+
+      for (let d = 21; d <= 31; d++) {
+        dateSelect.innerHTML += `<option value="${d}-${prevMonthStr}-${prevYear}">${d} ${prevMonthStr} ${prevYear}</option>`;
+      }
+      for (let d = 1; d <= 20; d++) {
+        dateSelect.innerHTML += `<option value="${d}-${monthsMap[curMonthStr] || 'Sep'}-${curYear}">${d} ${monthsMap[curMonthStr] || 'Sep'} ${curYear}</option>`;
+      }
+    }
+
+    function loadAndRenderDO2() {
+      const localCfg = localStorage.getItem(`CPL_DO2_CONFIG_${activePeriod}`);
+      if (localCfg) {
+        try { do2Config = JSON.parse(localCfg); } catch(e){}
+      } else {
+        do2Config.presentOrder = `PRESENT PART-II ORDER No : 01/63/CPL/2026 DATED ____ ${activePeriod}.`;
+        do2Config.dated = `____ ${activePeriod.toUpperCase()}`;
+      }
+
+      updateUIHeaderFooterDisplay();
+
+      const localActive = localStorage.getItem(`CPL_OFFLINE_SHEETS_${activePeriod}`);
+      let completedSheets = [];
+      if (localActive) {
+        try {
+          let parsed = JSON.parse(localActive);
+          completedSheets = (parsed.mrSheets || []).filter(m => m.isSubmitted === true);
+        } catch(e){}
+      }
+      cachedSubmittedSheets = completedSheets;
+
+      let manualOverrides = [];
+      const savedManual = localStorage.getItem(`CPL_DO2_MANUAL_OVERRIDES_${activePeriod}`);
+      if (savedManual) {
+        try { manualOverrides = JSON.parse(savedManual); } catch(e){}
+      }
+
+      do2Groups = [];
+      let baseCode = parseInt(do2Config.lastCode, 10) || 8541;
+
+      completedSheets.forEach(mr => {
+        const matchingRows = [];
+
+        (mr.rows || []).forEach((r, idx) => {
+          const colCode = String((r.rowData && r.rowData[1]) || r.code || '').trim();
+          const colTrade = String((r.rowData && r.rowData[2]) || '').trim();
+          const colName = String((r.rowData && r.rowData[3]) || r.name || '').trim();
+          const colFather = String((r.rowData && r.rowData[5]) || '').trim();
+          
+          const colEnrolmentDate = String((r.rowData && r.rowData[22]) || '').trim();
+          const colDischargeDate = String((r.rowData && r.rowData[23]) || r.dischargeDate || '').trim();
+          const hasSlash = colTrade.includes("/");
+
+          const manualMatch = manualOverrides.find(mo => mo.mrLabel.toUpperCase() === mr.label.toUpperCase() && mo.sno === (idx + 1));
+          
+          // 💡 Payment screen se jo lifecycleData save hua hai usme transfer date check karna
+          const lifeData = r.lifecycleData || {};
+          const transferDateFromPayment = lifeData.transferDate ? formatToStandardDate(lifeData.transferDate) : "";
+          const transferFnAn = lifeData.transferFnAn || "(F/N)";
+          // Payment editor stores the Down/Up calendar value as gradeDate.
+          // Also accept tradeChangeDate for rows saved by other app versions.
+          const savedTradeEffectiveDate = lifeData.tradeChangeDate || lifeData.gradeDate || "";
+          const tradeChangeDateFromPayment = savedTradeEffectiveDate
+            ? formatToStandardDate(savedTradeEffectiveDate)
+            : "";
+          const tradeDateForCurrentPeriod = hasSlash
+            ? getTradeChangeDateForCurrentPeriod(tradeChangeDateFromPayment)
+            : tradeChangeDateFromPayment;
+          const savedChangedTrade = String(lifeData.changedTrade || "").trim();
+          const changedTradeParts = savedChangedTrade.split("/").map(part => part.trim()).filter(Boolean);
+          const tradeChangeFrom = String(lifeData.tradeFrom || "").trim() ||
+            (changedTradeParts.length > 1 ? changedTradeParts[0] : "");
+          const tradeChangeTo = changedTradeParts.length > 1
+            ? changedTradeParts[changedTradeParts.length - 1]
+            : savedChangedTrade;
+
+          const isNew = (colCode.toUpperCase() === "NEW");
+          const hasTradeChangeDate = hasSlash && tradeChangeDateFromPayment !== "";
+          const hasLifecycleTradeChange = tradeChangeDateFromPayment !== "" && tradeChangeTo !== "";
+          const hasDischarge = (colDischargeDate !== "");
+          const hasTransfer = (transferDateFromPayment !== "");
+          const hasManual = (manualMatch !== undefined);
+
+          // A single current trade (for example SKD-II) is not a DO-II event.
+          // Ignore stale trade lifecycle metadata unless the row's Trade field
+          // is an actual slash pair; recruitment, discharge, transfer and
+          // explicit manual entries continue to be included independently.
+          if (isNew || hasSlash || hasDischarge || hasTransfer || hasManual) {
+            let assignedNewCode = "";
+
+            // Agar payment screen se MR From / To bhara gaya hai toh custom remark bana lo, warna default
+            let autoRemark = "";
+            if (hasTransfer) {
+              let fromMr = lifeData.mrFrom ? ` from ${lifeData.mrFrom}` : "";
+              let toMr = lifeData.mrTo ? ` to ${lifeData.mrTo}` : "";
+              autoRemark = `Transferred${fromMr}${toMr} w.e.f. ${transferDateFromPayment} ${transferFnAn}`;
+            }
+
+            const rowObj = {
+              mrSno: idx + 1,
+              code: colCode || (isNew ? "NEW" : ""),
+              newCode: assignedNewCode,
+              trade: colTrade || (isNew ? "MAZ" : ""),
+              name: colName,
+              father: colFather,
+              dateRecruit: isNew ? colEnrolmentDate : "",
+              dateDischarge: colDischargeDate,
+              dateTfr: manualMatch ? manualMatch.tfrDate : (transferDateFromPayment ? `${transferDateFromPayment} ${transferFnAn}` : ""),
+              dateUpgrade: hasSlash ? tradeDateForCurrentPeriod : "",
+              tradeChangeDate: hasSlash ? tradeDateForCurrentPeriod : "",
+              tradeChangeFrom: hasSlash && hasLifecycleTradeChange ? tradeChangeFrom : "",
+              tradeChangeTo: hasSlash && hasLifecycleTradeChange ? tradeChangeTo : "",
+              time: "(F/N)",
+              customRemark: manualMatch ? manualMatch.remark : autoRemark
+            };
+            rowObj.remark = generateRemarkFormula(rowObj);
+            matchingRows.push(rowObj);
+          }
+        });
+
+        if (matchingRows.length > 0) {
+          do2Groups.push({ mrHeading: mr.title, rows: matchingRows });
+        }
+      });
+
+      // Keep DO-II groups in numeric MR order (e.g. 38 before 376),
+      // and each group's entries in their original MR S/No order.
+      const getMRNumberForSort = group => {
+        const title = String(group.mrHeading || "");
+        const titleMatch = title.match(/\/(\d+)\//);
+        if (titleMatch) return Number(titleMatch[1]);
+        const labelMatch = title.match(/MR\s*(?:NO\.?)?\s*(\d+)/i);
+        return labelMatch ? Number(labelMatch[1]) : Number.MAX_SAFE_INTEGER;
+      };
+      do2Groups.forEach(group => {
+        group.rows.sort((a, b) => (Number(a.mrSno) || 0) - (Number(b.mrSno) || 0));
+      });
+      do2Groups.sort((a, b) => getMRNumberForSort(a) - getMRNumberForSort(b));
+
+      // Assign new codes only after sorting MR groups. This keeps code numbers
+      // continuous in the same numeric MR order displayed in the DO-II table,
+      // regardless of the server's original sheet order.
+      let nextNewCodeCounter = baseCode + 1;
+      do2Groups.forEach(group => {
+        group.rows.forEach(row => {
+          if (String(row.code || "").trim().toUpperCase() === "NEW") {
+            row.newCode = String(nextNewCodeCounter++);
+          }
+        });
+      });
+
+      localStorage.setItem(`CPL_SAVED_DO2_GROUPS_${activePeriod}`, JSON.stringify(do2Groups));
+
+      if (navigator.onLine) {
+        fetch(`/api/do2-groups`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ period: activePeriod, groups: do2Groups })
+        }).catch(e => {});
+      }
+
+      renderDO2Table();
+      populateManualMrDropdown();
+    }
+
+    function populateManualMrDropdown() {
+      const select = document.getElementById("manualMrSelect");
+      if (!select) return;
+      let opts = `<option value="">-- Select MR --</option>`;
+      cachedSubmittedSheets.forEach(mr => {
+        opts += `<option value="${mr.label}">${mr.label} (${mr.title})</option>`;
+      });
+      select.innerHTML = opts;
+    }
+
+    function loadMrRowsForManual() {
+      const mrLabel = document.getElementById("manualMrSelect").value;
+      const snoSelect = document.getElementById("manualSnoSelect");
+      document.getElementById("selectedEmpPreview").style.display = "none";
+      if (!mrLabel) {
+        snoSelect.innerHTML = `<option value="">-- Select S/No --</option>`;
         return;
       }
 
-      if (confirm("Kya aap is employee ko sheet se delete karna chahte hain?")) {
-        pushUndoState();
-        curRows.splice(selectedRowIdx, 1);
-        selectedRowIdx = Math.max(0, selectedRowIdx - 1);
-        updateGrandTotalInternal();
-        closeModal("editModal");
-        renderBody();
-        saveToLocal(true);
-        showAlert("Employee successfully deleted!");
+      const mr = cachedSubmittedSheets.find(m => m.label.toUpperCase() === mrLabel.toUpperCase());
+      if (!mr) return;
+
+      let opts = `<option value="">-- Select S/No --</option>`;
+      (mr.rows || []).forEach((r, idx) => {
+        if (!r.isGrandTotal) {
+          const name = r.name || (r.rowData && r.rowData[3]) || 'Unknown';
+          opts += `<option value="${idx + 1}">S/No ${idx + 1} - ${name}</option>`;
+        }
+      });
+      snoSelect.innerHTML = opts;
+    }
+
+    function fillEmployeeDetailsForManual() {
+      const mrLabel = document.getElementById("manualMrSelect").value;
+      const sno = parseInt(document.getElementById("manualSnoSelect").value);
+      const previewBox = document.getElementById("selectedEmpPreview");
+
+      if (!mrLabel || isNaN(sno)) {
+        previewBox.style.display = "none";
+        return;
       }
+
+      const mr = cachedSubmittedSheets.find(m => m.label.toUpperCase() === mrLabel.toUpperCase());
+      if (!mr) return;
+
+      const row = mr.rows[sno - 1];
+      if (row) {
+        const name = row.name || (row.rowData && row.rowData[3]) || '';
+        const code = row.code || (row.rowData && row.rowData[1]) || '';
+        document.getElementById("previewEmpName").innerText = name;
+        document.getElementById("previewEmpCode").innerText = code;
+        previewBox.style.display = "block";
+      }
+    }
+
+    function saveManualDo2Override() {
+      const mrLabel = document.getElementById("manualMrSelect").value;
+      const sno = parseInt(document.getElementById("manualSnoSelect").value);
+      const tfrDate = document.getElementById("manualTfrDate").value.trim();
+      const remark = document.getElementById("manualRemark").value.trim();
+
+      if (!mrLabel || isNaN(sno)) {
+        alert("Please select MR and S/No!");
+        return;
+      }
+
+      let manualOverrides = [];
+      const savedManual = localStorage.getItem(`CPL_DO2_MANUAL_OVERRIDES_${activePeriod}`);
+      if (savedManual) {
+        try { manualOverrides = JSON.parse(savedManual); } catch(e){}
+      }
+
+      const existingIdx = manualOverrides.findIndex(mo => mo.mrLabel.toUpperCase() === mrLabel.toUpperCase() && mo.sno === sno);
+      if (existingIdx !== -1) {
+        manualOverrides[existingIdx] = { mrLabel, sno, tfrDate, remark };
+      } else {
+        manualOverrides.push({ mrLabel, sno, tfrDate, remark });
+      }
+
+      localStorage.setItem(`CPL_DO2_MANUAL_OVERRIDES_${activePeriod}`, JSON.stringify(manualOverrides));
+      alert("Manual entry saved successfully! DO-II updated.");
+      closeModal('configModal');
+      loadAndRenderDO2();
+    }
+
+    function updateUIHeaderFooterDisplay() {
+      document.getElementById("doHeaderTitle").innerText = `DO PART - II ORDER OF CPLs FOR THE MONTH OF ${activePeriod}`;
+      document.getElementById("displayOCName").innerText = do2Config.ocName;
+      document.getElementById("lastCodeNum").innerText = do2Config.lastCode;
+      document.getElementById("displayPrevOrder").innerText = do2Config.prevOrder;
+      document.getElementById("presentOrderRef").innerText = do2Config.presentOrder;
+
+      document.getElementById("displayStation").innerHTML = `${do2Config.station}<br><br>Dated : <span id="displayDatedText">${do2Config.dated}</span>`;
+      document.getElementById("displaySignName").innerText = do2Config.signName;
+      document.getElementById("displaySignDesig").innerText = do2Config.signDesig;
+      document.getElementById("displaySignOrg").innerText = do2Config.signOrg;
+      document.getElementById("displaySignUnit").innerText = do2Config.signUnit;
+    }
+
+    function renderDO2Table() {
+      const tbody = document.getElementById("do2TableBody");
+      tbody.innerHTML = "";
+      let globalSNo = 1;
+
+      if (do2Groups.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="12" style="padding:20px; color:#666;">No COMPLETED (Submitted) MR sheets found. Pehle Payment screen se MR submit karein.</td></tr>`;
+        return;
+      }
+
+      do2Groups.forEach((group) => {
+        const headTr = document.createElement("tr");
+        headTr.className = `mr-header-row`;
+        headTr.innerHTML = `<td colspan="12">${group.mrHeading}</td>`;
+        tbody.appendChild(headTr);
+
+        group.rows.forEach((r) => {
+          if (!r.isBlank) r.remark = generateRemarkFormula(r);
+
+          const tr = document.createElement("tr");
+          tr.innerHTML = `
+            <td class="col-bold">${r.isBlank ? '' : globalSNo++}</td>
+            <td>${r.mrSno || ''}</td>
+            <td class="col-bold">${r.code || ''}</td>
+            <td class="col-bold" style="color:#007e33;">${r.newCode || ''}</td>
+            <td class="col-bold">${r.trade || ''}</td>
+            <td class="col-left col-bold">${r.name || ''}</td>
+            <td class="col-left">${r.father || ''}</td>
+            <td>${formatToStandardDate(r.dateRecruit)}</td>
+            <td>${formatToStandardDate(r.dateDischarge)}</td>
+            <td>${formatToStandardDate(r.dateTfr)}</td>
+            <td>${formatToStandardDate(r.dateUpgrade)}</td>
+            <td class="col-remark">${r.remark || ''}</td>
+          `;
+          tbody.appendChild(tr);
+        });
+      });
+    }
+
+    function openConfigModal() {
+      if (!isAdmin) {
+        alert("Access Denied! Only Admin can access Edit Config");
+        return;
+      }
+      document.getElementById("cfgLastCode").value = do2Config.lastCode;
+      document.getElementById("cfgPrevOrder").value = do2Config.prevOrder;
+      document.getElementById("cfgPresentOrder").value = do2Config.presentOrder;
+      document.getElementById("cfgOcName").value = do2Config.ocName;
+      document.getElementById("cfgStation").value = do2Config.station;
+      document.getElementById("cfgDated").value = do2Config.dated;
+      document.getElementById("cfgSignName").value = do2Config.signName;
+      document.getElementById("cfgSignDesig").value = do2Config.signDesig;
+      document.getElementById("cfgSignOrg").value = do2Config.signOrg;
+      document.getElementById("cfgSignUnit").value = do2Config.signUnit;
+      document.getElementById("configModal").style.display = "flex";
+    }
+
+    function saveConfigData() {
+      if (!isAdmin) return;
+      do2Config.lastCode = document.getElementById("cfgLastCode").value.trim() || "8541";
+      do2Config.prevOrder = document.getElementById("cfgPrevOrder").value.trim();
+      do2Config.presentOrder = document.getElementById("cfgPresentOrder").value.trim();
+      do2Config.ocName = document.getElementById("cfgOcName").value.trim();
+      do2Config.station = document.getElementById("cfgStation").value.trim();
+      do2Config.dated = document.getElementById("cfgDated").value.trim();
+      do2Config.signName = document.getElementById("cfgSignName").value.trim();
+      do2Config.signDesig = document.getElementById("cfgSignDesig").value.trim();
+      do2Config.signOrg = document.getElementById("cfgSignOrg").value.trim();
+      do2Config.signUnit = document.getElementById("cfgSignUnit").value.trim();
+
+      localStorage.setItem(`CPL_DO2_CONFIG_${activePeriod}`, JSON.stringify(do2Config));
+      updateUIHeaderFooterDisplay();
+      closeModal('configModal');
+      loadAndRenderDO2();
+    }
+
+    function closeModal(id) {
+      document.getElementById(id).style.display = "none";
+    }
+
+    function exportDO2Excel() {
+      if (do2Groups.length === 0) return alert("DO-II sheet is empty!");
+
+      let row7 = new Array(12).fill("");
+      row7[0] = do2Config.prevOrder;
+      row7[9] = do2Config.presentOrder;
+
+      const wsData = [
+        ["RESTRICTED"], // Row 0
+        [`DO PART - II ORDER OF CPLs FOR THE MONTH OF ${activePeriod}`], // Row 1
+        ["BY"], // Row 2
+        [do2Config.ocName], // Row 3
+        [], // Row 4
+        [`(LAST CODE No.${do2Config.lastCode})`], // Row 5
+        [], // Row 6
+        row7, // Row 7 (Prev & Present Order)
+        [
+          "S/No", "MR S/NO", "CODE", "NEW CODE", "TRADE", "NAME", "FATHER'S NAME",
+          "DATE OF RECRUITMENT/ RE-RECRUITMENT", "DATE OF DISCHARGED/ DIED/INJURED",
+          "DATE OF TFR", "DATE OF UPGRADATION/ DOWNGRADATION", "REMARKS"
+        ] // Row 8 (Table Headers)
+      ];
+
+      let globalNo = 1;
+      do2Groups.forEach(grp => {
+        wsData.push([grp.mrHeading]); // MR Heading row
+
+        grp.rows.forEach(r => {
+          if (r.isBlank) {
+            wsData.push([]);
+          } else {
+            wsData.push([
+              globalNo++,
+              r.mrSno,
+              r.code,
+              r.newCode,
+              r.trade,
+              r.name,
+              r.father,
+              formatToStandardDate(r.dateRecruit),
+              formatToStandardDate(r.dateDischarge),
+              formatToStandardDate(r.dateTfr),
+              formatToStandardDate(r.dateUpgrade),
+              r.remark
+            ]);
+          }
+        });
+      });
+
+      // Footer Rows side-by-side (Station/Dated on left, Signature on right)
+      wsData.push([]);
+      const footerStartIdx = wsData.length;
+      
+      let f1 = new Array(12).fill(""); f1[0] = do2Config.station; f1[9] = `(${do2Config.signName})`;
+      let f2 = new Array(12).fill(""); f2[0] = `Dated : ${do2Config.dated}`; f2[9] = do2Config.signDesig;
+      let f3 = new Array(12).fill(""); f3[9] = do2Config.signOrg;
+      let f4 = new Array(12).fill(""); f4[9] = do2Config.signUnit;
+      
+      wsData.push(f1, f2, f3, f4);
+
+      const wb = XLSX.utils.book_new();
+      const ws = XLSX.utils.aoa_to_sheet(wsData);
+
+      if (!ws['!merges']) ws['!merges'] = [];
+
+      // Top Header Merges (A to L) for Rows 0, 1, 2, 3, 5
+      [0, 1, 2, 3, 5].forEach(rIdx => {
+        ws['!merges'].push({ s: { r: rIdx, c: 0 }, e: { r: rIdx, c: 11 } });
+      });
+
+      // Previous Order merged A to F (Col 0 to 5)
+      ws['!merges'].push({ s: { r: 7, c: 0 }, e: { r: 7, c: 5 } });
+
+      // Present Order merged J to L (Col 9 to 11)
+      ws['!merges'].push({ s: { r: 7, c: 9 }, e: { r: 7, c: 11 } });
+
+      // MR Headings merge across A to L
+      let currentRowIdx = 9;
+      do2Groups.forEach(grp => {
+        ws['!merges'].push({ s: { r: currentRowIdx, c: 0 }, e: { r: currentRowIdx, c: 11 } });
+        currentRowIdx += 1 + grp.rows.length;
+      });
+
+      // Footer merges: Station & Dated merged A to C (Col 0 to 2)
+      ws['!merges'].push({ s: { r: footerStartIdx, c: 0 }, e: { r: footerStartIdx, c: 2 } });
+      ws['!merges'].push({ s: { r: footerStartIdx + 1, c: 0 }, e: { r: footerStartIdx + 1, c: 2 } });
+
+      // Signature block lines merged J to L (Col 9 to 11)
+      for (let i = 0; i < 4; i++) {
+        ws['!merges'].push({ s: { r: footerStartIdx + i, c: 9 }, e: { r: footerStartIdx + i, c: 11 } });
+      }
+
+      const borderStyleThin = {
+        top: { style: "thin", color: { rgb: "000000" } },
+        bottom: { style: "thin", color: { rgb: "000000" } },
+        left: { style: "thin", color: { rgb: "000000" } },
+        right: { style: "thin", color: { rgb: "000000" } }
+      };
+
+      const totalRowsCount = wsData.length;
+      for (let R = 0; R < totalRowsCount; R++) {
+        for (let C = 0; C < 12; C++) {
+          const cellRef = XLSX.utils.encode_cell({ r: R, c: C });
+          if (!ws[cellRef]) ws[cellRef] = { t: 's', v: '' };
+
+          // Check if row is inside the active table data area
+          let isTableArea = false;
+          let isMrHeadingRow = false;
+          let checkIdx = 9;
+          for (let g = 0; g < do2Groups.length; g++) {
+            if (R === checkIdx) { isMrHeadingRow = true; break; }
+            checkIdx += 1 + do2Groups[g].rows.length;
+          }
+
+          if (R === 8 || isMrHeadingRow || (R > 8 && R < footerStartIdx && wsData[R] && wsData[R].length > 0)) {
+            isTableArea = true;
+          }
+
+          if (R === 0 || R === 1 || R === 5) {
+            ws[cellRef].s = {
+              alignment: { vertical: "center", horizontal: "center" },
+              font: { bold: true, underline: true }
+            };
+          } else if (R === 2 || R === 3) {
+            ws[cellRef].s = {
+              alignment: { vertical: "center", horizontal: "center" },
+              font: { bold: true }
+            };
+          } else if (R === 7) {
+            ws[cellRef].s = {
+              alignment: { vertical: "center", horizontal: C === 9 ? "right" : "left" },
+              font: { bold: true, underline: true, sz: 9.5 }
+            };
+          } else if (isTableArea) {
+            if (R === 8) {
+              ws[cellRef].s = {
+                border: borderStyleThin,
+                alignment: { vertical: "center", horizontal: "center", wrapText: true },
+                font: { bold: true, sz: 9.5 }
+              };
+            } else if (isMrHeadingRow) {
+              ws[cellRef].s = {
+                border: borderStyleThin,
+                alignment: { vertical: "center", horizontal: "left" },
+                font: { bold: true, italic: true, underline: true, sz: 10 }
+              };
+            } else {
+              let alignH = "center";
+              if (C === 4 || C === 5 || C === 6) alignH = "left";
+              if (C === 11) alignH = "left";
+
+              ws[cellRef].s = {
+                border: borderStyleThin,
+                alignment: { vertical: "center", horizontal: alignH, wrapText: C === 11 },
+                font: { sz: 9.5 }
+              };
+            }
+          } else if (R >= footerStartIdx) {
+            // Footer formatting (Left aligned for signature block as requested)
+            ws[cellRef].s = {
+              alignment: { vertical: "center", horizontal: "left" },
+              font: { bold: true, sz: 10 }
+            };
+          } else {
+            // Blank rows (no borders)
+            ws[cellRef].s = {};
+          }
+        }
+      }
+
+      ws['!cols'] = [
+        { wch: 6 }, { wch: 8 }, { wch: 8 }, { wch: 10 }, { wch: 14 },
+        { wch: 24 }, { wch: 24 }, { wch: 18 }, { wch: 18 }, { wch: 14 },
+        { wch: 18 }, { wch: 55 }
+      ];
+
+      XLSX.utils.book_append_sheet(wb, ws, "DO_PART_II");
+      XLSX.writeFile(wb, `DO_PART_II_ORDER_${activePeriod.replace(/[^a-zA-Z0-9]/g, '_')}.xlsx`);
     }
   </script>
 </body>
