@@ -12,6 +12,7 @@
       padding: 0;
       font-family: Arial, Helvetica, sans-serif;
     }
+
     body {
       background: #2b271d;
       min-height: 100vh;
@@ -412,6 +413,31 @@
     let activePeriod = localStorage.getItem("CPL_GLOBAL_MONTH") || "SEP 2026";
     let pendingConfirmAction = null;
 
+    function getLetterWagePeriodDates(period = activePeriod) {
+      const parts = String(period || "").trim().toUpperCase().replace(/_/g, " ").split(/\s+/);
+      const monthKeys = ["JAN", "FEB", "MAR", "APR", "MAY", "JUN", "JUL", "AUG", "SEP", "OCT", "NOV", "DEC"];
+      const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+      const monthIndex = monthKeys.indexOf((parts[0] || "").slice(0, 3));
+      const year = parseInt(parts[1], 10);
+      if (monthIndex < 0 || !Number.isFinite(year)) {
+        return { from: "21 Aug 2026", to: "20 Sep 2026" };
+      }
+
+      const startDate = new Date(year, monthIndex - 1, 21);
+      const endDate = new Date(year, monthIndex, 20);
+      const formatDate = date => `
+        ${String(date.getDate()).padStart(2, "0")} ${monthNames[date.getMonth()]} ${date.getFullYear()}
+      `.trim();
+      return { from: formatDate(startDate), to: formatDate(endDate) };
+    }
+
+    function getLetterWagePeriodText(uppercase = false) {
+      const dates = getLetterWagePeriodDates();
+      const from = uppercase ? dates.from.toUpperCase() : dates.from;
+      const to = uppercase ? dates.to.toUpperCase() : dates.to;
+      return { from, to };
+    }
+
     function numberToIndianWords(num) {
       const a = ['', 'One ', 'Two ', 'Three ', 'Four ', 'Five ', 'Six ', 'Seven ', 'Eight ', 'Nine ', 'Ten ', 'Eleven ', 'Twelve ', 'Thirteen ', 'Fourteen ', 'Fifteen ', 'Sixteen ', 'Seventeen ', 'Eighteen ', 'Nineteen '];
       const b = ['', '', 'Twenty', 'Thirty', 'Forty', 'Fifty', 'Sixty', 'Seventy', 'Eighty', 'Ninety'];
@@ -466,8 +492,10 @@
       letterConfig.letterDate = activePeriod.toUpperCase();
       document.getElementById("dispDate").innerText = letterConfig.letterDate;
       
-      document.getElementById("letterSubjectTitle").innerHTML = `FORWARDING OF BILLS ON ACCOUNT OF WAGES OF CPL's FOR THE MONTH OF ${activePeriod.toUpperCase()}<br>(PERIOD FROM 21 AUG 2026 TO 20 SEP 2026)`;
-      document.getElementById("letterPara1").innerHTML = `1. &nbsp;&nbsp; The under mentioned Special Wages Bills on account of wages of ${activePeriod.toUpperCase()} (Period from 21 Aug 2026 to 20 Sep 2026) alongwith Mandate form, DLRs and Part-II orders of CPLs are forwarded herewith for your pre-audit and early payment, please.`;
+      const wagePeriodUpper = getLetterWagePeriodText(true);
+      const wagePeriodDisplay = getLetterWagePeriodText(false);
+      document.getElementById("letterSubjectTitle").innerHTML = `FORWARDING OF BILLS ON ACCOUNT OF WAGES OF CPL's FOR THE MONTH OF ${activePeriod.toUpperCase()}<br>(PERIOD FROM ${wagePeriodUpper.from} TO ${wagePeriodUpper.to})`;
+      document.getElementById("letterPara1").innerHTML = `1. &nbsp;&nbsp; The under mentioned Special Wages Bills on account of wages of ${activePeriod.toUpperCase()} (Period from ${wagePeriodDisplay.from} to ${wagePeriodDisplay.to}) alongwith Mandate form, DLRs and Part-II orders of CPLs are forwarded herewith for your pre-audit and early payment, please.`;
 
       const savedCfg = localStorage.getItem(`CPL_SAVED_LETTER_CONFIG_${activePeriod}`);
       if (savedCfg) {
@@ -679,9 +707,9 @@
         ["C/o 99 APO"],
         [],
         [`FORWARDING OF BILLS ON ACCOUNT OF WAGES OF CPL's FOR THE MONTH OF ${activePeriod.toUpperCase()}`],
-        ["(PERIOD FROM 21 AUG 2026 TO 20 SEP 2026)"],
+        [`(PERIOD FROM ${getLetterWagePeriodText(true).from} TO ${getLetterWagePeriodText(true).to})`],
         [],
-        [`1.   The under mentioned Special Wages Bills on account of wages of ${activePeriod.toUpperCase()} (Period from 21 Aug 2026 to 20 Sep 2026) alongwith Mandate form, DLRs and Part-II orders of CPLs are forwarded herewith for your pre-audit and early payment, please.`],
+        [`1.   The under mentioned Special Wages Bills on account of wages of ${activePeriod.toUpperCase()} (Period from ${getLetterWagePeriodText(false).from} to ${getLetterWagePeriodText(false).to}) alongwith Mandate form, DLRs and Part-II orders of CPLs are forwarded herewith for your pre-audit and early payment, please.`],
         [],
         ["S/No", "Mr No", "Job No.", "Amount (Rs)", "REMARKS"]
       ];
