@@ -660,7 +660,6 @@
 
       do2Groups = [];
       let baseCode = parseInt(do2Config.lastCode, 10) || 8541;
-      let nextNewCodeCounter = baseCode + 1;
 
       completedSheets.forEach(mr => {
         const matchingRows = [];
@@ -701,9 +700,6 @@
 
           if (isNew || hasSlash || hasDischarge || hasTransfer || hasManual || hasTradeChangeDate || hasLifecycleTradeChange) {
             let assignedNewCode = "";
-            if (isNew) {
-              assignedNewCode = String(nextNewCodeCounter++);
-            }
 
             // Agar payment screen se MR From / To bhara gaya hai toh custom remark bana lo, warna default
             let autoRemark = "";
@@ -753,6 +749,19 @@
         group.rows.sort((a, b) => (Number(a.mrSno) || 0) - (Number(b.mrSno) || 0));
       });
       do2Groups.sort((a, b) => getMRNumberForSort(a) - getMRNumberForSort(b));
+
+      // Assign new codes only after sorting MR groups. This keeps code numbers
+      // continuous in the same numeric MR order displayed in the DO-II table,
+      // regardless of the server's original sheet order.
+      let nextNewCodeCounter = baseCode + 1;
+      do2Groups.forEach(group => {
+        group.rows.forEach(row => {
+          if (String(row.code || "").trim().toUpperCase() === "NEW") {
+            row.newCode = String(nextNewCodeCounter++);
+          }
+        });
+      });
+
       localStorage.setItem(`CPL_SAVED_DO2_GROUPS_${activePeriod}`, JSON.stringify(do2Groups));
 
       if (navigator.onLine) {
