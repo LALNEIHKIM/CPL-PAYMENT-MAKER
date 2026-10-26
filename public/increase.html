@@ -1,0 +1,949 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CPL INCREASE & DECREASE MODULE</title>
+  <script src="https://cdn.jsdelivr.net/npm/xlsx-js-style@1.2.0/dist/xlsx.bundle.js"></script>
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: Arial, Helvetica, sans-serif;
+    }
+    body {
+      background: #2b271d;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 8px 10px 15px 10px;
+      color: #000;
+    }
+    .app-toolbar {
+      width: 100%;
+      max-width: 210mm;
+      background: #ffffff;
+      padding: 5px 10px;
+      border-radius: 6px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 8px;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+      border: 1px solid #ccc;
+    }
+    .toolbar-left, .toolbar-actions {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+    }
+    .btn-nav {
+      background: #4b6584;
+      color: #ffffff;
+      text-decoration: none;
+      font-size: 11px;
+      font-weight: 900;
+      padding: 5px 10px;
+      border-radius: 4px;
+      height: 28px;
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      cursor: pointer;
+    }
+    .btn-tool {
+      font-size: 11px;
+      font-weight: bold;
+      padding: 5px 8px;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      color: #fff;
+      height: 28px;
+      display: inline-flex;
+      align-items: center;
+      gap: 3px;
+    }
+    .btn-sync { background: #007e33; }
+    .btn-edit-tool { background: #8e44ad; }
+    .btn-export { background: #16a085; }
+    .btn-print { background: #27ae60; }
+
+    .tab-row {
+      width: 100%;
+      max-width: 210mm;
+      display: flex;
+      gap: 5px;
+      margin-bottom: 8px;
+    }
+    .tab-btn {
+      flex: 1;
+      padding: 8px;
+      font-size: 11.5px;
+      font-weight: 900;
+      background: #ffffff;
+      border: 1.5px solid #ccc;
+      border-radius: 4px;
+      cursor: pointer;
+      text-align: center;
+      color: #333;
+    }
+    .tab-btn.active {
+      background: #2b579a;
+      color: #ffffff;
+      border-color: #153465;
+    }
+
+    /* A4 PORTRAIT CONTAINER */
+    .container-box {
+      width: 210mm;
+      min-height: 297mm;
+      background: #ffffff;
+      border-radius: 4px;
+      padding: 12mm 14mm;
+      box-shadow: 0 6px 20px rgba(0,0,0,0.4);
+      display: none;
+      margin-bottom: 15px;
+    }
+    .container-box.active-view {
+      display: block;
+    }
+
+    /* LETTER STYLES */
+    .letter-title {
+      text-align: left;
+      font-size: 10px;
+      font-weight: 900;
+      text-decoration: underline;
+      line-height: 1.35;
+      margin: 12px 0;
+    }
+    .letter-body {
+      font-size: 10px;
+      line-height: 1.45;
+      margin-bottom: 12px;
+    }
+    .letter-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 12px 0;
+      font-size: 9.5px;
+    }
+    .letter-table th, .letter-table td {
+      border: 1px solid #000;
+      padding: 5px 6px;
+      text-align: center;
+      vertical-align: middle;
+    }
+    .letter-table th {
+      background: #f2f2f2;
+      font-weight: 900;
+    }
+
+    /* APPENDICES TABLE STYLES */
+    .appx-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 9px;
+      margin-top: 8px;
+      table-layout: fixed;
+    }
+    .appx-table th, .appx-table td {
+      border: 1px solid #000;
+      padding: 4px 5px;
+      text-align: center;
+      vertical-align: middle;
+      overflow: hidden;
+    }
+    .appx-table th {
+      background: #f8f9fa;
+      font-weight: 900;
+      font-size: 9px;
+      white-space: normal;
+    }
+    .col-unit {
+      text-align: center !important;
+      white-space: normal !important;
+      line-height: 1.15;
+      font-size: 8px;
+    }
+    .col-nok {
+      width: 170px !important;
+      min-width: 170px !important;
+      max-width: 170px !important;
+      text-align: left !important;
+      white-space: pre-line !important;
+      word-wrap: break-word !important;
+      font-size: 8px !important;
+      line-height: 1.2;
+    }
+    .col-left { text-align: left !important; }
+    .appx-table tbody tr { cursor: pointer; height: 42px; }
+    .appx-table tbody tr:hover { background-color: #f1f7ff; }
+    .appx-table tbody tr.selected-row { background-color: #d4e6f1 !important; }
+
+    /* MODAL */
+    .modal-overlay {
+      display: none;
+      position: fixed;
+      top: 0; left: 0; width: 100vw; height: 100vh;
+      background: rgba(0,0,0,0.6);
+      z-index: 200;
+      justify-content: center;
+      align-items: center;
+    }
+    .modal-window {
+      background: #ffffff;
+      border-radius: 6px;
+      box-shadow: 0 6px 20px rgba(0,0,0,0.4);
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      width: 90%;
+      max-width: 750px;
+    }
+    .modal-header {
+      background: #2b579a;
+      color: white;
+      padding: 10px 16px;
+      font-size: 14px;
+      font-weight: bold;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .edit-grid {
+      padding: 16px;
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 10px;
+      max-height: 65vh;
+      overflow-y: auto;
+      background: #f8f9fa;
+    }
+    .form-group {
+      display: flex;
+      flex-direction: column;
+      gap: 3px;
+    }
+    .form-group label { font-size: 11px; font-weight: bold; }
+    .form-group input, .form-group textarea { padding: 5px 8px; font-size: 12px; border: 1px solid #ccc; border-radius: 4px; }
+
+    #alertToast {
+      position: fixed; top: 20px; right: 20px; background: #27ae60; color: #ffffff; padding: 10px 18px; border-radius: 4px; font-size: 13px; font-weight: bold; box-shadow: 0 4px 12px rgba(0,0,0,0.3); z-index: 9999; display: none;
+    }
+    #alertToast.error { background: #c0392b; }
+
+    @page {
+      size: A4 portrait;
+      margin: 12mm 14mm;
+    }
+    @media print {
+      body { background: #fff; padding: 0; margin: 0; }
+      .app-toolbar, .tab-row { display: none !important; }
+      .container-box { box-shadow: none; border: none; padding: 0; width: 100%; min-height: auto; margin: 0; display: block !important; }
+    }
+  </style>
+</head>
+<body>
+
+  <div id="alertToast">Success Message</div>
+
+  <!-- TOOLBAR -->
+  <div class="app-toolbar">
+    <div class="toolbar-left">
+      <a href="/completed.html" class="btn-nav" style="background: #007e33;">📁 COMPLETED MR</a>
+      <a href="/doii.html" class="btn-nav" style="background:#3498db;">📑 DO-II</a>
+      <button class="btn-nav" style="background:#576574; border:none;" onclick="goToHome()">🏠 HOME</button>
+    </div>
+    <div class="toolbar-actions">
+      <button class="btn-tool btn-sync" onclick="syncData()">⚡ SYNC</button>
+      <button class="btn-tool btn-edit-tool" onclick="openEditModal()">✏️ EDIT</button>
+      <button class="btn-tool btn-export" onclick="exportExcel()">📊 EXPORT EXCEL</button>
+      <button class="btn-tool btn-print" onclick="window.print()">🖨️ PRINT / PDF</button>
+    </div>
+  </div>
+
+  <!-- TABS -->
+  <div class="tab-row">
+    <button class="tab-btn active" onclick="switchTab('letter', this)">📄 LETTER</button>
+    <button class="tab-btn" onclick="switchTab('appxA', this)">📋 APPX 'A' (INC)</button>
+    <button class="tab-btn" onclick="switchTab('appxB', this)">📋 APPX 'B' (DEC)</button>
+  </div>
+
+  <!-- VIEW 1: LETTER -->
+  <div id="view-letter" class="container-box active-view">
+    <div style="font-size: 10px; font-weight: bold; margin-bottom: 6px;">
+      Mail-bro-74rcc@nic.in
+    </div>
+
+    <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom: 8px;">
+      <div style="font-size: 10px; font-weight: bold; line-height: 1.3;">
+        2014/CPL Gen/ <span id="dispRefNo" style="display:inline-block; min-width:40px; border-bottom:1px solid #000; text-align:center;"></span> /E2
+      </div>
+      <div style="text-align: left; font-size: 10px; font-weight: bold; line-height: 1.25;">
+        74 Road Constr Coy (GREF)<br>
+        Pin - 930 074<br>
+        C/o 99 APO
+      </div>
+    </div>
+
+    <div style="display:flex; justify-content:space-between; font-size:10px; font-weight:bold; margin-bottom: 12px;">
+      <div style="line-height: 1.25;">
+        HQ 24 BRTF<br>
+        Pin-930 024<br>
+        C/o 99 APO
+      </div>
+      <div id="letterTopDate"></div>
+    </div>
+
+    <div class="letter-title" id="letterSubTitle"></div>
+
+    <div class="letter-body" id="letterParaBody"></div>
+
+    <table class="letter-table">
+      <thead>
+        <tr>
+          <th style="width: 45px;">S.No</th>
+          <th id="thPrevHeader">
+            Strength as on<br><span id="lblPrevDate">20 AUG 2026</span><br>
+            <input type="number" id="inputBaseStrength" value="942" style="width:70px; text-align:center; font-weight:bold; border:1px solid #000; margin-top:2px;" oninput="updateBaseStrength(this.value)">
+          </th>
+          <th>Increase of CPLs<br>(Appx-A)</th>
+          <th>Decrease of CPLs<br>(Appx-B)</th>
+          <th id="thCurrHeader">Strength as on<br><span id="lblCurrDate">20 SEP 2026</span></th>
+          <th>Remarks</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>1</td>
+          <td id="valBaseDisp">942</td>
+          <td id="valD21" style="font-weight:bold;">0</td>
+          <td id="valE21" style="font-weight:bold;">0</td>
+          <td id="valNetStrength" style="font-weight:bold;">942</td>
+          <td></td>
+        </tr>
+      </tbody>
+    </table>
+
+    <div style="margin-top: 40px; display:flex; justify-content:space-between; align-items:flex-end;">
+      <div>Encls: <span id="dispEncls" style="border-bottom:1px solid #000; padding:0 10px; font-weight:bold;"></span> Sheets</div>
+      <div style="text-align:left; font-size:10px; font-weight:bold; line-height: 1.25;">
+        (S N Verma)<br>
+        AE (Civil)<br>
+        Officer Commanding<br>
+        74 RCC (GREF)
+      </div>
+    </div>
+  </div>
+
+  <!-- VIEW 2: APPX A (INCREASE) -->
+  <div id="view-appxA" class="container-box">
+    <div style="text-align: right; font-weight: bold; font-size: 10.5px;">Appx 'A'</div>
+    <div class="letter-title">
+      GROUP (TERM) INSURANCE SCHEME FOR CASUAL PAID LABOURERS WHO ENGAGED BRO PROJECT WORKS<br>
+      74 RCC/24 BRTF/PROJECT PUSHPAK (INCREASE STRENGTH OF CPL'S)
+    </div>
+    <table class="appx-table">
+      <thead>
+        <tr>
+          <th style="width:30px;">S/No</th>
+          <th style="width:50px;">Code</th>
+          <th style="width:100px;">Unit/TF/Project</th>
+          <th style="width:75px;">Adhar No./Any valid Govt docs</th>
+          <th style="width:100px;">Name of Beneficeary</th>
+          <th style="width:65px;">Date of Birth</th>
+          <th class="col-nok">NoK Details (Name and Address)</th>
+          <th style="width:75px;">Date of Enrolment</th>
+        </tr>
+      </thead>
+      <tbody id="appxABody">
+        <tr><td colspan="8" style="padding:15px; font-style:italic;">Click '⚡ SYNC' to load Increase records.</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- VIEW 3: APPX B (DECREASE) -->
+  <div id="view-appxB" class="container-box">
+    <div style="text-align: right; font-weight: bold; font-size: 10.5px;">Appx 'B'</div>
+    <div class="letter-title">
+      GROUP (TERM) INSURANCE SCHEME FOR CASUAL PAID LABOURERS WHO ENGAGED BRO PROJECT WORKS<br>
+      74 RCC/24 BRTF/PROJECT PUSHPAK (DECREASE STRENGTH OF CPL'S)
+    </div>
+    <table class="appx-table">
+      <thead>
+        <tr>
+          <th style="width:30px;">S/No</th>
+          <th style="width:50px;">Code</th>
+          <th style="width:95px;">Unit/TF/Project</th>
+          <th style="width:70px;">Adhar No./Any valid Govt docs</th>
+          <th style="width:95px;">Name of Beneficeary</th>
+          <th style="width:65px;">Date of Birth</th>
+          <th class="col-nok">NoK Details (Name and Address)</th>
+          <th style="width:75px;">Date of Enrolment</th>
+          <th style="width:75px;">Date of Discharge</th>
+        </tr>
+      </thead>
+      <tbody id="appxBBody">
+        <tr><td colspan="9" style="padding:15px; font-style:italic;">Click '⚡ SYNC' to load Decrease records.</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- EDIT MODAL -->
+  <div class="modal-overlay" id="editModal">
+    <div class="modal-window">
+      <div class="modal-header">
+        <span id="modalTitle">EDIT RECORD</span>
+        <span style="cursor:pointer;" onclick="closeModal()">✖</span>
+      </div>
+      <div class="edit-grid" id="editFormFields"></div>
+      <div style="padding: 10px 16px; background:#fff; border-top:1px solid #ddd; display:flex; justify-content:flex-end; gap:10px;">
+        <button class="btn-tool" style="background:#888;" onclick="closeModal()">CANCEL</button>
+        <button class="btn-tool" style="background:#27ae60;" onclick="saveEditedRecord()">UPDATE</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- CUSTOM CONFIRMATION MODAL FOR HOME -->
+  <div class="modal-overlay" id="customConfirmModal">
+    <div class="modal-window" style="width: 380px; padding: 20px; gap: 14px; text-align: center; background:#fff; border-radius:6px; max-width:380px;">
+      <h3 style="color:#2b579a; font-size:16px;">CONFIRMATION</h3>
+      <p id="customConfirmText" style="font-size: 13px; font-weight: bold; color: #333; line-height: 1.4;">Are you sure you want to go to Home?</p>
+      <div style="display:flex; justify-content:center; gap:10px; margin-top:6px;">
+        <button class="btn-tool" style="background:#666;" onclick="closeCustomConfirm(false)">NO</button>
+        <button class="btn-tool" style="background:#007e33;" onclick="closeCustomConfirm(true)">YES</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    let masterData = [];
+    let increaseRecords = [];
+    let decreaseRecords = [];
+    let baseStrength = 942;
+    let activeEditTab = 'letter';
+    let activeEditIdx = 0;
+    let activePeriod = localStorage.getItem("CPL_GLOBAL_MONTH") || "SEP 2026";
+    let pendingConfirmAction = null;
+
+    function showAlert(message, isError = false) {
+      const toast = document.getElementById("alertToast");
+      toast.innerText = message;
+      toast.className = isError ? "error" : "";
+      toast.style.display = "block";
+      setTimeout(() => { toast.style.display = "none"; }, 3000);
+    }
+
+    function getFormattedDates(periodStr) {
+      const months = ["JAN", "FEB", "MAR", "APR", "MAY", "JUN", "JUL", "AUG", "SEP", "OCT", "NOV", "DEC"];
+      const parts = periodStr.trim().toUpperCase().split(/\s+/);
+      let curMonthStr = parts[0] || "SEP";
+      let curYear = parseInt(parts[1]) || 2026;
+      let mIdx = months.indexOf(curMonthStr);
+      if (mIdx === -1) mIdx = 8;
+
+      let prevMIdx = mIdx - 1;
+      let prevYear = curYear;
+      if (prevMIdx < 0) {
+        prevMIdx = 11;
+        prevYear -= 1;
+      }
+
+      let prevMonthStr = months[prevMIdx];
+      return {
+        prevDateStr: `20 ${prevMonthStr} ${prevYear}`,
+        currDateStr: `20 ${curMonthStr} ${curYear}`,
+        periodRangeStr: `21 ${prevMonthStr} ${prevYear} TO 20 ${curMonthStr} ${curYear}`
+      };
+    }
+
+    const datesInfo = getFormattedDates(activePeriod);
+
+    let letterConfig = {
+      refNo: "",
+      letterDate: activePeriod,
+      encls: "03",
+      title: `GROUP (TERM) INSURANCE SCHEME FOR CPLs BY BRO/GREF ON ITS ONGOING PROJECT WORKS: MONTHLY REPORT OF INCREASE AND DECREASE STRENGTH OF CPLs FOR ${activePeriod} (PERIOD: ${datesInfo.periodRangeStr})`,
+      para: `1. &nbsp;&nbsp; Please refer HQ CE (P) Pushpak letter No. 23030/Group-Insurance/39/E2 Wks dated 13 Feb 2026.<br><br>2. &nbsp;&nbsp; Subject report in r/o increase and decrease strength of CPL's in AoR of the 74 RCC for the month of ${activePeriod} (Period from ${datesInfo.periodRangeStr.toLowerCase().replace(/\b\w/g, l => l.toUpperCase())}) is submitted herewith as Appx 'A' and 'B' for your information and further necessary action, please.<br><br>3. &nbsp;&nbsp; The summary of labour strength as on ${datesInfo.currDateStr} is as under: -`
+    };
+
+    const borderStyleThin = {
+      top: { style: "thin", color: { rgb: "000000" } },
+      bottom: { style: "thin", color: { rgb: "000000" } },
+      left: { style: "thin", color: { rgb: "000000" } },
+      right: { style: "thin", color: { rgb: "000000" } }
+    };
+
+    function switchTab(tabId, btn) {
+      activeEditTab = tabId;
+      document.querySelectorAll('.container-box').forEach(b => b.classList.remove('active-view'));
+      document.querySelectorAll('.tab-btn').forEach(t => t.classList.remove('active'));
+      document.getElementById(`view-${tabId}`).classList.add('active-view');
+      btn.classList.add('active');
+    }
+
+    function goToHome() {
+      pendingConfirmAction = () => {
+        localStorage.removeItem("CPL_IN_PAYMENT_SCREEN");
+        localStorage.removeItem("CPL_ADMIN_LOGGED");
+        window.location.href = "/login.html";
+      };
+      document.getElementById("customConfirmText").innerText = "Did you check everything yourself? Are you sure you want to go to Home (Login Screen)?";
+      document.getElementById("customConfirmModal").style.display = "flex";
+    }
+
+    function closeCustomConfirm(yes) {
+      document.getElementById("customConfirmModal").style.display = "none";
+      if (yes && pendingConfirmAction) {
+        pendingConfirmAction();
+      }
+      pendingConfirmAction = null;
+    }
+
+    window.addEventListener("DOMContentLoaded", async () => {
+      const savedCfg = localStorage.getItem(`CPL_INCREASE_LETTER_CFG_${activePeriod}`);
+      if (savedCfg) {
+        try {
+          const cfg = JSON.parse(savedCfg);
+          letterConfig.refNo = cfg.refNo || "";
+          letterConfig.letterDate = cfg.letterDate || activePeriod;
+          letterConfig.encls = cfg.encls || "03";
+          if (cfg.title) letterConfig.title = cfg.title;
+          if (cfg.para) letterConfig.para = cfg.para;
+          if (cfg.baseStr && cfg.baseStr !== "") {
+            baseStrength = parseInt(cfg.baseStr) || baseStrength;
+          }
+        } catch(e){}
+      }
+
+      renderLetterUI();
+
+      try {
+        const res = await fetch('/api/master-data');
+        const json = await res.json();
+        masterData = json.data || [];
+      } catch(e) {
+        console.error("Master data load error:", e);
+        const localMaster = localStorage.getItem('CPL_OFFLINE_MASTER_DATA');
+        if (localMaster) {
+          try {
+            const pm = JSON.parse(localMaster);
+            masterData = pm.data || [];
+          } catch(err){}
+        }
+      }
+
+      syncData(true);
+    });
+
+    function renderLetterUI() {
+      document.getElementById("dispRefNo").innerText = letterConfig.refNo;
+      document.getElementById("letterTopDate").innerText = letterConfig.letterDate;
+      document.getElementById("letterSubTitle").innerHTML = letterConfig.title;
+      document.getElementById("letterParaBody").innerHTML = letterConfig.para;
+      document.getElementById("dispEncls").innerText = letterConfig.encls;
+      document.getElementById("inputBaseStrength").value = baseStrength;
+      document.getElementById("valBaseDisp").innerText = baseStrength;
+
+      document.getElementById("lblPrevDate").innerText = datesInfo.prevDateStr;
+      document.getElementById("lblCurrDate").innerText = datesInfo.currDateStr;
+    }
+
+    function saveLetterConfig() {
+      const baseStr = document.getElementById("inputBaseStrength").value;
+      letterConfig.baseStr = baseStr;
+      localStorage.setItem(`CPL_INCREASE_LETTER_CFG_${activePeriod}`, JSON.stringify(letterConfig));
+    }
+
+    function updateBaseStrength(val) {
+      baseStrength = parseInt(val) || 0;
+      saveLetterConfig();
+      renderTables();
+    }
+
+    function syncData(silent = false) {
+      let do2Groups = [];
+      const localDo2 = localStorage.getItem(`CPL_SAVED_DO2_GROUPS_${activePeriod}`);
+      if (localDo2) {
+        try { do2Groups = JSON.parse(localDo2); } catch(e){}
+      }
+
+      let mrSheets = [];
+      const localMr = localStorage.getItem(`CPL_OFFLINE_SHEETS_${activePeriod}`) || localStorage.getItem("CPL_SAVED_MR_SHEETS");
+      if (localMr) {
+        try {
+          let parsed = JSON.parse(localMr);
+          mrSheets = parsed.mrSheets || parsed;
+        } catch(e){}
+      }
+
+      if (navigator.onLine) {
+        Promise.all([
+          fetch(`/api/mr-sheets?period=${encodeURIComponent(activePeriod)}`).then(res => res.json()).catch(() => ({})),
+          fetch(`/api/do2-groups?period=${encodeURIComponent(activePeriod)}`).then(res => res.json()).catch(() => ({}))
+        ]).then(([mrData, do2Data]) => {
+          if (mrData.mrSheets && mrData.mrSheets.length > 0) {
+            mrSheets = mrData.mrSheets;
+            localStorage.setItem("CPL_SAVED_MR_SHEETS", JSON.stringify(mrSheets));
+          }
+          if (do2Data.groups && do2Data.groups.length > 0) {
+            do2Groups = do2Data.groups;
+            localStorage.setItem(`CPL_SAVED_DO2_GROUPS_${activePeriod}`, JSON.stringify(do2Groups));
+          }
+          processSyncExecution(mrSheets, do2Groups, silent);
+        }).catch(err => {
+          processSyncExecution(mrSheets, do2Groups, silent);
+        });
+      } else {
+        processSyncExecution(mrSheets, do2Groups, silent);
+      }
+    }
+
+    function processSyncExecution(mrSheets, do2Groups, silent = false) {
+      increaseRecords = [];
+      decreaseRecords = [];
+
+      function getEmployeeDetails(code, name, targetMrSno, targetMrHeading) {
+        let foundRow = null;
+
+        // 1. Exact MR Number aur S/No (Index) se strict matching karna
+        if (targetMrSno && targetMrHeading) {
+          // DO-II heading se exact MR number extract karna (e.g., "74 RCC/20" ya "MR NO. 20" se "20")
+          const headingStr = String(targetMrHeading).toUpperCase();
+          const mrNumMatch = headingStr.match(/(?:RCC\/|MR\s*NO\.?\s*)(\d+)/i);
+          const targetMrNum = mrNumMatch ? mrNumMatch[1] : null;
+
+          if (targetMrNum) {
+            for (const mr of mrSheets) {
+              const labelStr = (mr.label || "").toUpperCase();
+              const labelNumMatch = labelStr.match(/\d+/);
+              const currentMrNum = labelNumMatch ? labelNumMatch[0] : null;
+
+              // Agar MR numbers bilkul exact match karte hain
+              if (currentMrNum && currentMrNum === targetMrNum) {
+                const rObj = (mr.rows || [])[parseInt(targetMrSno) - 1];
+                if (rObj && rObj.rowData) {
+                  const sheetName = String(rObj.rowData[3] || '').trim().toLowerCase();
+                  const do2Name = String(name || '').trim().toLowerCase();
+                  
+                  // Name cross-verify karna taaki 100% wahi exact individual ho
+                  if (!do2Name || sheetName === do2Name || sheetName.includes(do2Name) || do2Name.includes(sheetName)) {
+                    foundRow = rObj;
+                    break;
+                  }
+                }
+              }
+            }
+          }
+        }
+
+        // 2. Agar exact MR number se na mile, toh saari sheets mein S/No aur Name se exact match dhoondo
+        if (!foundRow && targetMrSno && name) {
+          for (const mr of mrSheets) {
+            const rObj = (mr.rows || [])[parseInt(targetMrSno) - 1];
+            if (rObj && rObj.rowData) {
+              const rName = String(rObj.rowData[3] || '').trim().toLowerCase();
+              if (rName === String(name).trim().toLowerCase()) {
+                foundRow = rObj;
+                break;
+              }
+            }
+          }
+        }
+
+        // 3. Agar row mil gayi toh exact details return karo
+        if (foundRow && foundRow.rowData) {
+          return {
+            aadhar: foundRow.rowData[8] || foundRow.rowData[9] || "---",
+            dob: foundRow.rowData[4] || "1-Jan-1995",
+            nok: foundRow.rowData[7] || "NOK: ---",
+            enrolment: foundRow.rowData[22] || "1-Jul-2026"
+          };
+        }
+
+        // 4. Fallback: Master data se match karna
+        let match = null;
+        if (code && code.toUpperCase() !== 'NEW') {
+          match = masterData.find(m => m.code && m.code.trim().toLowerCase() === String(code).trim().toLowerCase());
+        }
+        if (!match && name) {
+          match = masterData.find(m => m.name && m.name.trim().toLowerCase() === String(name).trim().toLowerCase());
+        }
+
+        return {
+          aadhar: (match && match.rowData) ? (match.rowData[8] || match.rowData[9] || "---") : "---",
+          dob: (match && match.rowData) ? (match.rowData[4] || "1-Jan-1995") : "1-Jan-1995",
+          nok: (match && match.rowData) ? (match.rowData[7] || "NOK: ---") : "NOK: ---",
+          enrolment: (match && match.rowData) ? (match.rowData[22] || "1-Jul-2026") : "1-Jul-2026"
+        };
+      }
+
+      do2Groups.forEach(grp => {
+        (grp.rows || []).forEach(r => {
+          if (!r.isBlank) {
+            const code = String(r.code || '').trim();
+            const name = String(r.name || '').trim();
+            const mrSno = r.mrSno;
+            const mrHeading = grp.mrHeading;
+
+            const details = getEmployeeDetails(code, name, mrSno, mrHeading);
+            
+            let displayCode = code;
+            if (code.toUpperCase() === 'NEW') {
+              if (r.newCode && r.newCode.trim() !== '') {
+                displayCode = r.newCode.trim();
+              } else {
+                displayCode = 'NEW';
+              }
+            } else if (r.newCode && r.newCode.trim() !== '') {
+              displayCode = r.newCode.trim();
+            }
+            
+            if (r.dateRecruit || code.toUpperCase() === "NEW") {
+              increaseRecords.push({
+                code: displayCode,
+                unit: "74 RCC / 24 BRTF / HQ CE (P) Pushpak",
+                aadhar: details.aadhar,
+                name: name,
+                dob: details.dob,
+                nok: details.nok,
+                enrolment: r.dateRecruit || details.enrolment
+              });
+            }
+
+            if (r.dateDischarge) {
+              decreaseRecords.push({
+                code: displayCode,
+                unit: "74 RCC / 24 BRTF / HQ CE (P) Pushpak",
+                aadhar: details.aadhar,
+                name: name,
+                dob: details.dob,
+                nok: details.nok,
+                enrolment: details.enrolment,
+                discharge: r.dateDischarge
+              });
+            }
+          }
+        });
+      });
+
+      renderTables();
+      if (!silent) showAlert(`Data successfully synced for ${activePeriod} from DO-II!`);
+    }
+
+    function renderTables() {
+      const incCount = increaseRecords.length;
+      const decCount = decreaseRecords.length;
+
+      document.getElementById("valBaseDisp").innerText = baseStrength;
+      document.getElementById("valD21").innerText = incCount;
+      document.getElementById("valE21").innerText = decCount;
+      document.getElementById("valNetStrength").innerText = baseStrength + incCount - decCount;
+
+      const tbodyA = document.getElementById("appxABody");
+      if (incCount === 0) {
+        tbodyA.innerHTML = `<tr><td colspan="8" style="padding:15px; font-style:italic; color:#666;">No increase records found for ${activePeriod}. Please check DO-II entries.</td></tr>`;
+      } else {
+        tbodyA.innerHTML = "";
+        increaseRecords.forEach((r, idx) => {
+          const tr = document.createElement("tr");
+          tr.onclick = () => { activeEditTab = 'appxA'; activeEditIdx = idx; highlightRow(tbodyA, tr); };
+          tr.ondblclick = () => { activeEditTab = 'appxA'; activeEditIdx = idx; openEditModal(); };
+          tr.innerHTML = `
+            <td>${idx + 1}</td>
+            <td style="font-weight:bold;">${r.code}</td>
+            <td class="col-unit">${r.unit}</td>
+            <td>${r.aadhar}</td>
+            <td class="col-left" style="font-weight:bold;">${r.name}</td>
+            <td>${r.dob}</td>
+            <td class="col-nok">${r.nok}</td>
+            <td>${r.enrolment}</td>
+          `;
+          tbodyA.appendChild(tr);
+        });
+      }
+
+      const tbodyB = document.getElementById("appxBBody");
+      if (decCount === 0) {
+        tbodyB.innerHTML = `<tr><td colspan="9" style="padding:15px; font-style:italic; color:#666;">No decrease records found for ${activePeriod}. Please check DO-II entries.</td></tr>`;
+      } else {
+        tbodyB.innerHTML = "";
+        decreaseRecords.forEach((r, idx) => {
+          const tr = document.createElement("tr");
+          tr.onclick = () => { activeEditTab = 'appxB'; activeEditIdx = idx; highlightRow(tbodyB, tr); };
+          tr.ondblclick = () => { activeEditTab = 'appxB'; activeEditIdx = idx; openEditModal(); };
+          tr.innerHTML = `
+            <td>${idx + 1}</td>
+            <td style="font-weight:bold;">${r.code}</td>
+            <td class="col-unit">${r.unit}</td>
+            <td>${r.aadhar}</td>
+            <td class="col-left" style="font-weight:bold;">${r.name}</td>
+            <td>${r.dob}</td>
+            <td class="col-nok">${r.nok}</td>
+            <td>${r.enrolment}</td>
+            <td style="color:#c0392b; font-weight:bold;">${r.discharge}</td>
+          `;
+          tbodyB.appendChild(tr);
+        });
+      }
+    }
+
+    function highlightRow(tbody, selectedTr) {
+      tbody.querySelectorAll('tr').forEach(tr => tr.classList.remove('selected-row'));
+      selectedTr.classList.add('selected-row');
+    }
+
+    function openEditModal() {
+      const grid = document.getElementById("editFormFields");
+      grid.innerHTML = "";
+
+      if (activeEditTab === 'letter') {
+        document.getElementById("modalTitle").innerText = "EDIT FORWARDING LETTER DETAILS";
+        grid.innerHTML = `
+          <div class="form-group"><label>LETTER REF NO:</label><input type="text" id="edit_refNo" value="${letterConfig.refNo}"></div>
+          <div class="form-group"><label>LETTER DATE:</label><input type="text" id="edit_letterDate" value="${letterConfig.letterDate}"></div>
+          <div class="form-group"><label>ENCLS (SHEETS):</label><input type="text" id="edit_encls" value="${letterConfig.encls}"></div>
+          <div class="form-group" style="grid-column: span 2;"><label>LETTER TITLE:</label><textarea id="edit_title" style="height:60px;">${letterConfig.title}</textarea></div>
+          <div class="form-group" style="grid-column: span 2;"><label>LETTER PARAGRAPH:</label><textarea id="edit_para" style="height:90px;">${letterConfig.para}</textarea></div>
+        `;
+      } else {
+        const records = (activeEditTab === 'appxA') ? increaseRecords : decreaseRecords;
+        if (!records || records.length === 0) return alert("No records available to edit!");
+        const r = records[activeEditIdx];
+
+        document.getElementById("modalTitle").innerText = `EDIT RECORD - ${r.name || 'EMPLOYEE'}`;
+        grid.innerHTML = `
+          <div class="form-group"><label>CODE:</label><input type="text" id="edit_code" value="${r.code}"></div>
+          <div class="form-group"><label>UNIT/TF/PROJECT:</label><input type="text" id="edit_unit" value="${r.unit}"></div>
+          <div class="form-group"><label>ADHAR NO / GOVT DOCS:</label><input type="text" id="edit_aadhar" value="${r.aadhar}"></div>
+          <div class="form-group"><label>NAME OF BENEFICIARY:</label><input type="text" id="edit_name" value="${r.name}"></div>
+          <div class="form-group"><label>DATE OF BIRTH:</label><input type="text" id="edit_dob" value="${r.dob}"></div>
+          <div class="form-group" style="grid-column: span 2;"><label>NOK DETAILS (NAME & ADDRESS):</label><input type="text" id="edit_nok" value="${r.nok}"></div>
+          <div class="form-group"><label>DATE OF ENROLMENT:</label><input type="text" id="edit_enrolment" value="${r.enrolment}"></div>
+          ${activeEditTab === 'appxB' ? `<div class="form-group"><label>DATE OF DISCHARGE:</label><input type="text" id="edit_discharge" value="${r.discharge}"></div>` : ''}
+        `;
+      }
+
+      document.getElementById("editModal").style.display = "flex";
+    }
+
+    function closeModal() {
+      document.getElementById("editModal").style.display = "none";
+    }
+
+    function saveEditedRecord() {
+      if (activeEditTab === 'letter') {
+        letterConfig.refNo = document.getElementById("edit_refNo").value.trim();
+        letterConfig.letterDate = document.getElementById("edit_letterDate").value.trim();
+        letterConfig.encls = document.getElementById("edit_encls").value.trim();
+        letterConfig.title = document.getElementById("edit_title").value.trim();
+        letterConfig.para = document.getElementById("edit_para").value.trim();
+
+        saveLetterConfig();
+        renderLetterUI();
+        closeModal();
+        showAlert("Letter details updated successfully!");
+      } else {
+        const records = (activeEditTab === 'appxA') ? increaseRecords : decreaseRecords;
+        const r = records[activeEditIdx];
+
+        r.code = document.getElementById("edit_code").value.trim();
+        r.unit = document.getElementById("edit_unit").value.trim();
+        r.aadhar = document.getElementById("edit_aadhar").value.trim();
+        r.name = document.getElementById("edit_name").value.trim();
+        r.dob = document.getElementById("edit_dob").value.trim();
+        r.nok = document.getElementById("edit_nok").value.trim();
+        r.enrolment = document.getElementById("edit_enrolment").value.trim();
+        if (activeEditTab === 'appxB') {
+          r.discharge = document.getElementById("edit_discharge").value.trim();
+        }
+
+        closeModal();
+        renderTables();
+        showAlert("Record updated successfully!");
+      }
+    }
+
+    function exportExcel() {
+      const wb = XLSX.utils.book_new();
+      const incCount = increaseRecords.length;
+      const decCount = decreaseRecords.length;
+      const netStrength = baseStrength + incCount - decCount;
+
+      const wsLetterData = [
+        ["Mail-bro-74rcc@nic.in"],
+        [`2014/CPL Gen/ ${letterConfig.refNo} /E2`, "", "", "", "", "74 Road Constr Coy (GREF)"],
+        ["", "", "", "", "", "Pin - 930 074"],
+        ["HQ 24 BRTF", "", "", "", "", "C/o 99 APO"],
+        ["Pin-930 024"],
+        ["C/o 99 APO", "", "", "", "", letterConfig.letterDate],
+        [],
+        [letterConfig.title],
+        [],
+        [letterConfig.para.replace(/<br>/g, " ").replace(/&nbsp;/g, " ")],
+        [],
+        ["S.No", `Strength as on ${datesInfo.prevDateStr}\n(${baseStrength})`, "Increase of CPLs\n(Appx-A)", "Decrease of CPLs\n(Appx-B)", `Strength as on ${datesInfo.currDateStr}\n(${netStrength})`, "Remarks"],
+        [1, baseStrength, incCount, decCount, netStrength, ""]
+      ];
+      const wsLetter = XLSX.utils.aoa_to_sheet(wsLetterData);
+      for (let R = 11; R <= 12; R++) {
+        for (let C = 0; C <= 5; C++) {
+          const cellRef = XLSX.utils.encode_cell({ r: R, c: C });
+          if (!wsLetter[cellRef]) wsLetter[cellRef] = { t: 's', v: '' };
+          wsLetter[cellRef].s = { border: borderStyleThin, alignment: { horizontal: "center", vertical: "center" } };
+        }
+      }
+      wsLetter['!cols'] = [{ wch: 8 }, { wch: 28 }, { wch: 22 }, { wch: 22 }, { wch: 24 }, { wch: 15 }];
+      XLSX.utils.book_append_sheet(wb, wsLetter, "Forwarding_Letter");
+
+      const wsAData = [
+        ["Appx 'A'"],
+        ["GROUP (TERM) INSURANCE SCHEME FOR CASUAL PAID LABOURERS WHO ENGAGED BRO PROJECT WORKS"],
+        ["74 RCC/24 BRTF/PROJECT PUSHPAK (INCREASE STRENGTH OF CPL'S)"],
+        [],
+        ["S/No", "Code", "Unit/TF/Project", "Adhar No./Any valid Govt docs", "Name of Beneficeary", "Date of Birth", "NoK Details (Name and Address)", "Date of Enrolment"]
+      ];
+      increaseRecords.forEach((r, i) => {
+        wsAData.push([i+1, r.code, r.unit, r.aadhar, r.name, r.dob, r.nok, r.enrolment]);
+      });
+      const wsA = XLSX.utils.aoa_to_sheet(wsAData);
+      for (let R = 4; R < wsAData.length; R++) {
+        for (let C = 0; C < 8; C++) {
+          const cellRef = XLSX.utils.encode_cell({ r: R, c: C });
+          if (!wsA[cellRef]) wsA[cellRef] = { t: 's', v: '' };
+          wsA[cellRef].s = { border: borderStyleThin, alignment: { vertical: "center" } };
+        }
+      }
+      wsA['!cols'] = [{ wch: 6 }, { wch: 10 }, { wch: 28 }, { wch: 18 }, { wch: 24 }, { wch: 14 }, { wch: 30 }, { wch: 22 }];
+      XLSX.utils.book_append_sheet(wb, wsA, "Appx_A_Increase");
+
+      const wsBData = [
+        ["Appx 'B'"],
+        ["GROUP (TERM) INSURANCE SCHEME FOR CASUAL PAID LABOURERS WHO ENGAGED BRO PROJECT WORKS"],
+        ["74 RCC/24 BRTF/PROJECT PUSHPAK (DECREASE STRENGTH OF CPL'S)"],
+        [],
+        ["S/No", "Code", "Unit/TF/Project", "Adhar No./Any valid Govt docs", "Name of Beneficeary", "Date of Birth", "NoK Details (Name and Address)", "Date of Enrolment", "Date of Discharge"]
+      ];
+      decreaseRecords.forEach((r, i) => {
+        wsBData.push([i+1, r.code, r.unit, r.aadhar, r.name, r.dob, r.nok, r.enrolment, r.discharge]);
+      });
+      const wsB = XLSX.utils.aoa_to_sheet(wsBData);
+      for (let R = 4; R < wsBData.length; R++) {
+        for (let C = 0; C < 9; C++) {
+          const cellRef = XLSX.utils.encode_cell({ r: R, c: C });
+          if (!wsB[cellRef]) wsB[cellRef] = { t: 's', v: '' };
+          wsB[cellRef].s = { border: borderStyleThin, alignment: { vertical: "center" } };
+        }
+      }
+      wsB['!cols'] = [{ wch: 6 }, { wch: 10 }, { wch: 28 }, { wch: 18 }, { wch: 24 }, { wch: 14 }, { wch: 30 }, { wch: 18 }, { wch: 18 }];
+      XLSX.utils.book_append_sheet(wb, wsB, "Appx_B_Decrease");
+
+      XLSX.writeFile(wb, `CPL_INCREASE_DECREASE_REPORT_${activePeriod.replace(/[^a-zA-Z0-9]/g, '_')}.xlsx`);
+    }
+  </script>
+</body>
+</html>
