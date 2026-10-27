@@ -538,6 +538,13 @@
       return str;
     }
 
+    function formatDo2DateWithSession(value, fallbackTime = "(F/N)") {
+      const raw = String(value || "").trim();
+      if (!raw) return "";
+      const sessionMatch = raw.match(/\((?:F\/N|A\/N)\)/i);
+      const dateOnly = formatToStandardDate(raw.replace(/\s*\((?:F\/N|A\/N)\)/ig, "").trim());
+      return dateOnly ? `${dateOnly} ${sessionMatch ? sessionMatch[0].toUpperCase() : (fallbackTime || "(F/N)")}` : "";
+    }
     function getDO2PayrollPeriodStartDate() {
       const parts = String(activePeriod || "").trim().toUpperCase().replace(/_/g, " ").split(/\s+/);
       const monthKeys = ["JAN", "FEB", "MAR", "APR", "MAY", "JUN", "JUL", "AUG", "SEP", "OCT", "NOV", "DEC"];
@@ -800,7 +807,7 @@
               tradeChangeDate: hasSlash ? tradeDateForCurrentPeriod : "",
               tradeChangeFrom: hasSlash && hasLifecycleTradeChange ? tradeChangeFrom : "",
               tradeChangeTo: hasSlash && hasLifecycleTradeChange ? tradeChangeTo : "",
-              time: "(F/N)",
+              time: lifeData.eventTime || lifeData.transferFnAn || "(F/N)",
               customRemark: manualMatch ? manualMatch.remark : autoRemark
             };
             rowObj.remark = generateRemarkFormula(rowObj);
@@ -980,10 +987,10 @@
             <td class="col-bold">${r.trade || ''}</td>
             <td class="col-left col-bold">${r.name || ''}</td>
             <td class="col-left">${r.father || ''}</td>
-            <td>${formatToStandardDate(r.dateRecruit)}</td>
-            <td>${formatToStandardDate(r.dateDischarge)}</td>
-            <td>${formatToStandardDate(r.dateTfr)}</td>
-            <td>${formatToStandardDate(r.dateUpgrade)}</td>
+            <td>${formatDo2DateWithSession(r.dateRecruit, r.time)}</td>
+            <td>${formatDo2DateWithSession(r.dateDischarge, r.time)}</td>
+            <td>${formatDo2DateWithSession(r.dateTfr, r.time)}</td>
+            <td>${formatDo2DateWithSession(r.dateUpgrade, r.time)}</td>
             <td class="col-remark">${r.remark || ''}</td>
           `;
           tbody.appendChild(tr);
