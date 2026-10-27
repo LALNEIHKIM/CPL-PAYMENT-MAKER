@@ -430,6 +430,13 @@
     let activePeriod = localStorage.getItem("CPL_GLOBAL_MONTH") || "SEP 2026";
     let pendingConfirmAction = null;
 
+    function formatDateWithSession(value, session = "(F/N)") {
+      const raw = String(value || "").trim();
+      if (!raw) return "";
+      const found = raw.match(/\((?:F\/N|A\/N)\)/i);
+      const dateOnly = raw.replace(/\s*\((?:F\/N|A\/N)\)/ig, "").trim();
+      return `${dateOnly} ${found ? found[0].toUpperCase() : (session || "(F/N)")}`;
+    }
     function showAlert(message, isError = false) {
       const toast = document.getElementById("alertToast");
       toast.innerText = message;
@@ -689,6 +696,7 @@
             const name = String(r.name || '').trim();
             const mrSno = r.mrSno;
             const mrHeading = grp.mrHeading;
+            const eventTime = r.time || "(F/N)";
 
             const details = getEmployeeDetails(code, name, mrSno, mrHeading);
             
@@ -711,7 +719,7 @@
                 name: name,
                 dob: details.dob,
                 nok: details.nok,
-                enrolment: r.dateRecruit || details.enrolment
+                enrolment: formatDateWithSession(r.dateRecruit || details.enrolment, eventTime)
               });
             }
 
@@ -724,7 +732,7 @@
                 dob: details.dob,
                 nok: details.nok,
                 enrolment: details.enrolment,
-                discharge: r.dateDischarge
+                discharge: formatDateWithSession(r.dateDischarge, eventTime)
               });
             }
           }
